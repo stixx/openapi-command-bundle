@@ -1,0 +1,23 @@
+{
+    "name": "stixx/openapi-command-bundle",
+    "description": "Create Command-Bus APIs with auto-generated OpenAPI docs and schema-driven request validation",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "authors": [
+      {
+        "name": "Jelle van Oosterbosch",
+        "email": "info@celer-it.nl"
+      }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Stixx\\OpenapiCommandBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Stixx\\OpenapiCommandBundleTests\\": "tests/"
+        }
+    },
+    "require": {}
+}
