@@ -11,13 +11,31 @@
     ],
     "autoload": {
         "psr-4": {
-            "Stixx\\OpenapiCommandBundle\\": "src/"
+            "Stixx\\OpenApiCommandBundle\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Stixx\\OpenapiCommandBundleTests\\": "tests/"
+            "Stixx\\OpenApiCommandBundleTests\\": "tests/"
         }
     },
-    "require": {}
+    "require": {
+        "php": "^8.4",
+        "ext-json": "*",
+        "league/openapi-psr7-validator": "^0.22.0",
+        "nelmio/api-doc-bundle": "^5.8",
+        "nyholm/psr7": "^1.8",
+        "symfony/dependency-injection": "^7.3",
+        "symfony/framework-bundle": "^7.3",
+        "symfony/messenger": "^7.3",
+        "symfony/psr-http-message-bridge": "^7.3",
+        "symfony/serializer": "^7.3",
+        "symfony/validator": "^7.3"
+    },
+    "suggest": {
+        "symfony/security": "For using authentication and exception handing in your APIs."
+    },
+    "config": {
+        "sort-packages": true
+    }
 }
