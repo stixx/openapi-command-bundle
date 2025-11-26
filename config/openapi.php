@@ -18,5 +18,5 @@ return static function (ContainerConfigurator $configurator): void {
         ->set(CommandRouteDescriber::class)
             ->arg('$argumentMetadataFactory', service('argument_metadata_factory'))
             ->arg('$inlineParameterDescribers', tagged_iterator('nelmio_api_doc.route_argument_describer'))
-            ->tag('nelmio_api_doc.route_describer');
+            ->tag('nelmio_api_doc.route_describer', ['priority' => -260]);
 };
