@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Serializer\Serializer;
+use Stixx\OpenApiCommandBundle\Serializer\Normalizer\ConstraintViolationNormalizer;
+use Stixx\OpenApiCommandBundle\Serializer\Normalizer\ConstraintViolationListNormalizer;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $configurator): void {
