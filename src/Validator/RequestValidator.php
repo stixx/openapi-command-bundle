@@ -17,13 +17,11 @@ use League\OpenAPIValidation\PSR7\ValidatorBuilder;
 use Nelmio\ApiDocBundle\ApiDocGenerator;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 
 final readonly class RequestValidator implements ValidatorInterface
 {
     public function __construct(
-        #[Autowire(service: 'nelmio_api_doc.generator.default')]
         private ApiDocGenerator $apiDocGenerator
     ) {
     }

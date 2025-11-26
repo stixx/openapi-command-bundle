@@ -27,8 +27,6 @@ use OpenApi\Generator;
 use ReflectionClass;
 use ReflectionMethod;
 use stdClass;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadataFactoryInterface;
 use Symfony\Component\Routing\Route;
 
@@ -42,9 +40,7 @@ final class CommandRouteDescriber implements RouteDescriberInterface, ModelRegis
      * @param iterable<RouteArgumentDescriberInterface> $inlineParameterDescribers
      */
     public function __construct(
-        #[Autowire(service: 'argument_metadata_factory')]
         private readonly ArgumentMetadataFactoryInterface $argumentMetadataFactory,
-        #[TaggedIterator(tag: 'nelmio_api_doc.route_argument_describer')]
         private readonly iterable $inlineParameterDescribers,
         /**
          * @var array<string, OA\AbstractAnnotation[]>

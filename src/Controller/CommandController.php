@@ -18,7 +18,6 @@ use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
 use Stixx\OpenApiCommandBundle\Response\StatusResolverInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -26,8 +25,7 @@ use Symfony\Component\Messenger\Stamp\HandledStamp;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Throwable;
 
-#[AsController]
-final readonly class CommandController
+readonly class CommandController
 {
     public function __construct(
         private MessageBusInterface $commandBus,
