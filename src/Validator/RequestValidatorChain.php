@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Validator;
 
-use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 use Symfony\Component\HttpFoundation\Request;
 
 final readonly class RequestValidatorChain implements ValidatorInterface
@@ -22,7 +21,6 @@ final readonly class RequestValidatorChain implements ValidatorInterface
      * @param iterable<ValidatorInterface> $validators
      */
     public function __construct(
-        #[TaggedIterator(ValidatorInterface::TAG_NAME)]
         private iterable $validators
     ) {
     }

@@ -17,7 +17,6 @@ use League\OpenAPIValidation\PSR7\Exception\ValidationFailed as OpenApiValidatio
 use Nelmio\ApiDocBundle\Exception\RenderInvalidArgumentException;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
 use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutes;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -33,7 +32,6 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
 {
     public function __construct(
         private NelmioAreaRoutes $nelmioAreaRoutes,
-        #[Autowire(service: 'app.api_problem.serializer')]
         private SerializerInterface $serializer
     ) {
     }
