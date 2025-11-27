@@ -26,11 +26,11 @@ use Symfony\Component\Routing\RouteCollection;
 final class CommandRouteClassLoader extends AttributeClassLoader
 {
     /**
-     * @param list<string> $controllers Classes of services tagged with controller.service_arguments
+     * @param list<string> $controllerClasses
      */
     public function __construct(
         protected readonly ?string $env = null,
-        private readonly array $controllers = []
+        private readonly array $controllerClasses = []
     ) {
         parent::__construct($env);
     }
@@ -51,7 +51,7 @@ final class CommandRouteClassLoader extends AttributeClassLoader
             return $collection;
         }
 
-        if (isset($this->controllers[$class])) {
+        if (isset($this->controllerClasses[$class])) {
             return $collection;
         }
 
