@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle;
 
 use Stixx\OpenApiCommandBundle\DependencyInjection\Compiler\NelmioApiDocRoutesPass;
+use Stixx\OpenApiCommandBundle\DependencyInjection\Compiler\CommandRouteTaggedPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
@@ -22,5 +23,6 @@ class StixxOpenApiCommandBundle extends Bundle
     public function build(ContainerBuilder $container): void
     {
         $container->addCompilerPass(new NelmioApiDocRoutesPass());
+        $container->addCompilerPass(new CommandRouteTaggedPass());
     }
 }

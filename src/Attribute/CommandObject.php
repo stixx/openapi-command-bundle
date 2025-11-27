@@ -19,7 +19,7 @@ use Attribute;
 final class CommandObject
 {
     public function __construct(
-        public ?string $class = null
+        public ?string $class = null,
     ) {
     }
 }
