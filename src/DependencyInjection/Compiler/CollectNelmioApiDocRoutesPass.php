@@ -18,11 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
-/**
- * Collects Nelmio ApiDoc per-area RouteCollections into a ServiceLocator
- * so we can quickly determine whether a request targets an API route.
- */
-final class NelmioApiDocRoutesPass implements CompilerPassInterface
+final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
