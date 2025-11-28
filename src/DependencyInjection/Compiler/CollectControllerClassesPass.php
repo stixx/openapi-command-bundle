@@ -31,6 +31,6 @@ final class CollectControllerClassesPass implements CompilerPassInterface
             }
         }
 
-        $container->setParameter('stixx_openapi_command.controller_classes', array_keys($controllerClasses));
+        $container->setParameter('stixx_openapi_command.controller_classes', $controllerClasses);
     }
 }
