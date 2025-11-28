@@ -26,7 +26,7 @@ return static function (ContainerConfigurator $configurator): void {
 
     $services
         ->set(AttributeDirectoryLoaderDecorator::class)
-            ->decorate('routing.loader.attribute_directory')
+            ->decorate('routing.loader.attribute.directory')
             ->arg('$inner', service('.inner'))
             ->arg('$locator', service('file_locator'))
             ->arg('$commandAttributeLoader', service(CommandRouteClassLoader::class))

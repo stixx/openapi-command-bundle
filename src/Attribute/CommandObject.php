@@ -14,12 +14,14 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Attribute;
 
 use Attribute;
+use Stixx\OpenApiCommandBundle\Controller\CommandController;
 
-#[Attribute(Attribute::TARGET_PARAMETER)]
+#[Attribute(Attribute::TARGET_PARAMETER | Attribute::TARGET_CLASS)]
 final class CommandObject
 {
     public function __construct(
         public ?string $class = null,
+        public ?string $controller = CommandController::class,
     ) {
     }
 }

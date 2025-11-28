@@ -13,12 +13,19 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Routing\Loader;
 
-use OpenApi\Attributes\Operation;
+use OpenApi\Attributes\Delete as OADelete;
+use OpenApi\Attributes\Get as OAGet;
+use OpenApi\Attributes\Head as OAHead;
+use OpenApi\Attributes\Options as OAOptions;
+use OpenApi\Attributes\Patch as OAPatch;
+use OpenApi\Attributes\Post as OAPost;
+use OpenApi\Attributes\Put as OAPut;
+use OpenApi\Annotations\Operation as OAOperation;
 use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionMethod;
+use Stixx\OpenApiCommandBundle\Attribute\CommandObject;
 use Stixx\OpenApiCommandBundle\Controller\CommandController;
-use Symfony\Component\Routing\Attribute\Route as SymfonyRouteAttribute;
 use Symfony\Component\Routing\Loader\AttributeClassLoader;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
@@ -55,38 +62,50 @@ final class CommandRouteClassLoader extends AttributeClassLoader
             return $collection;
         }
 
-        $hasOpenApiOperation = $ref->getAttributes(Operation::class, ReflectionAttribute::IS_INSTANCEOF) !== [];
-        if (!$hasOpenApiOperation) {
+        $operations = array_merge(
+            $ref->getAttributes(OAOperation::class, ReflectionAttribute::IS_INSTANCEOF),
+            $ref->getAttributes(OAGet::class, ReflectionAttribute::IS_INSTANCEOF),
+            $ref->getAttributes(OAPost::class, ReflectionAttribute::IS_INSTANCEOF),
+            $ref->getAttributes(OAPut::class, ReflectionAttribute::IS_INSTANCEOF),
+            $ref->getAttributes(OAPatch::class, ReflectionAttribute::IS_INSTANCEOF),
+            $ref->getAttributes(OADelete::class, ReflectionAttribute::IS_INSTANCEOF),
+            $ref->getAttributes(OAOptions::class, ReflectionAttribute::IS_INSTANCEOF),
+            $ref->getAttributes(OAHead::class, ReflectionAttribute::IS_INSTANCEOF),
+        );
+
+        if ($operations === []) {
             return $collection;
         }
 
-        // Only collect class-level Route attributes (commands are not controllers).
-        $attrs = $ref->getAttributes(SymfonyRouteAttribute::class, ReflectionAttribute::IS_INSTANCEOF);
-        foreach ($attrs as $attr) {
-            /** @var SymfonyRouteAttribute $routeAttr */
-            $routeAttr = $attr->newInstance();
+        $classController = $this->resolveClassLevelController($ref);
 
-            $path = (string) $routeAttr->getPath();
+        foreach ($operations as $attr) {
+            /** @var OAOperation $op */
+            $op = $attr->newInstance();
+
+            $path = $op->path ?? '';
             if ($path === '') {
                 continue;
             }
 
-            $defaults = $routeAttr->getDefaults();
-            $defaults['_controller'] = CommandController::class;
-            $defaults['_command_class'] = $class;
+            $methods = $this->methodsFromOperation($op);
+            $controller = $this->controllerFromVendorExtension($op) ?? $classController ?? CommandController::class;
 
             $route = $this->createRoute(
                 path: $path,
-                defaults: $defaults,
-                requirements: $routeAttr->getRequirements(),
-                options: $routeAttr->getOptions(),
-                host: $routeAttr->getHost(),
-                schemes: $routeAttr->getSchemes(),
-                methods: $routeAttr->getMethods(),
-                condition: $routeAttr->getCondition(),
+                defaults: [
+                    '_controller' => $controller,
+                    '_command_class' => $class,
+                ],
+                requirements: [],
+                options: [],
+                host: null,
+                schemes: [],
+                methods: $methods,
+                condition: null,
             );
 
-            $name = $routeAttr->getName() ?? $this->defaultNameFromClass($ref);
+            $name = $this->routeNameFromOperation($op, $ref);
             $finalName = $this->ensureUniqueName($collection, $name);
             $collection->add($finalName, $route);
         }
@@ -117,5 +136,64 @@ final class CommandRouteClassLoader extends AttributeClassLoader
         }
 
         return $name.'_'.$i;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function methodsFromOperation(OAOperation $op): array
+    {
+        $method = property_exists($op, 'method') ? ($op->method ?? '') : '';
+        if ($method !== '') {
+            return [strtoupper($method)];
+        }
+
+        return match (true) {
+            $op instanceof OAGet => ['GET'],
+            $op instanceof OAPost => ['POST'],
+            $op instanceof OAPut => ['PUT'],
+            $op instanceof OAPatch => ['PATCH'],
+            $op instanceof OADelete => ['DELETE'],
+            $op instanceof OAOptions => ['OPTIONS'],
+            $op instanceof OAHead => ['HEAD'],
+            default => [],
+        };
+    }
+
+    private function routeNameFromOperation(OAOperation $op, ReflectionClass $class): string
+    {
+        $operationId = $op->operationId ?? '';
+        if ($operationId !== '') {
+            return $operationId;
+        }
+
+        return $this->defaultNameFromClass($class);
+    }
+
+    private function controllerFromVendorExtension(OAOperation $op): ?string
+    {
+        $x = $op->x ?? null;
+        if (is_array($x)) {
+            $controller = $x['controller'] ?? null;
+            if (is_string($controller) && $controller !== '') {
+                return $controller;
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveClassLevelController(ReflectionClass $class): ?string
+    {
+        $attrs = $class->getAttributes(CommandObject::class, ReflectionAttribute::IS_INSTANCEOF);
+        if ($attrs === []) {
+            return null;
+        }
+
+        /** @var CommandObject $co */
+        $co = $attrs[0]->newInstance();
+        $controller = $co->controller;
+
+        return (is_string($controller) && $controller !== '') ? $controller : null;
     }
 }
