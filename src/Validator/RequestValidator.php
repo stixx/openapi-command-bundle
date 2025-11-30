@@ -22,7 +22,7 @@ use Symfony\Component\HttpFoundation\Request;
 final readonly class RequestValidator implements ValidatorInterface
 {
     public function __construct(
-        private ApiDocGenerator $apiDocGenerator
+        private ApiDocGenerator $apiDocGenerator,
     ) {
     }
 

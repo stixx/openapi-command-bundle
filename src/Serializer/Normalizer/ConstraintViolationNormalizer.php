@@ -2,6 +2,15 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the StixxOpenApiCommandBundle package.
+ *
+ * (c) Stixx
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Stixx\OpenApiCommandBundle\Serializer\Normalizer;
 
 /*
@@ -31,6 +40,7 @@ final class ConstraintViolationNormalizer implements NormalizerInterface
 
     /**
      * @param ConstraintViolationInterface $data
+     *
      * @return array{propertyPath:?string,message:string,code:?string,constraint:?string,error:?string}
      */
     public function normalize($data, ?string $format = null, array $context = []): array
@@ -43,11 +53,11 @@ final class ConstraintViolationNormalizer implements NormalizerInterface
         $constraintName = null;
         $errorName = null;
 
-        if (null !== $constraint) {
+        if ($constraint !== null) {
             $reflectionClass = new ReflectionClass($constraint);
             $constraintName = $reflectionClass->getShortName();
 
-            if (null !== $code) {
+            if ($code !== null) {
                 $map = $this->constMapCache[$reflectionClass->getName()] ??= $this->buildConstantMap($reflectionClass);
                 $errorName = $map[$code] ?? null;
             }

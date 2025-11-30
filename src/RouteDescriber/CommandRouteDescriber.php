@@ -52,12 +52,12 @@ final class CommandRouteDescriber implements RouteDescriberInterface, ModelRegis
     public function describe(OA\OpenApi $api, Route $route, ReflectionMethod $reflectionMethod): void
     {
         $commandClass = $this->resolveCommandClass($route);
-        if (null === $commandClass) {
+        if ($commandClass === null) {
             return;
         }
 
         $supportedHttpMethods = $this->getSupportedHttpMethods($route);
-        if ([] === $supportedHttpMethods) {
+        if ($supportedHttpMethods === []) {
             return;
         }
 
@@ -81,7 +81,7 @@ final class CommandRouteDescriber implements RouteDescriberInterface, ModelRegis
     {
         $allMethods = Util::OPERATIONS;
         $methods = array_map('strtolower', $route->getMethods());
-        if ([] === $methods) {
+        if ($methods === []) {
             return $allMethods;
         }
 
@@ -181,10 +181,10 @@ final class CommandRouteDescriber implements RouteDescriberInterface, ModelRegis
 
         foreach ($supportedHttpMethods as $httpMethod) {
             $operation = Util::getOperation($pathItem, $httpMethod);
-            if ([] !== $implicitAnnotations) {
+            if ($implicitAnnotations !== []) {
                 $operation->merge($implicitAnnotations);
             }
-            if ([] !== get_object_vars($mergeProperties)) {
+            if (get_object_vars($mergeProperties) !== []) {
                 $operation->mergeProperties($mergeProperties);
             }
         }

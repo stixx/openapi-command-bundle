@@ -21,7 +21,7 @@ final readonly class RequestValidatorChain implements ValidatorInterface
      * @param iterable<ValidatorInterface> $validators
      */
     public function __construct(
-        private iterable $validators
+        private iterable $validators,
     ) {
     }
 

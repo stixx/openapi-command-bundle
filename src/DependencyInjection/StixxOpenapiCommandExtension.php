@@ -2,6 +2,15 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the StixxOpenApiCommandBundle package.
+ *
+ * (c) Stixx
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Stixx\OpenApiCommandBundle\DependencyInjection;
 
 use Symfony\Component\Config\FileLocator;
@@ -19,7 +28,7 @@ final class StixxOpenApiCommandExtension extends Extension
         $container->setParameter('stixx_openapi_command.validate_http', $config['validate_http']);
         $container->setParameter('stixx_openapi_command.validation_groups', $config['validation_groups']);
 
-        $loader = new PhpFileLoader($container, new FileLocator(__DIR__ . '/../../config'));
+        $loader = new PhpFileLoader($container, new FileLocator(__DIR__.'/../../config'));
         $this->registerCommonConfiguration($loader);
     }
 

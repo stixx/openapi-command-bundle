@@ -32,8 +32,12 @@
         "symfony/serializer": "^7.3",
         "symfony/validator": "^7.3"
     },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.91"
+    },
     "suggest": {
-        "symfony/security": "For using authentication and exception handing in your APIs."
+        "nijens/openapi-bundle": "For creating REST APIs from your OpenAPI specification.",
+        "symfony/security": "For using authentication and exception handling in your APIs."
     },
     "config": {
         "sort-packages": true

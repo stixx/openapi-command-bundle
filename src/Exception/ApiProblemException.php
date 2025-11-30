@@ -32,7 +32,7 @@ final class ApiProblemException extends RuntimeException implements HttpExceptio
         private readonly ?string $instance = null,
         private readonly array|ConstraintViolationListInterface|null $violations = null,
         ?Throwable $previous = null,
-        private readonly array $headers = []
+        private readonly array $headers = [],
     ) {
         parent::__construct($detail ?? $title, 0, $previous);
     }

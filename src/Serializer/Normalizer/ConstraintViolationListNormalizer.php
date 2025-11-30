@@ -2,6 +2,15 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the StixxOpenApiCommandBundle package.
+ *
+ * (c) Stixx
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Stixx\OpenApiCommandBundle\Serializer\Normalizer;
 
 /*
@@ -23,16 +32,17 @@ final class ConstraintViolationListNormalizer implements NormalizerInterface, No
 {
     use NormalizerAwareTrait;
 
-    public function supportsNormalization($data, string $format = null, array $context = []): bool
+    public function supportsNormalization($data, ?string $format = null, array $context = []): bool
     {
         return $data instanceof ConstraintViolationListInterface;
     }
 
     /**
      * @param ConstraintViolationListInterface $data
+     *
      * @return array<int, array<string, mixed>>
      */
-    public function normalize($data, string $format = null, array $context = []): array
+    public function normalize($data, ?string $format = null, array $context = []): array
     {
         $out = [];
         foreach ($data as $violation) {

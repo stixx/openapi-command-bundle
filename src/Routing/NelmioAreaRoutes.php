@@ -26,7 +26,7 @@ final readonly class NelmioAreaRoutes
     public function isApiRoute(Request $request): bool
     {
         $routeName = (string) $request->attributes->get('_route', '');
-        if ('' === $routeName) {
+        if ($routeName === '') {
             return false;
         }
 
