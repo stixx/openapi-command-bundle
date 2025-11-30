@@ -13,14 +13,8 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Routing\Loader;
 
-use OpenApi\Attributes\Delete as OADelete;
-use OpenApi\Attributes\Get as OAGet;
-use OpenApi\Attributes\Head as OAHead;
-use OpenApi\Attributes\Options as OAOptions;
-use OpenApi\Attributes\Patch as OAPatch;
-use OpenApi\Attributes\Post as OAPost;
-use OpenApi\Attributes\Put as OAPut;
-use OpenApi\Annotations\Operation as OAOperation;
+use OpenApi\Attributes as OA;
+use OpenApi\Annotations\Operation;
 use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionMethod;
@@ -63,14 +57,13 @@ final class CommandRouteClassLoader extends AttributeClassLoader
         }
 
         $operations = array_merge(
-            $ref->getAttributes(OAOperation::class, ReflectionAttribute::IS_INSTANCEOF),
-            $ref->getAttributes(OAGet::class, ReflectionAttribute::IS_INSTANCEOF),
-            $ref->getAttributes(OAPost::class, ReflectionAttribute::IS_INSTANCEOF),
-            $ref->getAttributes(OAPut::class, ReflectionAttribute::IS_INSTANCEOF),
-            $ref->getAttributes(OAPatch::class, ReflectionAttribute::IS_INSTANCEOF),
-            $ref->getAttributes(OADelete::class, ReflectionAttribute::IS_INSTANCEOF),
-            $ref->getAttributes(OAOptions::class, ReflectionAttribute::IS_INSTANCEOF),
-            $ref->getAttributes(OAHead::class, ReflectionAttribute::IS_INSTANCEOF),
+            $ref->getAttributes(OA\Get::class, ReflectionAttribute::IS_INSTANCEOF),
+            $ref->getAttributes(OA\Post::class, ReflectionAttribute::IS_INSTANCEOF),
+            $ref->getAttributes(OA\Put::class, ReflectionAttribute::IS_INSTANCEOF),
+            $ref->getAttributes(OA\Patch::class, ReflectionAttribute::IS_INSTANCEOF),
+            $ref->getAttributes(OA\Delete::class, ReflectionAttribute::IS_INSTANCEOF),
+            $ref->getAttributes(OA\Options::class, ReflectionAttribute::IS_INSTANCEOF),
+            $ref->getAttributes(OA\Head::class, ReflectionAttribute::IS_INSTANCEOF),
         );
 
         if ($operations === []) {
@@ -79,17 +72,19 @@ final class CommandRouteClassLoader extends AttributeClassLoader
 
         $classController = $this->resolveClassLevelController($ref);
 
-        foreach ($operations as $attr) {
-            /** @var OAOperation $op */
-            $op = $attr->newInstance();
+        foreach ($operations as $attribute) {
+            $operation = $attribute->newInstance();
+            if (!$operation instanceof Operation) {
+                continue;
+            }
 
-            $path = $op->path ?? '';
+            $path = $operation->path ?? '';
             if ($path === '') {
                 continue;
             }
 
-            $methods = $this->methodsFromOperation($op);
-            $controller = $this->controllerFromVendorExtension($op) ?? $classController ?? CommandController::class;
+            $methods = $this->methodsFromOperation($operation);
+            $controller = $this->controllerFromVendorExtension($operation) ?? $classController ?? CommandController::class;
 
             $route = $this->createRoute(
                 path: $path,
@@ -105,7 +100,7 @@ final class CommandRouteClassLoader extends AttributeClassLoader
                 condition: null,
             );
 
-            $name = $this->routeNameFromOperation($op, $ref);
+            $name = $this->routeNameFromOperation($operation, $ref);
             $finalName = $this->ensureUniqueName($collection, $name);
             $collection->add($finalName, $route);
         }
@@ -141,28 +136,28 @@ final class CommandRouteClassLoader extends AttributeClassLoader
     /**
      * @return list<string>
      */
-    private function methodsFromOperation(OAOperation $op): array
+    private function methodsFromOperation(Operation $operation): array
     {
-        $method = property_exists($op, 'method') ? ($op->method ?? '') : '';
+        $method = property_exists($operation, 'method') ? ($operation->method ?? '') : '';
         if ($method !== '') {
             return [strtoupper($method)];
         }
 
         return match (true) {
-            $op instanceof OAGet => ['GET'],
-            $op instanceof OAPost => ['POST'],
-            $op instanceof OAPut => ['PUT'],
-            $op instanceof OAPatch => ['PATCH'],
-            $op instanceof OADelete => ['DELETE'],
-            $op instanceof OAOptions => ['OPTIONS'],
-            $op instanceof OAHead => ['HEAD'],
+            $operation instanceof OA\Get => ['GET'],
+            $operation instanceof OA\Post => ['POST'],
+            $operation instanceof OA\Put => ['PUT'],
+            $operation instanceof OA\Patch => ['PATCH'],
+            $operation instanceof OA\Delete => ['DELETE'],
+            $operation instanceof OA\Options => ['OPTIONS'],
+            $operation instanceof OA\Head => ['HEAD'],
             default => [],
         };
     }
 
-    private function routeNameFromOperation(OAOperation $op, ReflectionClass $class): string
+    private function routeNameFromOperation(Operation $operation, ReflectionClass $class): string
     {
-        $operationId = $op->operationId ?? '';
+        $operationId = $operation->operationId ?? '';
         if ($operationId !== '') {
             return $operationId;
         }
@@ -170,9 +165,9 @@ final class CommandRouteClassLoader extends AttributeClassLoader
         return $this->defaultNameFromClass($class);
     }
 
-    private function controllerFromVendorExtension(OAOperation $op): ?string
+    private function controllerFromVendorExtension(Operation $operation): ?string
     {
-        $x = $op->x ?? null;
+        $x = $operation->x ?? null;
         if (is_array($x)) {
             $controller = $x['controller'] ?? null;
             if (is_string($controller) && $controller !== '') {
@@ -190,9 +185,12 @@ final class CommandRouteClassLoader extends AttributeClassLoader
             return null;
         }
 
-        /** @var CommandObject $co */
-        $co = $attrs[0]->newInstance();
-        $controller = $co->controller;
+        $commandObject = $attrs[0]?->newInstance();
+        if (!$commandObject instanceof CommandObject) {
+            return null;
+        }
+
+        $controller = $commandObject->controller;
 
         return (is_string($controller) && $controller !== '') ? $controller : null;
     }
