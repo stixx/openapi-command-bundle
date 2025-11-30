@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Routing\Loader;
 
-use OpenApi\Attributes as OA;
 use OpenApi\Annotations\Operation;
+use OpenApi\Attributes as OA;
 use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionMethod;
@@ -31,7 +31,7 @@ final class CommandRouteClassLoader extends AttributeClassLoader
      */
     public function __construct(
         ?string $env = null,
-        private readonly array $controllerClasses = []
+        private readonly array $controllerClasses = [],
     ) {
         parent::__construct($env);
     }
@@ -116,6 +116,7 @@ final class CommandRouteClassLoader extends AttributeClassLoader
     {
         $short = $class->getShortName();
         $base = strtolower(preg_replace('/[^A-Za-z0-9_]+/', '_', $short));
+
         return 'command_'.$base;
     }
 

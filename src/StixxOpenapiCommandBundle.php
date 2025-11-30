@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle;
 
-use Stixx\OpenApiCommandBundle\DependencyInjection\Compiler\CollectNelmioApiDocRoutesPass;
 use Stixx\OpenApiCommandBundle\DependencyInjection\Compiler\CollectControllerClassesPass;
+use Stixx\OpenApiCommandBundle\DependencyInjection\Compiler\CollectNelmioApiDocRoutesPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 

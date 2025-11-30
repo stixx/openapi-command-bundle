@@ -26,7 +26,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 final readonly class CommandValueResolver implements ValueResolverInterface
 {
     public function __construct(
-        private SerializerInterface $serializer
+        private SerializerInterface $serializer,
     ) {
     }
 
@@ -130,7 +130,7 @@ final readonly class CommandValueResolver implements ValueResolverInterface
         try {
             return $this->serializer->deserialize($content, $type, 'json');
         } catch (NotEncodableValueException $e) {
-            throw new BadRequestHttpException('Invalid JSON body: ' . $e->getMessage(), $e);
+            throw new BadRequestHttpException('Invalid JSON body: '.$e->getMessage(), $e);
         }
     }
 
@@ -144,7 +144,7 @@ final readonly class CommandValueResolver implements ValueResolverInterface
         try {
             return $this->serializer->deserialize($encoded, $type, JsonEncoder::FORMAT);
         } catch (NotEncodableValueException $e) {
-            throw new BadRequestHttpException('Unable to map route/query parameters to command: ' . $e->getMessage(), $e);
+            throw new BadRequestHttpException('Unable to map route/query parameters to command: '.$e->getMessage(), $e);
         }
     }
 }

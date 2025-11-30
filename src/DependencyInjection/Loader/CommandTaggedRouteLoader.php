@@ -28,7 +28,7 @@ final class CommandTaggedRouteLoader extends Loader
      * @param array<int, array<string, mixed>> $taggedRoutes
      */
     public function __construct(
-        private readonly array $taggedRoutes = []
+        private readonly array $taggedRoutes = [],
     ) {
         parent::__construct();
     }
@@ -83,7 +83,8 @@ final class CommandTaggedRouteLoader extends Loader
     private function generateRouteName(string $class): string
     {
         $base = strtolower(preg_replace('/[^A-Za-z0-9_]+/', '_', ltrim(strrchr($class, '\\') ?: $class, '\\')));
-        return 'command_' . $base;
+
+        return 'command_'.$base;
     }
 
     private function ensureUniqueName(RouteCollection $collection, string $name): string
@@ -93,10 +94,10 @@ final class CommandTaggedRouteLoader extends Loader
         }
 
         $i = 2;
-        while (null !== $collection->get($name . '_' . $i)) {
+        while (null !== $collection->get($name.'_'.$i)) {
             ++$i;
         }
 
-        return $name . '_' . $i;
+        return $name.'_'.$i;
     }
 }

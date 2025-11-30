@@ -32,7 +32,7 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
 {
     public function __construct(
         private NelmioAreaRoutes $nelmioAreaRoutes,
-        private SerializerInterface $serializer
+        private SerializerInterface $serializer,
     ) {
     }
 

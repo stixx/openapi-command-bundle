@@ -32,7 +32,7 @@ final readonly class RequestValidatorSubscriber implements EventSubscriberInterf
         return [
             KernelEvents::REQUEST => [
                 ['validateRequest', 7],
-            ]
+            ],
         ];
     }
 
