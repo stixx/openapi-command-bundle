@@ -64,13 +64,13 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
             'title' => $throwable->getTitle(),
             'status' => $throwable->getStatusCode(),
         ];
-        if (null !== $throwable->getDetail()) {
+        if ($throwable->getDetail() !== null) {
             $payload['detail'] = $throwable->getDetail();
         }
-        if (null !== $throwable->getInstance()) {
+        if ($throwable->getInstance() !== null) {
             $payload['instance'] = $throwable->getInstance();
         }
-        if (null !== $throwable->getViolations() && [] !== $throwable->getViolations()) {
+        if ($throwable->getViolations() !== null && $throwable->getViolations() !== []) {
             $payload['violations'] = $this->serializer->normalize($throwable->getViolations(), 'json');
         }
 

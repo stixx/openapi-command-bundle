@@ -53,11 +53,11 @@ final class ConstraintViolationNormalizer implements NormalizerInterface
         $constraintName = null;
         $errorName = null;
 
-        if (null !== $constraint) {
+        if ($constraint !== null) {
             $reflectionClass = new ReflectionClass($constraint);
             $constraintName = $reflectionClass->getShortName();
 
-            if (null !== $code) {
+            if ($code !== null) {
                 $map = $this->constMapCache[$reflectionClass->getName()] ??= $this->buildConstantMap($reflectionClass);
                 $errorName = $map[$code] ?? null;
             }

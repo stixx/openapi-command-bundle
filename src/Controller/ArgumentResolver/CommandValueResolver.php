@@ -33,7 +33,7 @@ final readonly class CommandValueResolver implements ValueResolverInterface
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
         $type = $this->resolveTargetClass($request, $argument);
-        if (null === $type) {
+        if ($type === null) {
             return [];
         }
 

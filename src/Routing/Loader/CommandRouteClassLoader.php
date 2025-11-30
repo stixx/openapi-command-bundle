@@ -122,12 +122,12 @@ final class CommandRouteClassLoader extends AttributeClassLoader
 
     private function ensureUniqueName(RouteCollection $collection, string $name): string
     {
-        if (null === $collection->get($name)) {
+        if ($collection->get($name) === null) {
             return $name;
         }
 
         $i = 2;
-        while (null !== $collection->get($name.'_'.$i)) {
+        while ($collection->get($name.'_'.$i) !== null) {
             ++$i;
         }
 
