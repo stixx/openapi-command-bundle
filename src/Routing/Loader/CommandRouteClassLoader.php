@@ -47,8 +47,8 @@ final class CommandRouteClassLoader extends AttributeClassLoader
             return $collection;
         }
 
-        $ref = new ReflectionClass($class);
-        if ($ref->isAbstract()) {
+        $reflectionClass = new ReflectionClass($class);
+        if ($reflectionClass->isAbstract()) {
             return $collection;
         }
 
@@ -57,20 +57,20 @@ final class CommandRouteClassLoader extends AttributeClassLoader
         }
 
         $operations = array_merge(
-            $ref->getAttributes(OA\Get::class, ReflectionAttribute::IS_INSTANCEOF),
-            $ref->getAttributes(OA\Post::class, ReflectionAttribute::IS_INSTANCEOF),
-            $ref->getAttributes(OA\Put::class, ReflectionAttribute::IS_INSTANCEOF),
-            $ref->getAttributes(OA\Patch::class, ReflectionAttribute::IS_INSTANCEOF),
-            $ref->getAttributes(OA\Delete::class, ReflectionAttribute::IS_INSTANCEOF),
-            $ref->getAttributes(OA\Options::class, ReflectionAttribute::IS_INSTANCEOF),
-            $ref->getAttributes(OA\Head::class, ReflectionAttribute::IS_INSTANCEOF),
+            $reflectionClass->getAttributes(OA\Get::class, ReflectionAttribute::IS_INSTANCEOF),
+            $reflectionClass->getAttributes(OA\Post::class, ReflectionAttribute::IS_INSTANCEOF),
+            $reflectionClass->getAttributes(OA\Put::class, ReflectionAttribute::IS_INSTANCEOF),
+            $reflectionClass->getAttributes(OA\Patch::class, ReflectionAttribute::IS_INSTANCEOF),
+            $reflectionClass->getAttributes(OA\Delete::class, ReflectionAttribute::IS_INSTANCEOF),
+            $reflectionClass->getAttributes(OA\Options::class, ReflectionAttribute::IS_INSTANCEOF),
+            $reflectionClass->getAttributes(OA\Head::class, ReflectionAttribute::IS_INSTANCEOF),
         );
 
         if ($operations === []) {
             return $collection;
         }
 
-        $classController = $this->resolveClassLevelController($ref);
+        $classController = $this->resolveClassLevelController($reflectionClass);
 
         foreach ($operations as $attribute) {
             $operation = $attribute->newInstance();
@@ -100,7 +100,7 @@ final class CommandRouteClassLoader extends AttributeClassLoader
                 condition: null,
             );
 
-            $name = $this->routeNameFromOperation($operation, $ref);
+            $name = $this->routeNameFromOperation($operation, $reflectionClass);
             $finalName = $this->ensureUniqueName($collection, $name);
             $collection->add($finalName, $route);
         }
@@ -178,9 +178,9 @@ final class CommandRouteClassLoader extends AttributeClassLoader
         return null;
     }
 
-    private function resolveClassLevelController(ReflectionClass $class): ?string
+    private function resolveClassLevelController(ReflectionClass $reflectionClass): ?string
     {
-        $attrs = $class->getAttributes(CommandObject::class, ReflectionAttribute::IS_INSTANCEOF);
+        $attrs = $reflectionClass->getAttributes(CommandObject::class, ReflectionAttribute::IS_INSTANCEOF);
         if ($attrs === []) {
             return null;
         }
