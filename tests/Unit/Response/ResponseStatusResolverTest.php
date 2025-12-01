@@ -16,10 +16,10 @@ namespace Stixx\OpenApiCommandBundle\Tests\Unit\Response;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stixx\OpenApiCommandBundle\Response\ResponseStatusResolver;
-use Stixx\OpenApiCommandBundle\Tests\Mock\DeleteWithStringResponseCommand;
-use Stixx\OpenApiCommandBundle\Tests\Mock\ExampleCommand;
-use Stixx\OpenApiCommandBundle\Tests\Mock\GetWithNon2xxResponsesCommand;
-use Stixx\OpenApiCommandBundle\Tests\Mock\PostWithResponsesCommand;
+use Stixx\OpenApiCommandBundle\Tests\Mock\Command\DeleteWithStringResponseCommand;
+use Stixx\OpenApiCommandBundle\Tests\Mock\Command\ExampleCommand;
+use Stixx\OpenApiCommandBundle\Tests\Mock\Command\GetWithNon2xxResponsesCommand;
+use Stixx\OpenApiCommandBundle\Tests\Mock\Command\PostWithResponsesCommand;
 use Symfony\Component\HttpFoundation\Request;
 
 class ResponseStatusResolverTest extends TestCase

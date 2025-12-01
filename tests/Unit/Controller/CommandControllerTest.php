@@ -18,7 +18,7 @@ use RuntimeException;
 use Stixx\OpenApiCommandBundle\Controller\CommandController;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
 use Stixx\OpenApiCommandBundle\Response\StatusResolverInterface;
-use Stixx\OpenApiCommandBundle\Tests\Mock\ExampleCommand;
+use Stixx\OpenApiCommandBundle\Tests\Mock\Command\ExampleCommand;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;

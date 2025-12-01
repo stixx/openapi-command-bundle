@@ -11,13 +11,15 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Stixx\OpenApiCommandBundle\Tests\Mock;
+namespace Stixx\OpenApiCommandBundle\Tests\Mock\Command;
 
-final class ExampleCommand
+use OpenApi\Attributes as OA;
+
+#[OA\Delete(
+    responses: [
+        new OA\Response(response: '204'),
+    ]
+)]
+final class DeleteWithStringResponseCommand
 {
-    public function __construct(
-        public int $id = 0,
-        public string $name = '',
-    ) {
-    }
 }

@@ -21,11 +21,7 @@ use PHPUnit\Framework\TestCase;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use Stixx\OpenApiCommandBundle\RouteDescriber\CommandRouteDescriber;
-use Stixx\OpenApiCommandBundle\Tests\Mock\Commands\CreateItemCommand;
-use Stixx\OpenApiCommandBundle\Tests\Mock\Commands\DeleteItemCommand;
-use Stixx\OpenApiCommandBundle\Tests\Mock\Commands\GetItemsCommand;
-use Stixx\OpenApiCommandBundle\Tests\Mock\Commands\ReplaceItemCommand;
-use Stixx\OpenApiCommandBundle\Tests\Mock\Commands\UpdateItemCommand;
+use Stixx\OpenApiCommandBundle\Tests\Mock\Command as MockCommand;
 use Stixx\OpenApiCommandBundle\Tests\Mock\FakeInlineParameterDescriber;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadataFactoryInterface;
@@ -62,11 +58,11 @@ class CommandRouteDescriberTest extends TestCase
         // Arrange
         $api = new OA\OpenApi([]);
         $route = new Route('/items', defaults: [
-            '_command_class' => CreateItemCommand::class,
+            '_command_class' => MockCommand\CreateItemCommand::class,
         ], methods: ['POST']);
 
         $inlineParameterDescriber = new FakeInlineParameterDescriber();
-        $argumentMetadataFactory = $this->createArgumentMetadataFactory(CreateItemCommand::class);
+        $argumentMetadataFactory = $this->createArgumentMetadataFactory(MockCommand\CreateItemCommand::class);
         $commandRouteDescriber = $this->createCommandRouteDescriber($argumentMetadataFactory, $inlineParameterDescriber);
         $reflection = $this->createControllerReflection();
 
@@ -137,11 +133,11 @@ class CommandRouteDescriberTest extends TestCase
 
     public static function commandsProvider(): iterable
     {
-        yield 'GET full featured' => ['GET', '/items', GetItemsCommand::class, 'list_items_full', 200, 'items'];
-        yield 'POST full featured' => ['POST', '/items', CreateItemCommand::class, 'create_item_full', 201, 'items'];
-        yield 'PUT full featured' => ['PUT', '/items/{id}', ReplaceItemCommand::class, 'replace_item_full', 200, 'admin'];
-        yield 'PATCH full featured' => ['PATCH', '/items/{id}', UpdateItemCommand::class, 'update_item_full', 200, 'admin'];
-        yield 'DELETE full featured' => ['DELETE', '/items/{id}', DeleteItemCommand::class, 'delete_item_full', 204, 'admin'];
+        yield 'GET full featured' => ['GET', '/items', MockCommand\GetItemsCommand::class, 'list_items_full', 200, 'items'];
+        yield 'POST full featured' => ['POST', '/items', MockCommand\CreateItemCommand::class, 'create_item_full', 201, 'items'];
+        yield 'PUT full featured' => ['PUT', '/items/{id}', MockCommand\ReplaceItemCommand::class, 'replace_item_full', 200, 'admin'];
+        yield 'PATCH full featured' => ['PATCH', '/items/{id}', MockCommand\UpdateItemCommand::class, 'update_item_full', 200, 'admin'];
+        yield 'DELETE full featured' => ['DELETE', '/items/{id}', MockCommand\DeleteItemCommand::class, 'delete_item_full', 204, 'admin'];
     }
 
     private function createControllerReflection(): ReflectionMethod

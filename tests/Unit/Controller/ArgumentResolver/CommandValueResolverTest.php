@@ -17,7 +17,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stixx\OpenApiCommandBundle\Attribute\CommandObject;
 use Stixx\OpenApiCommandBundle\Controller\ArgumentResolver\CommandValueResolver;
-use Stixx\OpenApiCommandBundle\Tests\Mock\ExampleCommand;
+use Stixx\OpenApiCommandBundle\Tests\Mock\Command\ExampleCommand;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;

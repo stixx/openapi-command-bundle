@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Stixx\OpenApiCommandBundle\Tests\Mock\Commands;
+namespace Stixx\OpenApiCommandBundle\Tests\Mock\Command;
 
 use OpenApi\Attributes as OA;
 
@@ -46,18 +46,18 @@ use OpenApi\Attributes as OA;
 )]
 #[OA\Response(response: 400, description: 'Bad request')]
 #[OA\Response(response: 401, description: 'Unauthorized')]
-#[OA\Patch(
+#[OA\Delete(
     path: '/items/{id}',
-    operationId: 'update_item_full',
-    summary: 'Partially update an item',
+    operationId: 'delete_item_full',
+    summary: 'Delete an item',
     tags: ['admin'],
     parameters: [
         new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
     ],
     responses: [
-        new OA\Response(response: 200, description: 'Updated'),
+        new OA\Response(response: 204, description: 'No Content'),
     ]
 )]
-final class UpdateItemCommand
+final class DeleteItemCommand
 {
 }

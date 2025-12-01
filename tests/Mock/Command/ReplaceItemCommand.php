@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Stixx\OpenApiCommandBundle\Tests\Mock\Commands;
+namespace Stixx\OpenApiCommandBundle\Tests\Mock\Command;
 
 use OpenApi\Attributes as OA;
 
@@ -46,38 +46,18 @@ use OpenApi\Attributes as OA;
 )]
 #[OA\Response(response: 400, description: 'Bad request')]
 #[OA\Response(response: 401, description: 'Unauthorized')]
-#[OA\Post(
-    path: '/items',
-    operationId: 'create_item_full',
-    description: 'Creates a new item and returns it',
-    summary: 'Create a new item',
-    requestBody: new OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            required: ['name'],
-            properties: [
-                new OA\Property(property: 'name', type: 'string', example: 'New name'),
-                new OA\Property(property: 'description', type: 'string', nullable: true),
-            ]
-        )
-    ),
-    tags: ['items', 'admin'],
-    responses: [
-        new OA\Response(
-            response: 201,
-            description: 'Created',
-            headers: [
-                new OA\Header(header: 'Location', description: 'Resource URI', schema: new OA\Schema(type: 'string')),
-            ],
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'id', type: 'string'),
-                    new OA\Property(property: 'name', type: 'string'),
-                ]
-            )
-        ),
+#[OA\Put(
+    path: '/items/{id}',
+    operationId: 'replace_item_full',
+    summary: 'Replace an item',
+    tags: ['admin'],
+    parameters: [
+        new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
     ],
+    responses: [
+        new OA\Response(response: 200, description: 'Replaced'),
+    ]
 )]
-final class CreateItemCommand
+final class ReplaceItemCommand
 {
 }

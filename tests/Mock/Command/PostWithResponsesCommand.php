@@ -11,16 +11,16 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Stixx\OpenApiCommandBundle\Tests\Mock;
+namespace Stixx\OpenApiCommandBundle\Tests\Mock\Command;
 
 use OpenApi\Attributes as OA;
 
-#[OA\Get(
+#[OA\Post(
     responses: [
-        new OA\Response(response: 400),
-        new OA\Response(response: 500),
+        new OA\Response(response: 201),
+        new OA\Response(response: 200),
     ]
 )]
-final class GetWithNon2xxResponsesCommand
+final class PostWithResponsesCommand
 {
 }
