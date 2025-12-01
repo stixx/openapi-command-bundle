@@ -15,6 +15,7 @@ namespace Stixx\OpenApiCommandBundle\Routing\Loader;
 
 use OpenApi\Annotations\Operation;
 use OpenApi\Attributes as OA;
+use OpenApi\Generator;
 use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionMethod;
@@ -158,8 +159,8 @@ final class CommandRouteClassLoader extends AttributeClassLoader
 
     private function routeNameFromOperation(Operation $operation, ReflectionClass $class): string
     {
-        $operationId = $operation->operationId ?? '';
-        if ($operationId !== '') {
+        $operationId = $operation->operationId ?? null;
+        if ($operationId !== null && $operationId !== Generator::UNDEFINED && $operationId !== '') {
             return $operationId;
         }
 

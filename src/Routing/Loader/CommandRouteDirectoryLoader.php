@@ -27,6 +27,6 @@ final class CommandRouteDirectoryLoader extends AttributeDirectoryLoader
 
     public function supports(mixed $resource, ?string $type = null): bool
     {
-        return $type === self::TYPE;
+        return is_string($resource) && $type === self::TYPE;
     }
 }
