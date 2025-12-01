@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\EventSubscriber;
 
-use League\OpenAPIValidation\PSR7\Exception\ValidationFailed as OpenApiValidationFailed;
+use League\OpenAPIValidation\PSR7\Exception\ValidationFailed;
 use Nelmio\ApiDocBundle\Exception\RenderInvalidArgumentException;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
 use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutes;
@@ -25,14 +25,14 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Throwable;
 
 final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
 {
     public function __construct(
         private NelmioAreaRoutes $nelmioAreaRoutes,
-        private SerializerInterface $serializer,
+        private NormalizerInterface $normalizer,
     ) {
     }
 
@@ -71,7 +71,7 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
             $payload['instance'] = $throwable->getInstance();
         }
         if ($throwable->getViolations() !== null && $throwable->getViolations() !== []) {
-            $payload['violations'] = $this->serializer->normalize($throwable->getViolations(), 'json');
+            $payload['violations'] = $this->normalizer->normalize($throwable->getViolations(), 'json');
         }
 
         $response = new JsonResponse($payload, $throwable->getStatusCode(), array_merge([
@@ -90,7 +90,7 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
             (class_exists($authenticationExceptionClass) && is_a($throwable, $authenticationExceptionClass)) => ApiProblemException::unauthenticated(),
             $throwable instanceof AccessDeniedHttpException => ApiProblemException::forbidden(),
             $throwable instanceof NotFoundHttpException => ApiProblemException::notFound(),
-            $throwable instanceof OpenApiValidationFailed => ApiProblemException::badRequest(
+            $throwable instanceof ValidationFailed => ApiProblemException::badRequest(
                 detail: $throwable->getMessage(),
                 violations: [[
                     'constraint' => 'openapi_request_validation',

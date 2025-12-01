@@ -274,15 +274,10 @@ class CommandValueResolverTest extends TestCase
         self::assertSame($command, $result[0]);
     }
 
-    /**
-     * @return array<string, array{0: string}>
-     */
-    public static function invalidContentTypesProvider(): array
+    public static function invalidContentTypesProvider(): iterable
     {
-        return [
-            'plain text' => ['text/plain'],
-            'xml' => ['application/xml'],
-            'form' => ['application/x-www-form-urlencoded'],
-        ];
+        yield 'plain text' => ['text/plain'];
+        yield 'xml' => ['application/xml'];
+        yield 'form' => ['application/x-www-form-urlencoded'];
     }
 }
