@@ -17,7 +17,7 @@ use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouteCollection;
 
-final readonly class NelmioAreaRoutes
+final readonly class NelmioAreaRoutesChecker
 {
     public function __construct(private ServiceLocator $routesLocator)
     {

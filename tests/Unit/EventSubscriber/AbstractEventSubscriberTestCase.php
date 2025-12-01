@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\EventSubscriber;
 
 use PHPUnit\Framework\TestCase;
-use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutes;
+use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Routing\Route;
@@ -37,7 +37,7 @@ abstract class AbstractEventSubscriberTestCase extends TestCase
         ];
     }
 
-    protected function createNelmioAreaRoutesWithRouteName(string $routeName): NelmioAreaRoutes
+    protected function createNelmioAreaRoutesWithRouteName(string $routeName): NelmioAreaRoutesChecker
     {
         $collection = new RouteCollection();
         $collection->add($routeName, new Route('/'.$routeName));
@@ -46,6 +46,6 @@ abstract class AbstractEventSubscriberTestCase extends TestCase
             'default' => static fn () => $collection,
         ]);
 
-        return new NelmioAreaRoutes($locator);
+        return new NelmioAreaRoutesChecker($locator);
     }
 }

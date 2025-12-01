@@ -16,7 +16,7 @@ namespace Stixx\OpenApiCommandBundle\EventSubscriber;
 use League\OpenAPIValidation\PSR7\Exception\ValidationFailed;
 use Nelmio\ApiDocBundle\Exception\RenderInvalidArgumentException;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
-use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutes;
+use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,7 +31,7 @@ use Throwable;
 final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
 {
     public function __construct(
-        private NelmioAreaRoutes $nelmioAreaRoutes,
+        private NelmioAreaRoutesChecker $nelmioAreaRoutes,
         private NormalizerInterface $normalizer,
     ) {
     }

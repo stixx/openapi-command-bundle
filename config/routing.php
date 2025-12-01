@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutes;
+use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Stixx\OpenApiCommandBundle\Routing\Loader\CommandRouteClassLoader;
 use Stixx\OpenApiCommandBundle\Routing\Loader\AttributeDirectoryLoaderDecorator;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -17,7 +17,7 @@ return static function (ContainerConfigurator $configurator): void {
             ->private();
 
     $services
-        ->set(NelmioAreaRoutes::class)
+        ->set(NelmioAreaRoutesChecker::class)
             ->arg('$routesLocator', service('stixx_openapi_command.nelmio.routes_locator'));
 
     $services
