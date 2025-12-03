@@ -37,19 +37,6 @@ final class CommandRouteClassLoader extends AttributeClassLoader
     }
 
     /**
-     * Loads routes from a command class.
-     *
-     * Why the class_exists check?
-     * - The Symfony attribute loaders call into this class with the FQCN that was
-     *   discovered by scanning files. In edge-cases (custom locators, tests, or
-     *   mis‑configured autoloaders) the provided value might be an empty string or a
-     *   non-existing class. Instead of throwing and breaking the whole routing
-     *   discovery, we return an empty RouteCollection so the chain can continue.
-     * - Performing class_exists() before creating a ReflectionClass prevents fatal
-     *   errors and expensive autoloading work when the class genuinely doesn't
-     *   exist. This mirrors Symfony's own loader behavior and keeps this loader
-     *   resilient and side‑effect free.
-     *
      * @param class-string $class
      */
     public function load(mixed $class, ?string $type = null): RouteCollection
