@@ -16,6 +16,7 @@ namespace Stixx\OpenApiCommandBundle;
 use Stixx\OpenApiCommandBundle\DependencyInjection\Compiler\CollectControllerClassesPass;
 use Stixx\OpenApiCommandBundle\DependencyInjection\Compiler\CollectNelmioApiDocRoutesPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 class StixxOpenApiCommandBundle extends Bundle
@@ -24,5 +25,14 @@ class StixxOpenApiCommandBundle extends Bundle
     {
         $container->addCompilerPass(new CollectNelmioApiDocRoutesPass());
         $container->addCompilerPass(new CollectControllerClassesPass());
+    }
+
+    public function getContainerExtension(): ?ExtensionInterface
+    {
+        if (!isset($this->extension)) {
+            $this->extension = $this->createContainerExtension();
+        }
+
+        return $this->extension;
     }
 }

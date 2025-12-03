@@ -32,6 +32,11 @@ final class StixxOpenApiCommandExtension extends Extension
         $this->registerCommonConfiguration($loader);
     }
 
+    public function getAlias(): string
+    {
+        return Configuration::BUNDLE_ALIAS;
+    }
+
     private function registerCommonConfiguration(PhpFileLoader $loader): void
     {
         $loader->load('controller.php');
