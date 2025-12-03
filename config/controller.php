@@ -17,8 +17,8 @@ return static function (ContainerConfigurator $configurator): void {
     $services
         ->set(CommandController::class)
             ->tag('controller.service_arguments')
-            ->arg('$validateHttp', param('stixx_openapi_command.validate_http'))
-            ->arg('$validationGroups', param('stixx_openapi_command.validation_groups'));
+            ->arg('$validateHttp', param('stixx_openapi_command.validation.enabled'))
+            ->arg('$validationGroups', param('stixx_openapi_command.validation.groups'));
 
     $services
         ->set(CommandValueResolver::class)
