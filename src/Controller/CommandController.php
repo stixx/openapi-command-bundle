@@ -31,7 +31,7 @@ readonly class CommandController
         private MessageBusInterface $commandBus,
         private ValidatorInterface $validator,
         private StatusResolverInterface $statusResolver,
-        private bool $validateHttp = true,
+        private bool $validationEnabled = true,
         /** @var string[] */
         private array $validationGroups = ['Default'],
     ) {
@@ -43,7 +43,7 @@ readonly class CommandController
      */
     public function __invoke(Request $request, #[CommandObject] object $command): JsonResponse
     {
-        if ($this->validateHttp) {
+        if ($this->validationEnabled) {
             $this->validateCommand($command);
         }
 
