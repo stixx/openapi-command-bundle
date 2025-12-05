@@ -42,11 +42,6 @@ final readonly class CommandValueResolver implements ValueResolverInterface
             $command = $this->deserializeFromRequestBody($request, $type);
         } else {
             $data = $this->extractScalarsFromRouteAndQuery($request);
-
-            if ($data === []) {
-                throw new BadRequestHttpException('No request body provided and no mappable route/query parameters found to build the command.');
-            }
-
             $command = $this->deserializeFromQueryParameters($data, $type);
         }
 
