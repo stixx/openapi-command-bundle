@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-use Stixx\OpenApiCommandBundle\Controller\CommandController;
 use Stixx\OpenApiCommandBundle\Controller\ArgumentResolver\CommandValueResolver;
+use Stixx\OpenApiCommandBundle\Controller\CommandController;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 
 return static function (ContainerConfigurator $configurator): void {
     $services = $configurator->services()
         ->defaults()
-            ->autowire(true)
+            ->autowire()
             ->autoconfigure(false)
             ->private();
 
