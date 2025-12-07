@@ -9,7 +9,7 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 return static function (ContainerConfigurator $configurator): void {
     $services = $configurator->services()
         ->defaults()
-            ->autowire(true)
+            ->autowire()
             ->autoconfigure(false)
             ->private();
 

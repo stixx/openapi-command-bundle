@@ -2,17 +2,19 @@
 
 declare(strict_types=1);
 
-use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
-use Symfony\Component\Serializer\Serializer;
 use Stixx\OpenApiCommandBundle\Serializer\Normalizer\ApiProblemNormalizer;
-use Stixx\OpenApiCommandBundle\Serializer\Normalizer\ConstraintViolationNormalizer;
 use Stixx\OpenApiCommandBundle\Serializer\Normalizer\ConstraintViolationListNormalizer;
+use Stixx\OpenApiCommandBundle\Serializer\Normalizer\ConstraintViolationNormalizer;
+use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+
+use Symfony\Component\Serializer\Serializer;
 
 return static function (ContainerConfigurator $configurator): void {
     $services = $configurator->services()
         ->defaults()
-            ->autowire(true)
+            ->autowire()
             ->autoconfigure(false)
             ->private();
 
