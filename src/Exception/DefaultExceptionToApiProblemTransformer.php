@@ -35,7 +35,7 @@ final class DefaultExceptionToApiProblemTransformer implements ExceptionToApiPro
                 detail: $throwable->getMessage(),
                 violations: [[
                     'constraint' => 'openapi_request_validation',
-                    'message' => $throwable->getMessage(),
+                    'message' => $throwable->getPrevious()?->getMessage() ?: $throwable->getMessage(),
                 ]]
             ),
             $throwable instanceof RenderInvalidArgumentException => ApiProblemException::badRequest(
