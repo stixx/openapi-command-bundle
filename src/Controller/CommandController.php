@@ -22,6 +22,7 @@ use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\HandledStamp;
+use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Throwable;
 
@@ -31,6 +32,7 @@ readonly class CommandController
         private MessageBusInterface $commandBus,
         private ValidatorInterface $validator,
         private StatusResolverInterface $statusResolver,
+        private SerializerInterface $serializer,
         private bool $validationEnabled = true,
         /** @var string[] */
         private array $validationGroups = ['Default'],
@@ -58,7 +60,10 @@ readonly class CommandController
         $handled = $envelope->last(HandledStamp::class);
         $result = $handled?->getResult();
 
-        return new JsonResponse($result, $this->statusResolver->resolve($request, $command));
+        $status = $this->statusResolver->resolve($request, $command);
+        $json = $this->serializer->serialize($result, 'json');
+
+        return JsonResponse::fromJsonString($json, $status);
     }
 
     private function validateCommand(object $command): void
