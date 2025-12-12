@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\DependencyInjection;
 
+use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
+use Stixx\OpenApiCommandBundle\Validator\ValidatorInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
@@ -27,6 +29,14 @@ final class StixxOpenApiCommandExtension extends Extension
 
         $container->setParameter('stixx_openapi_command.validation.enabled', $config['validation']['enabled']);
         $container->setParameter('stixx_openapi_command.validation.groups', $config['validation']['groups']);
+
+        $container
+            ->registerForAutoconfiguration(ResponderInterface::class)
+            ->addTag(ResponderInterface::TAG_NAME);
+
+        $container
+            ->registerForAutoconfiguration(ValidatorInterface::class)
+            ->addTag(ValidatorInterface::TAG_NAME);
 
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__.'/../../config'));
         $this->registerCommonConfiguration($loader);
