@@ -17,11 +17,15 @@ return static function (ContainerConfigurator $configurator): void {
             ->private();
 
     $services
-        ->set(RequestValidator::class)
-            ->arg('$apiDocGenerator', service('nelmio_api_doc.generator.default'))
-            ->tag(StixxValidatorInterface::TAG_NAME);
+        ->set(RequestValidatorChain::class)
+        ->arg('$validators', tagged_iterator(StixxValidatorInterface::TAG_NAME));
+    $services->alias(StixxValidatorInterface::class, RequestValidatorChain::class);
 
     $services
-        ->set(RequestValidatorChain::class)
-            ->arg('$validators', tagged_iterator(StixxValidatorInterface::TAG_NAME));
+        ->instanceof(StixxValidatorInterface::class)
+        ->tag(StixxValidatorInterface::TAG_NAME);
+
+    $services
+        ->set(RequestValidator::class)
+            ->arg('$apiDocGenerator', service('nelmio_api_doc.generator.default'));
 };
