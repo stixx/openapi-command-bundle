@@ -38,6 +38,6 @@ final readonly class ResponderChain implements ResponderInterface
 
     public function supports(mixed $result): bool
     {
-        return false;
+        return true;
     }
 }
