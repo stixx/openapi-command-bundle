@@ -17,15 +17,19 @@ return static function (ContainerConfigurator $configurator): void {
     $services = $configurator->services()
         ->defaults()
             ->autowire()
-            ->autoconfigure()
+            ->autoconfigure(false)
             ->private();
+
+    $services
+        ->instanceof(ResponderInterface::class)
+        ->tag(ResponderInterface::TAG_NAME);
 
     $services->set(ResponseStatusResolver::class);
     $services->alias(StatusResolverInterface::class, ResponseStatusResolver::class);
 
-    $services
-        ->instanceof(ResponderInterface::class)
-            ->tag(ResponderInterface::TAG_NAME);
+    $services->set(JsonResponder::class);
+    $services->set(JsonSerializedResponder::class);
+    $services->set(NullableResponder::class);
 
     $services
         ->set(ResponderChain::class)
