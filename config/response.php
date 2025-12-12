@@ -23,9 +23,9 @@ return static function (ContainerConfigurator $configurator): void {
     $services->set(ResponseStatusResolver::class);
     $services->alias(StatusResolverInterface::class, ResponseStatusResolver::class);
 
-    $services->set(JsonResponder::class);
-    $services->set(JsonSerializedResponder::class);
-    $services->set(NullableResponder::class);
+    $services
+        ->instanceof(ResponderInterface::class)
+            ->tag(ResponderInterface::TAG_NAME);
 
     $services
         ->set(ResponderChain::class)

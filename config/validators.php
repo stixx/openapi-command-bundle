@@ -21,6 +21,10 @@ return static function (ContainerConfigurator $configurator): void {
             ->arg('$apiDocGenerator', service('nelmio_api_doc.generator.default'));
 
     $services
+        ->instanceof(StixxValidatorInterface::class)
+            ->tag(StixxValidatorInterface::TAG_NAME);
+
+    $services
         ->set(RequestValidatorChain::class)
             ->autoconfigure(false)
             ->arg('$validators', tagged_iterator(StixxValidatorInterface::TAG_NAME));

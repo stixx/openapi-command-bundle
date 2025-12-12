@@ -13,10 +13,8 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Validator;
 
-use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Component\HttpFoundation\Request;
 
-#[AutoconfigureTag(ValidatorInterface::TAG_NAME)]
 interface ValidatorInterface
 {
     public const string TAG_NAME = 'stixx_openapi_command.request.validator';

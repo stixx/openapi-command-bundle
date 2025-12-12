@@ -13,10 +13,8 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Responder;
 
-use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Component\HttpFoundation\Response;
 
-#[AutoconfigureTag(ResponderInterface::TAG_NAME)]
 interface ResponderInterface
 {
     public const string TAG_NAME = 'stixx_openapi_command.response.responder';
