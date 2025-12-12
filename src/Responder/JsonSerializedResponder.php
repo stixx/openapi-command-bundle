@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\SerializerInterface;
+use Traversable;
 
 final readonly class JsonSerializedResponder implements ResponderInterface
 {
@@ -34,6 +35,12 @@ final readonly class JsonSerializedResponder implements ResponderInterface
 
     public function supports(mixed $result): bool
     {
-        return is_object($result) && !$result instanceof JsonSerializable;
+        if ($result instanceof JsonSerializable) {
+            return false;
+        }
+
+        return is_object($result)
+            || is_array($result)
+            || $result instanceof Traversable;
     }
 }

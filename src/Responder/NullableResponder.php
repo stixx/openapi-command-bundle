@@ -24,6 +24,6 @@ final class NullableResponder implements ResponderInterface
 
     public function supports(mixed $result): bool
     {
-        return empty($result);
+        return empty($result) && !is_array($result);
     }
 }
