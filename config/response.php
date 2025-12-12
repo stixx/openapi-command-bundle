@@ -21,6 +21,11 @@ return static function (ContainerConfigurator $configurator): void {
             ->private();
 
     $services
+        ->set(ResponderChain::class)
+        ->arg('$responders', tagged_iterator(ResponderInterface::TAG_NAME));
+    $services->alias(ResponderInterface::class, ResponderChain::class);
+
+    $services
         ->instanceof(ResponderInterface::class)
         ->tag(ResponderInterface::TAG_NAME);
 
@@ -30,10 +35,4 @@ return static function (ContainerConfigurator $configurator): void {
     $services->set(JsonResponder::class);
     $services->set(JsonSerializedResponder::class);
     $services->set(NullableResponder::class);
-
-    $services
-        ->set(ResponderChain::class)
-        ->autoconfigure(false)
-        ->arg('$responders', tagged_iterator(ResponderInterface::TAG_NAME));
-    $services->alias(ResponderInterface::class, ResponderChain::class);
 };
