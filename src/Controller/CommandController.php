@@ -15,15 +15,14 @@ namespace Stixx\OpenApiCommandBundle\Controller;
 
 use Stixx\OpenApiCommandBundle\Attribute\CommandObject;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
+use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
 use Stixx\OpenApiCommandBundle\Response\StatusResolverInterface;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\HandledStamp;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Throwable;
 
@@ -33,7 +32,7 @@ readonly class CommandController
         private MessageBusInterface $commandBus,
         private ValidatorInterface $validator,
         private StatusResolverInterface $statusResolver,
-        private SerializerInterface $serializer,
+        private ResponderInterface $responder,
         private bool $validationEnabled = true,
         /** @var string[] */
         private array $validationGroups = ['Default'],
@@ -44,7 +43,7 @@ readonly class CommandController
      * @throws Throwable
      * @throws ExceptionInterface
      */
-    public function __invoke(Request $request, #[CommandObject] object $command): JsonResponse
+    public function __invoke(Request $request, #[CommandObject] object $command): Response
     {
         if ($this->validationEnabled) {
             $this->validateCommand($command);
@@ -61,10 +60,7 @@ readonly class CommandController
         $handled = $envelope->last(HandledStamp::class);
         $result = $handled?->getResult();
 
-        $status = $this->statusResolver->resolve($request, $command);
-        $json = $this->serializer->serialize($result, JsonEncoder::FORMAT);
-
-        return JsonResponse::fromJsonString($json, $status);
+        return $this->responder->respond($result, $this->statusResolver->resolve($request, $command));
     }
 
     private function validateCommand(object $command): void
