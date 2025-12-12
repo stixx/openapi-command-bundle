@@ -11,6 +11,7 @@
 
 namespace Stixx\OpenApiCommandBundle\Responder;
 
+use OutOfBoundsException;
 use Symfony\Component\HttpFoundation\Response;
 
 final readonly class ResponderChain implements ResponderInterface
@@ -31,6 +32,8 @@ final readonly class ResponderChain implements ResponderInterface
 
             return $responder->respond($result, $status);
         }
+
+        throw new OutOfBoundsException('No supported responder found.');
     }
 
     public function supports(mixed $result): bool
