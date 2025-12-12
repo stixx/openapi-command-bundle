@@ -7,22 +7,22 @@ use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
 use Stixx\OpenApiCommandBundle\Response\ResponseStatusResolver;
 use Stixx\OpenApiCommandBundle\Response\StatusResolverInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+
 use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 
 return static function (ContainerConfigurator $configurator): void {
     $services = $configurator->services()
         ->defaults()
             ->autowire()
-            ->autoconfigure(false)
+            ->autoconfigure()
             ->private();
 
     $services->set(ResponseStatusResolver::class);
     $services->alias(StatusResolverInterface::class, ResponseStatusResolver::class);
 
-    $services->set(ResponderChain::class);
-    $services->alias(ResponderInterface::class, ResponderChain::class);
-
     $services
         ->set(ResponderChain::class)
+        ->autoconfigure(false)
         ->arg('$responders', tagged_iterator(ResponderInterface::TAG_NAME));
+    $services->alias(ResponderInterface::class, ResponderChain::class);
 };
