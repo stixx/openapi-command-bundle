@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use Stixx\OpenApiCommandBundle\Responder\JsonResponder;
+use Stixx\OpenApiCommandBundle\Responder\JsonSerializedResponder;
+use Stixx\OpenApiCommandBundle\Responder\NullableResponder;
 use Stixx\OpenApiCommandBundle\Responder\ResponderChain;
 use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
 use Stixx\OpenApiCommandBundle\Response\ResponseStatusResolver;
@@ -19,6 +22,10 @@ return static function (ContainerConfigurator $configurator): void {
 
     $services->set(ResponseStatusResolver::class);
     $services->alias(StatusResolverInterface::class, ResponseStatusResolver::class);
+
+    $services->set(JsonResponder::class);
+    $services->set(JsonSerializedResponder::class);
+    $services->set(NullableResponder::class);
 
     $services
         ->set(ResponderChain::class)
