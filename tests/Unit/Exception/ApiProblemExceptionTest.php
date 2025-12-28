@@ -19,7 +19,7 @@ use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
-class ApiProblemExceptionTest extends TestCase
+final class ApiProblemExceptionTest extends TestCase
 {
     public function testConstructorSetsPropertiesAndImplementsInterface(): void
     {

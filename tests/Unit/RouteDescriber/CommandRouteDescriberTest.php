@@ -27,7 +27,7 @@ use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadataFactoryInterface;
 use Symfony\Component\Routing\Route;
 
-class CommandRouteDescriberTest extends TestCase
+final class CommandRouteDescriberTest extends TestCase
 {
     public function testDescribeDoesNothingWhenNoCommandClass(): void
     {

@@ -14,270 +14,212 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\Controller\ArgumentResolver;
 
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 use Stixx\OpenApiCommandBundle\Attribute\CommandObject;
 use Stixx\OpenApiCommandBundle\Controller\ArgumentResolver\CommandValueResolver;
-use Stixx\OpenApiCommandBundle\Tests\Mock\Command\ExampleCommand;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Serializer\Exception\NotEncodableValueException;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
-class CommandValueResolverTest extends TestCase
+final class CommandValueResolverTest extends TestCase
 {
-    public function testReturnsEmptyWhenNoCommandObjectAttribute(): void
+    private MockObject&DenormalizerInterface $serializer;
+    private CommandValueResolver $resolver;
+
+    protected function setUp(): void
+    {
+        $this->serializer = $this->createMock(DenormalizerInterface::class);
+        $this->resolver = new CommandValueResolver($this->serializer);
+    }
+
+    public function testResolveReturnsEmptyWhenNoAttribute(): void
     {
         // Arrange
-        $serializer = $this->createMock(SerializerInterface::class);
-        $resolver = new CommandValueResolver($serializer);
-
         $request = new Request();
-        $argument = new ArgumentMetadata(
-            'command',
-            ExampleCommand::class,
-            false,
-            false,
-            null,
-            false,
-            []
-        );
+        $argument = new ArgumentMetadata('command', stdClass::class, false, false, null);
 
         // Act
-        $result = iterator_to_array($resolver->resolve($request, $argument));
+        $result = $this->resolver->resolve($request, $argument);
 
         // Assert
-        self::assertSame([], $result);
+        $this->assertSame([], iterator_to_array($result));
     }
 
-    public function testResolvesFromJsonBodyWithValidContentType(): void
+    public function testResolveReturnsEmptyWhenTypeCannotBeResolved(): void
     {
         // Arrange
-        $command = new ExampleCommand(id: 1, name: 'john');
-
-        $serializer = $this->createMock(SerializerInterface::class);
-        $serializer->expects(self::once())
-            ->method('deserialize')
-            ->with('{"id":1,"name":"john"}', ExampleCommand::class, 'json')
-            ->willReturn($command);
-
-        $resolver = new CommandValueResolver($serializer);
-        $request = new Request([], [], [], [], [], [], '{"id":1,"name":"john"}');
-        $request->headers->set('Content-Type', 'application/json');
-
-        $argument = new ArgumentMetadata(
-            'command',
-            ExampleCommand::class,
-            false,
-            false,
-            null,
-            false,
-            [new CommandObject(ExampleCommand::class)]
-        );
-
-        // Act
-        $result = iterator_to_array($resolver->resolve($request, $argument));
-
-        // Assert
-        self::assertCount(1, $result);
-        self::assertSame($command, $result[0]);
-    }
-
-    #[DataProvider('invalidContentTypesProvider')]
-    public function testRejectsNonJsonContentTypeWhenBodyPresent(string $contentType): void
-    {
-        // Arrange
-        $this->expectException(BadRequestHttpException::class);
-        $this->expectExceptionMessage('Unsupported Content-Type');
-
-        $serializer = $this->createMock(SerializerInterface::class);
-        $resolver = new CommandValueResolver($serializer);
-
-        $request = new Request([], [], [], [], [], [], 'hello world');
-        $request->headers->set('Content-Type', $contentType);
-
-        $argument = new ArgumentMetadata(
-            'command',
-            ExampleCommand::class,
-            false,
-            false,
-            null,
-            false,
-            [new CommandObject(ExampleCommand::class)]
-        );
-
-        // Act
-        iterator_to_array($resolver->resolve($request, $argument));
-    }
-
-    public function testWrapsSerializerExceptionFromBodyIntoBadRequest(): void
-    {
-        // Arrange
-        $this->expectException(BadRequestHttpException::class);
-        $this->expectExceptionMessage('Invalid JSON body');
-
-        $serializer = $this->createMock(SerializerInterface::class);
-        $serializer->method('deserialize')
-            ->willThrowException(new NotEncodableValueException('bad json'));
-
-        $resolver = new CommandValueResolver($serializer);
-        $request = new Request([], [], [], [], [], [], '{"oops":');
-        $request->headers->set('Content-Type', 'application/json');
-
-        $argument = new ArgumentMetadata(
-            'command',
-            ExampleCommand::class,
-            false,
-            false,
-            null,
-            false,
-            [new CommandObject(ExampleCommand::class)]
-        );
-
-        // Act
-        iterator_to_array($resolver->resolve($request, $argument));
-    }
-
-    public function testResolvesFromRouteAndQueryWhenNoBody(): void
-    {
-        // Arrange
-        $serializer = $this->createMock(SerializerInterface::class);
-
-        // Expected combined data: route id=1 overridden by query id=2, plus name
-        $expectedJson = json_encode(['id' => 2, 'name' => 'a'], JSON_THROW_ON_ERROR);
-        $command = new ExampleCommand(id: 2, name: 'a');
-
-        $serializer->expects(self::once())
-            ->method('deserialize')
-            ->with($expectedJson, ExampleCommand::class, 'json')
-            ->willReturn($command);
-
-        $resolver = new CommandValueResolver($serializer);
-
-        $request = new Request(query: ['id' => 2, 'name' => 'a']);
-        $request->attributes->add([
-            'id' => 1,
-            '_route' => 'ignore_this',
-            '_command_class' => null,
-        ]);
-
-        $argument = new ArgumentMetadata(
-            'command',
-            ExampleCommand::class,
-            false,
-            false,
-            null,
-            false,
-            [new CommandObject(ExampleCommand::class)]
-        );
-
-        // Act
-        $result = iterator_to_array($resolver->resolve($request, $argument));
-
-        // Assert
-        self::assertCount(1, $result);
-        self::assertSame($command, $result[0]);
-    }
-
-    public function testThrowsWhenNoBodyAndNoMappableParams(): void
-    {
-        // Arrange
-        $this->expectException(BadRequestHttpException::class);
-        $this->expectExceptionMessage('No request body provided and no mappable route/query parameters found');
-
-        $serializer = $this->createMock(SerializerInterface::class);
-        $resolver = new CommandValueResolver($serializer);
-
         $request = new Request();
-        $request->attributes->add(['_route' => 'anything']);
-
-        $argument = new ArgumentMetadata(
-            'command',
-            ExampleCommand::class,
-            false,
-            false,
-            null,
-            false,
-            [new CommandObject(ExampleCommand::class)]
-        );
+        $attribute = new CommandObject(class: null);
+        $argument = new ArgumentMetadata('command', null, false, false, null, false, [$attribute]);
 
         // Act
-        iterator_to_array($resolver->resolve($request, $argument));
-    }
-
-    public function testUsesArgumentTypeWhenAttributeHasNoClass(): void
-    {
-        // Arrange
-        $command = new ExampleCommand(id: 10, name: 'x');
-
-        $serializer = $this->createMock(SerializerInterface::class);
-        $serializer->expects(self::once())
-            ->method('deserialize')
-            ->with('{"id":10,"name":"x"}', ExampleCommand::class, 'json')
-            ->willReturn($command);
-
-        $resolver = new CommandValueResolver($serializer);
-
-        $request = new Request([], [], [], [], [], [], '{"id":10,"name":"x"}');
-        $request->headers->set('Content-Type', 'application/json');
-
-        $argument = new ArgumentMetadata(
-            'command',
-            ExampleCommand::class,
-            false,
-            false,
-            null,
-            false,
-            [new CommandObject(null)]
-        );
-
-        // Act
-        $result = iterator_to_array($resolver->resolve($request, $argument));
+        $result = $this->resolver->resolve($request, $argument);
 
         // Assert
-        self::assertCount(1, $result);
-        self::assertSame($command, $result[0]);
+        $this->assertSame([], iterator_to_array($result));
     }
 
-    public function testUsesRequestCommandClassWhenNoTypeDefined(): void
+    /**
+     * @param array<string, mixed> $expectedPayload
+     */
+    #[DataProvider('provideResolveRequests')]
+    public function testResolveRequests(Request $request, ArgumentMetadata $argument, array $expectedPayload, string $expectedType): void
     {
         // Arrange
-        $command = new ExampleCommand(id: 5, name: 'y');
+        $expectedObject = new stdClass();
 
-        $serializer = $this->createMock(SerializerInterface::class);
-        $serializer->expects(self::once())
-            ->method('deserialize')
-            ->with('{"id":5,"name":"y"}', ExampleCommand::class, 'json')
-            ->willReturn($command);
-
-        $resolver = new CommandValueResolver($serializer);
-
-        $request = new Request([], [], [], [], [], [], '{"id":5,"name":"y"}');
-        $request->headers->set('Content-Type', 'application/json');
-        $request->attributes->set('_command_class', ExampleCommand::class);
-
-        $argument = new ArgumentMetadata(
-            'command',
-            'object',
-            false,
-            false,
-            null,
-            false,
-            [new CommandObject(null)]
-        );
+        $this->serializer->expects($this->once())
+            ->method('denormalize')
+            ->with($expectedPayload, $expectedType)
+            ->willReturn($expectedObject);
 
         // Act
-        $result = iterator_to_array($resolver->resolve($request, $argument));
+        $result = $this->resolver->resolve($request, $argument);
+        $actual = iterator_to_array($result);
 
         // Assert
-        self::assertCount(1, $result);
-        self::assertSame($command, $result[0]);
+        $this->assertCount(1, $actual);
+        $this->assertSame($expectedObject, $actual[0]);
     }
 
-    public static function invalidContentTypesProvider(): iterable
+    /**
+     * @return iterable<string, array{Request, ArgumentMetadata, array<string, mixed>, string}>
+     */
+    public static function provideResolveRequests(): iterable
     {
-        yield 'plain text' => ['text/plain'];
-        yield 'xml' => ['application/xml'];
-        yield 'form' => ['application/x-www-form-urlencoded'];
+        yield 'with attribute class' => [
+            new Request(),
+            new ArgumentMetadata('command', null, false, false, null, false, [new CommandObject(class: stdClass::class)]),
+            [],
+            stdClass::class,
+        ];
+
+        yield 'with argument type' => [
+            new Request(),
+            new ArgumentMetadata('command', stdClass::class, false, false, null, false, [new CommandObject()]),
+            [],
+            stdClass::class,
+        ];
+
+        yield 'with route class' => [
+            new Request(attributes: ['_command_class' => stdClass::class]),
+            new ArgumentMetadata('command', 'object', false, false, null, false, [new CommandObject()]),
+            [],
+            stdClass::class,
+        ];
+
+        yield 'with request body only' => [
+            self::createJsonRequest('{"foo":"bar"}'),
+            new ArgumentMetadata('command', stdClass::class, false, false, null, false, [new CommandObject()]),
+            ['foo' => 'bar'],
+            stdClass::class,
+        ];
+
+        yield 'with parameters only' => [
+            new Request(
+                query: ['queryParam' => 'queryValue'],
+                attributes: ['routeParam' => 'routeValue', '_internal' => 'ignore']
+            ),
+            new ArgumentMetadata('command', stdClass::class, false, false, null, false, [new CommandObject()]),
+            ['routeParam' => 'routeValue', 'queryParam' => 'queryValue'],
+            stdClass::class,
+        ];
+
+        yield 'with precedence' => [
+            self::createJsonRequest(
+                '{"key":"bodyValue", "other":"bodyOther", "unique":"bodyUnique"}',
+                ['key' => 'queryValue'],
+                ['key' => 'routeValue', 'other' => 'routeOther']
+            ),
+            new ArgumentMetadata('command', stdClass::class, false, false, null, false, [new CommandObject()]),
+            [
+                'key' => 'queryValue',
+                'other' => 'routeOther',
+                'unique' => 'bodyUnique',
+            ],
+            stdClass::class,
+        ];
+
+        yield 'merges payload route and query' => [
+            self::createJsonRequest(
+                '{"body":"value", "override":"body"}',
+                ['query' => 'value', 'override' => 'query'],
+                ['route' => 'value', 'override' => 'route', '_not_included' => 'secret']
+            ),
+            new ArgumentMetadata('command', stdClass::class, false, false, null, false, [new CommandObject()]),
+            [
+                'body' => 'value',
+                'override' => 'query',
+                'route' => 'value',
+                'query' => 'value',
+            ],
+            stdClass::class,
+        ];
+    }
+
+    #[DataProvider('provideValidationFailures')]
+    public function testResolveValidationFailures(Request $request, string $expectedMessage): void
+    {
+        // Arrange
+        $attribute = new CommandObject(class: stdClass::class);
+        $argument = new ArgumentMetadata('command', null, false, false, null, false, [$attribute]);
+
+        // Assert
+        $this->expectException(BadRequestHttpException::class);
+        $this->expectExceptionMessage($expectedMessage);
+
+        // Act
+        iterator_to_array($this->resolver->resolve($request, $argument));
+    }
+
+    /**
+     * @return iterable<string, array{Request, string}>
+     */
+    public static function provideValidationFailures(): iterable
+    {
+        yield 'unsupported content type' => [
+            new Request(server: ['HTTP_CONTENT_TYPE' => 'text/plain'], content: '{"foo":"bar"}'),
+            'Unsupported Content-Type. Expecting application/json',
+        ];
+
+        yield 'invalid JSON' => [
+            self::createJsonRequest('{invalid}'),
+            'Invalid JSON body',
+        ];
+    }
+
+    public function testResolveThrowsOnDenormalizationFailure(): void
+    {
+        // Arrange
+        $request = new Request();
+        $attribute = new CommandObject(class: stdClass::class);
+        $argument = new ArgumentMetadata('command', null, false, false, null, false, [$attribute]);
+
+        $this->serializer->expects($this->once())
+            ->method('denormalize')
+            ->willThrowException(new NotEncodableValueException('Fail'));
+
+        // Assert
+        $this->expectException(BadRequestHttpException::class);
+        $this->expectExceptionMessage('Unable to map request to command: Fail');
+
+        // Act
+        iterator_to_array($this->resolver->resolve($request, $argument));
+    }
+
+    /**
+     * @param array<string, mixed> $query
+     * @param array<string, mixed> $attributes
+     */
+    private static function createJsonRequest(string $content, array $query = [], array $attributes = []): Request
+    {
+        $request = new Request($query, [], $attributes, [], [], [], $content);
+        $request->headers->set('Content-Type', 'application/json');
+
+        return $request;
     }
 }

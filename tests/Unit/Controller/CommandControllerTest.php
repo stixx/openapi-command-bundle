@@ -17,9 +17,11 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Stixx\OpenApiCommandBundle\Controller\CommandController;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
+use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
 use Stixx\OpenApiCommandBundle\Response\StatusResolverInterface;
 use Stixx\OpenApiCommandBundle\Tests\Mock\Command\ExampleCommand;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -27,7 +29,7 @@ use Symfony\Component\Messenger\Stamp\HandledStamp;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-class CommandControllerTest extends TestCase
+final class CommandControllerTest extends TestCase
 {
     public function testInvokeValidatesDispatchesAndReturnsJsonResponse(): void
     {
@@ -59,8 +61,14 @@ class CommandControllerTest extends TestCase
             ->with($request, $command)
             ->willReturn(201);
 
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->expects(self::once())
+            ->method('respond')
+            ->with($result, 201)
+            ->willReturn(new Response(json_encode($result), 201, ['Content-Type' => 'application/json']));
+
         // Act
-        $controller = new CommandController($messageBus, $validator, $statusResolver);
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder);
         $response = $controller($request, $command);
 
         // Assert
@@ -92,8 +100,13 @@ class CommandControllerTest extends TestCase
             ->with($request, $command)
             ->willReturn(200);
 
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->method('respond')
+            ->with($result, 200)
+            ->willReturn(new Response(json_encode($result), 200));
+
         // Act
-        $controller = new CommandController($messageBus, $validator, $statusResolver, validate: false);
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, validationEnabled: false);
         $response = $controller($request, $command);
 
         // Assert
@@ -125,8 +138,10 @@ class CommandControllerTest extends TestCase
         $statusResolver->expects(self::never())
             ->method('resolve');
 
+        $responder = $this->createMock(ResponderInterface::class);
+
         // Act
-        $controller = new CommandController($messageBus, $validator, $statusResolver, validate: true);
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, validationEnabled: true);
         $controller($request, $command);
     }
 
@@ -154,9 +169,10 @@ class CommandControllerTest extends TestCase
             ->willThrowException($exception);
 
         $statusResolver = $this->createMock(StatusResolverInterface::class);
+        $responder = $this->createMock(ResponderInterface::class);
 
         // Act
-        $controller = new CommandController($messageBus, $validator, $statusResolver, validate: true);
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, validationEnabled: true);
 
         // Assert
         try {

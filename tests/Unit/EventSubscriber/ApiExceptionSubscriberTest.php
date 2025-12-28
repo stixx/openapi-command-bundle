@@ -17,6 +17,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Stixx\OpenApiCommandBundle\EventSubscriber\ApiExceptionSubscriber;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
+use Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -25,7 +26,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Throwable;
 
-class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
+final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
 {
     #[DataProvider('skipRequestProvider')]
     public function testSkipsHandlingForNonApplicableRequests(int $requestType, string $areaRoute, string $requestRoute): void
@@ -40,7 +41,8 @@ class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
         $request->attributes->set('_route', $requestRoute);
 
         $normalizer = $this->createMock(NormalizerInterface::class);
-        $subscriber = new ApiExceptionSubscriber($routes, $normalizer);
+        $transformer = $this->createMock(ExceptionToApiProblemTransformerInterface::class);
+        $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer);
 
         // Act
         $subscriber->onKernelException($event);
@@ -72,10 +74,10 @@ class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
         $normalizer = $this->createMock(NormalizerInterface::class);
         $normalizer->expects(self::once())
             ->method('normalize')
-            ->with($violations, 'json')
-            ->willReturn($violations);
+            ->willReturn(['detail' => 'bad', 'violations' => $violations, 'status' => 400, 'title' => 'The request body contains errors', 'type' => 'about:blank']);
 
-        $subscriber = new ApiExceptionSubscriber($routes, $normalizer);
+        $transformer = $this->createMock(ExceptionToApiProblemTransformerInterface::class);
+        $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer);
 
         // Act
         $subscriber->onKernelException($event);
@@ -87,7 +89,10 @@ class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
         self::assertSame(400, $response->getStatusCode());
         self::assertSame('application/problem+json', $response->headers->get('Content-Type'));
 
-        $data = json_decode((string) $response->getContent(), true);
+        $content = $response->getContent();
+        self::assertIsString($content);
+        /** @var array<string, mixed> $data */
+        $data = json_decode($content, true);
         self::assertSame('about:blank', $data['type']);
         self::assertSame('The request body contains errors', $data['title']);
         self::assertSame(400, $data['status']);
@@ -106,10 +111,21 @@ class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
         $routes = $this->createNelmioAreaRoutesWithRouteName($routeName);
         $request->attributes->set('_route', $routeName);
 
-        $normalizer = $this->createMock(NormalizerInterface::class);
-        $normalizer->expects(self::never())->method('normalize');
+        $apiProblem = new ApiProblemException($expectedStatus, $expectedTitle);
 
-        $subscriber = new ApiExceptionSubscriber($routes, $normalizer);
+        $transformer = $this->createMock(ExceptionToApiProblemTransformerInterface::class);
+        $transformer->expects(self::once())
+            ->method('transform')
+            ->with($throwable)
+            ->willReturn($apiProblem);
+
+        $normalizer = $this->createMock(NormalizerInterface::class);
+        $normalizer->expects(self::once())
+            ->method('normalize')
+            ->with($apiProblem, 'json')
+            ->willReturn(['title' => $expectedTitle, 'status' => $expectedStatus, 'type' => 'about:blank']);
+
+        $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer);
 
         // Act
         $subscriber->onKernelException($event);
@@ -119,12 +135,19 @@ class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
         $response = $event->getResponse();
         self::assertNotNull($response);
         self::assertSame($expectedStatus, $response->getStatusCode());
-        $data = json_decode((string) $response->getContent(), true);
+
+        $content = $response->getContent();
+        self::assertIsString($content);
+        /** @var array<string, mixed> $data */
+        $data = json_decode($content, true);
         self::assertSame($expectedTitle, $data['title']);
         self::assertSame($expectedStatus, $data['status']);
         self::assertSame('about:blank', $data['type']);
     }
 
+    /**
+     * @return iterable<string, array{0: Throwable, 1: string, 2: int, 3: string}>
+     */
     public static function exceptionMappingProvider(): iterable
     {
         yield 'forbidden from access denied' => [new AccessDeniedHttpException(), 'api_forbidden', 403, 'Forbidden'];

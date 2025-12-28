@@ -22,7 +22,7 @@ use Symfony\Component\HttpKernel\Event\KernelEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 
-class RequestValidatorSubscriberTest extends AbstractEventSubscriberTestCase
+final class RequestValidatorSubscriberTest extends AbstractEventSubscriberTestCase
 {
     #[DataProvider('skipRequestProvider')]
     public function testSkipsValidation(int $requestType, string $areaRoute, string $requestRoute): void

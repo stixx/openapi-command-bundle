@@ -22,7 +22,7 @@ use Stixx\OpenApiCommandBundle\Tests\Mock\Command\GetWithNon2xxResponsesCommand;
 use Stixx\OpenApiCommandBundle\Tests\Mock\Command\PostWithResponsesCommand;
 use Symfony\Component\HttpFoundation\Request;
 
-class ResponseStatusResolverTest extends TestCase
+final class ResponseStatusResolverTest extends TestCase
 {
     #[DataProvider('defaultMappingProvider')]
     public function testFallsBackToDefaultMappingWhenNoMatchingOperationAttribute(string $method, int $expected): void

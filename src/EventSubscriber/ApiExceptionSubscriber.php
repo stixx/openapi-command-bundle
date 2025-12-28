@@ -21,13 +21,13 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
 {
     public function __construct(
         private NelmioAreaRoutesChecker $nelmioAreaRoutesChecker,
-        private SerializerInterface $serializer,
+        private NormalizerInterface $normalizer,
         private ExceptionToApiProblemTransformerInterface $exceptionTransformer,
     ) {
     }
@@ -55,7 +55,7 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
             $throwable = $this->exceptionTransformer->transform($throwable);
         }
 
-        $payload = $this->serializer->normalize($throwable, JsonEncoder::FORMAT);
+        $payload = $this->normalizer->normalize($throwable, JsonEncoder::FORMAT);
 
         $response = new JsonResponse($payload, $throwable->getStatusCode(), array_merge([
             'Content-Type' => 'application/problem+json',
