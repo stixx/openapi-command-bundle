@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Stixx\OpenApiCommandBundle\Routing\Loader\AttributeDirectoryLoaderDecorator;
 use Stixx\OpenApiCommandBundle\Routing\Loader\CommandRouteClassLoader;
+use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
