@@ -11,13 +11,11 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Stixx\OpenApiCommandBundle\Validator;
+namespace Stixx\OpenApiCommandBundle\Exception;
 
-use Symfony\Component\HttpFoundation\Request;
+use Throwable;
 
-interface ValidatorInterface
+interface ExceptionToApiProblemTransformerInterface
 {
-    public const string TAG_NAME = 'stixx_openapi_command.request.validator';
-
-    public function validate(Request $request): void;
+    public function transform(Throwable $throwable): ApiProblemException;
 }

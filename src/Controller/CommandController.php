@@ -15,9 +15,10 @@ namespace Stixx\OpenApiCommandBundle\Controller;
 
 use Stixx\OpenApiCommandBundle\Attribute\CommandObject;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
+use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
 use Stixx\OpenApiCommandBundle\Response\StatusResolverInterface;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -31,7 +32,8 @@ readonly class CommandController
         private MessageBusInterface $commandBus,
         private ValidatorInterface $validator,
         private StatusResolverInterface $statusResolver,
-        private bool $validate = true,
+        private ResponderInterface $responder,
+        private bool $validationEnabled = true,
         /** @var string[] */
         private array $validationGroups = ['Default'],
     ) {
@@ -41,9 +43,9 @@ readonly class CommandController
      * @throws Throwable
      * @throws ExceptionInterface
      */
-    public function __invoke(Request $request, #[CommandObject] object $command): JsonResponse
+    public function __invoke(Request $request, #[CommandObject] object $command): Response
     {
-        if ($this->validate) {
+        if ($this->validationEnabled) {
             $this->validateCommand($command);
         }
 
@@ -58,7 +60,7 @@ readonly class CommandController
         $handled = $envelope->last(HandledStamp::class);
         $result = $handled?->getResult();
 
-        return new JsonResponse($result, $this->statusResolver->resolve($request, $command));
+        return $this->responder->respond($result, $this->statusResolver->resolve($request, $command));
     }
 
     private function validateCommand(object $command): void

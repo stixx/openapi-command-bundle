@@ -18,19 +18,26 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 final class Configuration implements ConfigurationInterface
 {
+    public const string BUNDLE_ALIAS = 'stixx_openapi_command';
+
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder('stixx_openapi_command');
+        $treeBuilder = new TreeBuilder(self::BUNDLE_ALIAS);
 
         $rootNode = $treeBuilder->getRootNode();
         $rootNode
             ->children()
-                ->booleanNode('validate_http')
-                    ->defaultTrue()
-                ->end()
-                ->arrayNode('validation_groups')
-                    ->scalarPrototype()->end()
-                    ->defaultValue(['Default'])
+                ->arrayNode('validation')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')
+                            ->defaultTrue()
+                        ->end()
+                        ->arrayNode('groups')
+                            ->scalarPrototype()->end()
+                            ->defaultValue(['Default'])
+                        ->end()
+                    ->end()
                 ->end()
             ->end();
 

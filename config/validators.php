@@ -12,16 +12,20 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 return static function (ContainerConfigurator $configurator): void {
     $services = $configurator->services()
         ->defaults()
-            ->autowire(true)
+            ->autowire()
             ->autoconfigure(false)
             ->private();
 
     $services
-        ->set(RequestValidator::class)
-            ->arg('$apiDocGenerator', service('nelmio_api_doc.generator.default'))
-            ->tag(StixxValidatorInterface::TAG_NAME);
+        ->set(RequestValidatorChain::class)
+        ->arg('$validators', tagged_iterator(StixxValidatorInterface::TAG_NAME));
+    $services->alias(StixxValidatorInterface::class, RequestValidatorChain::class);
 
     $services
-        ->set(RequestValidatorChain::class)
-            ->arg('$validators', tagged_iterator(StixxValidatorInterface::TAG_NAME));
+        ->instanceof(StixxValidatorInterface::class)
+        ->tag(StixxValidatorInterface::TAG_NAME);
+
+    $services
+        ->set(RequestValidator::class)
+            ->arg('$apiDocGenerator', service('nelmio_api_doc.generator.default'));
 };

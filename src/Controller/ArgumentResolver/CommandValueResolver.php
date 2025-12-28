@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Controller\ArgumentResolver;
 
+use JsonException;
 use Stixx\OpenApiCommandBundle\Attribute\CommandObject;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,6 +22,7 @@ use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Exception\NotEncodableValueException;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
 final readonly class CommandValueResolver implements ValueResolverInterface
@@ -37,20 +39,18 @@ final readonly class CommandValueResolver implements ValueResolverInterface
             return [];
         }
 
-        if ($this->hasRequestBody($request)) {
+        $hasBody = $this->hasRequestBody($request);
+        if ($hasBody) {
             $this->assertJsonContentType($request);
-            $command = $this->deserializeFromRequestBody($request, $type);
-        } else {
-            $data = $this->extractScalarsFromRouteAndQuery($request);
-
-            if ($data === []) {
-                throw new BadRequestHttpException('No request body provided and no mappable route/query parameters found to build the command.');
-            }
-
-            $command = $this->deserializeFromQueryParameters($data, $type);
         }
 
-        yield $command;
+        $params = $this->extractScalarsFromRouteAndQuery($request);
+        $payload = $hasBody ? $this->decodeJsonBodyToArray($request) : [];
+        if ($params !== []) {
+            $payload = array_replace($payload, $params);
+        }
+
+        yield $this->denormalizeToType($payload, $type);
     }
 
     private function resolveTargetClass(Request $request, ArgumentMetadata $argument): ?string
@@ -76,7 +76,7 @@ final readonly class CommandValueResolver implements ValueResolverInterface
 
     private function hasRequestBody(Request $request): bool
     {
-        return $request->getContent() !== null && trim($request->getContent()) !== '';
+        return $request->getContent() !== null && trim((string) $request->getContent()) !== '';
     }
 
     private function assertJsonContentType(Request $request): void
@@ -123,28 +123,33 @@ final readonly class CommandValueResolver implements ValueResolverInterface
         return array_replace($routeData, $filteredQuery);
     }
 
-    private function deserializeFromRequestBody(Request $request, string $type): object
+    /**
+     * @return array<string, mixed>
+     */
+    private function decodeJsonBodyToArray(Request $request): array
     {
-        $content = (string) $request->getContent();
-
         try {
-            return $this->serializer->deserialize($content, $type, 'json');
-        } catch (NotEncodableValueException $e) {
-            throw new BadRequestHttpException('Invalid JSON body: '.$e->getMessage(), $e);
+            $decoded = json_decode((string) $request->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $exception) {
+            throw new BadRequestHttpException('Invalid JSON body: '.$exception->getMessage(), $exception);
         }
+
+        return is_array($decoded) ? $decoded : [];
     }
 
-    /**
-     * @param array<string, scalar|null> $data
-     */
-    private function deserializeFromQueryParameters(array $data, string $type): object
+    private function denormalizeToType(array $data, string $type): object
     {
-        $encoded = json_encode($data, JSON_THROW_ON_ERROR);
+        $format = null;
+
+        if (!$this->serializer instanceof DenormalizerInterface) {
+            $data = json_encode($data, JSON_THROW_ON_ERROR);
+            $format = JsonEncoder::FORMAT;
+        }
 
         try {
-            return $this->serializer->deserialize($encoded, $type, JsonEncoder::FORMAT);
-        } catch (NotEncodableValueException $e) {
-            throw new BadRequestHttpException('Unable to map route/query parameters to command: '.$e->getMessage(), $e);
+            return $this->serializer->denormalize($data, $type, $format);
+        } catch (NotEncodableValueException $exception) {
+            throw new BadRequestHttpException('Unable to map request to command: '.$exception->getMessage(), $exception);
         }
     }
 }
