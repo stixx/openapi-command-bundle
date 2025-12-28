@@ -20,18 +20,20 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Exception\NotEncodableValueException;
+use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
-use Symfony\Component\Serializer\SerializerInterface;
 
 final readonly class CommandValueResolver implements ValueResolverInterface
 {
     public function __construct(
-        private SerializerInterface $serializer,
+        private DenormalizerInterface $serializer,
     ) {
     }
 
+    /**
+     * @return iterable<object>
+     */
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
         $type = $this->resolveTargetClass($request, $argument);
@@ -76,14 +78,22 @@ final readonly class CommandValueResolver implements ValueResolverInterface
 
     private function hasRequestBody(Request $request): bool
     {
-        return $request->getContent() !== null && trim((string) $request->getContent()) !== '';
+        $content = $request->getContent();
+
+        return $content !== '' && trim((string) $content) !== '';
     }
 
     private function assertJsonContentType(Request $request): void
     {
-        $header = $request->headers->get('Content-Type', '');
-        $first = (string) (current(HeaderUtils::split($header, ',')) ?: '');
-        $mediaType = strtolower(trim((string) (current(HeaderUtils::split($first, ';')) ?: '')));
+        $contentType = $request->headers->get('Content-Type');
+
+        if ($contentType === null) {
+            throw new BadRequestHttpException('Unsupported Content-Type. Expecting application/json');
+        }
+
+        $parts = HeaderUtils::split($contentType, ';,');
+        /** @var array<int, array<int, string>> $parts */
+        $mediaType = strtolower(trim($parts[0][0] ?? ''));
         $isJson = ($mediaType === 'application/json') || str_ends_with($mediaType, '+json');
 
         if (!$isJson) {
@@ -129,26 +139,29 @@ final readonly class CommandValueResolver implements ValueResolverInterface
     private function decodeJsonBodyToArray(Request $request): array
     {
         try {
+            /** @var array<string, mixed> $decoded */
             $decoded = json_decode((string) $request->getContent(), true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $exception) {
             throw new BadRequestHttpException('Invalid JSON body: '.$exception->getMessage(), $exception);
         }
 
-        return is_array($decoded) ? $decoded : [];
+        return $decoded;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     private function denormalizeToType(array $data, string $type): object
     {
-        $format = null;
-
-        if (!$this->serializer instanceof DenormalizerInterface) {
-            $data = json_encode($data, JSON_THROW_ON_ERROR);
-            $format = JsonEncoder::FORMAT;
-        }
-
         try {
-            return $this->serializer->denormalize($data, $type, $format);
-        } catch (NotEncodableValueException $exception) {
+            $object = $this->serializer->denormalize($data, $type);
+
+            if (!is_object($object)) {
+                throw new NotNormalizableValueException(sprintf('Expected object, got %s', get_debug_type($object)));
+            }
+
+            return $object;
+        } catch (NotEncodableValueException|NotNormalizableValueException $exception) {
             throw new BadRequestHttpException('Unable to map request to command: '.$exception->getMessage(), $exception);
         }
     }
