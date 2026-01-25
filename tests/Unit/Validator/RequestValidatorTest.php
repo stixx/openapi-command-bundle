@@ -55,7 +55,7 @@ final class RequestValidatorTest extends TestCase
                 'name' => 'X-Required-Header',
                 'in' => 'header',
                 'required' => true,
-                'schema' => new Schema(['type' => 'string', '_context' => new Context(['version' => '3.0.0'], null)]),
+                'schema' => new Schema(['schema' => 'header-schema', 'type' => 'string', '_context' => new Context(['version' => '3.0.0'], null)]),
                 '_context' => new Context(['version' => '3.0.0'], null),
             ]),
         ]);

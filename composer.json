@@ -52,6 +52,10 @@
     },
     "scripts": {
         "test": "./vendor/bin/simple-phpunit",
+        "check": [
+            "@cs-fixer",
+            "@phpstan"
+        ],
         "cs-fixer": "php -d memory_limit=-1 ./vendor/bin/php-cs-fixer fix",
         "phpstan": "php -d memory_limit=-1 ./vendor/bin/phpstan analyse"
     }
