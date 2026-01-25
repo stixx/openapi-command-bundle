@@ -26,19 +26,15 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
             return;
         }
 
+        /** @var list<string> $areas */
         $areas = (array) $container->getParameter('nelmio_api_doc.areas');
         $map = [];
 
         foreach ($areas as $area) {
-            /** @var string|null $areaString */
-            $areaString = is_scalar($area) ? (string) $area : null;
-            if ($areaString === null) {
-                continue;
-            }
-            $serviceId = sprintf('nelmio_api_doc.routes.%s', $areaString);
+            $serviceId = sprintf('nelmio_api_doc.routes.%s', $area);
 
             if ($container->has($serviceId)) {
-                $map[$areaString] = new Reference($serviceId);
+                $map[$area] = new Reference($serviceId);
             }
         }
 
