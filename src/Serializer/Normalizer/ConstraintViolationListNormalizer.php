@@ -58,7 +58,7 @@ final class ConstraintViolationListNormalizer implements NormalizerInterface, No
             }
         }
 
-        /** @var array<int, array<string, mixed>> $out */
+        /* @var array<int, array<string, mixed>> $out */
         return $out;
     }
 
