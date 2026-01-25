@@ -53,12 +53,12 @@ final class ConstraintViolationListNormalizer implements NormalizerInterface, No
         foreach ($data as $violation) {
             $normalized = $this->normalizer->normalize($violation, $format, $context);
             if (is_array($normalized)) {
-                /** @var array<string, mixed> $normalized */
+                /* @var array<string, mixed> $normalized */
                 $out[] = $normalized;
             }
         }
 
-        /** @var array<int, array<string, mixed>> $out */
+        /* @var array<int, array<string, mixed>> $out */
         return $out;
     }
 
