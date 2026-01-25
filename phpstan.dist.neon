@@ -4,5 +4,5 @@ parameters:
         - src/
         - tests/
     scanDirectories:
-        - vendor/bin/.phpunit/phpunit-12.4-0/src
+        - vendor/bin/.phpunit/phpunit/src
     treatPhpDocTypesAsCertain: false
