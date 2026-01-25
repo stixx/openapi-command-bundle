@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Stixx\OpenApiCommandBundle\Tests\Mock\Routing\Src;
+namespace Stixx\OpenApiCommandBundle\Tests\Mock\Routing\src;
 
 use OpenApi\Attributes as OA;
 
