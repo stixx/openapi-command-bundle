@@ -80,6 +80,7 @@ final class ApiProblemExceptionTest extends TestCase
     public function testSimpleFactoriesCreateExpectedProblems(callable $factory, int $expectedStatus, string $expectedTitle, ?string $detail): void
     {
         // Act
+        /** @var ApiProblemException $exception */
         $exception = $factory($detail);
 
         // Assert
@@ -92,6 +93,9 @@ final class ApiProblemExceptionTest extends TestCase
         self::assertSame($expectedMessage, $exception->getMessage());
     }
 
+    /**
+     * @return iterable<string, array{0: callable(string|null): ApiProblemException, 1: int, 2: string, 3: string|null}>
+     */
     public static function exceptionProvider(): iterable
     {
         yield 'unauthenticated default detail' => [

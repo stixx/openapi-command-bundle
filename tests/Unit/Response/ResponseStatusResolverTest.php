@@ -40,6 +40,9 @@ final class ResponseStatusResolverTest extends TestCase
         self::assertSame($expected, $status);
     }
 
+    /**
+     * @return iterable<string, array{0: string, 1: int}>
+     */
     public static function defaultMappingProvider(): iterable
     {
         yield 'GET => 200' => ['GET', 200];
@@ -66,6 +69,9 @@ final class ResponseStatusResolverTest extends TestCase
         self::assertSame($expected, $status);
     }
 
+    /**
+     * @return iterable<string, array{0: Request, 1: object, 2: int}>
+     */
     public static function attributeResolutionProvider(): iterable
     {
         $post = new Request();
@@ -90,6 +96,9 @@ final class ResponseStatusResolverTest extends TestCase
         self::assertSame($expected, $status);
     }
 
+    /**
+     * @return iterable<string, array{0: Request, 1: object, 2: int}>
+     */
     public static function nonApplicableAttributesProvider(): iterable
     {
         $get = new Request();

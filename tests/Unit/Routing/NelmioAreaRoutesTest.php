@@ -24,6 +24,7 @@ final class NelmioAreaRoutesTest extends TestCase
 {
     public function testReturnsFalseWhenNoRouteAttributePresent(): void
     {
+        /** @var ServiceLocator<RouteCollection> $locator */
         $locator = new ServiceLocator([]);
         $checker = new NelmioAreaRoutesChecker($locator);
 
@@ -34,6 +35,7 @@ final class NelmioAreaRoutesTest extends TestCase
 
     public function testReturnsFalseWhenRouteNameIsEmpty(): void
     {
+        /** @var ServiceLocator<RouteCollection> $locator */
         $locator = new ServiceLocator([]);
         $checker = new NelmioAreaRoutesChecker($locator);
 
@@ -48,6 +50,7 @@ final class NelmioAreaRoutesTest extends TestCase
         $collection = new RouteCollection();
         $collection->add('api_route', new Route('/api'));
 
+        /** @var ServiceLocator<RouteCollection> $locator */
         $locator = new ServiceLocator([
             'default' => static fn () => $collection,
         ]);
@@ -65,6 +68,7 @@ final class NelmioAreaRoutesTest extends TestCase
         $collection = new RouteCollection();
         $collection->add('another_route', new Route('/other'));
 
+        /** @var ServiceLocator<RouteCollection> $locator */
         $locator = new ServiceLocator([
             'default' => static fn () => $collection,
         ]);
@@ -85,6 +89,7 @@ final class NelmioAreaRoutesTest extends TestCase
         $second = new RouteCollection();
         $second->add('target', new Route('/target'));
 
+        /** @var ServiceLocator<RouteCollection> $locator */
         $locator = new ServiceLocator([
             'area_one' => static fn () => $first,
             'area_two' => static fn () => $second,
@@ -105,6 +110,7 @@ final class NelmioAreaRoutesTest extends TestCase
         $collection = new RouteCollection();
         $collection->add('would_match', new Route('/match'));
 
+        /** @var ServiceLocator<RouteCollection> $locator */
         $locator = new ServiceLocator([
             'not_a_route_collection' => $notARouteCollection,
             'collection' => static fn () => $collection,

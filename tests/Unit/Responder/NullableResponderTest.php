@@ -16,7 +16,6 @@ namespace Stixx\OpenApiCommandBundle\Tests\Unit\Responder;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stixx\OpenApiCommandBundle\Responder\NullableResponder;
-use Symfony\Component\HttpFoundation\Response;
 
 final class NullableResponderTest extends TestCase
 {
@@ -30,7 +29,6 @@ final class NullableResponderTest extends TestCase
         $response = $responder->respond(null, $status);
 
         // Assert
-        self::assertInstanceOf(Response::class, $response);
         self::assertSame('', $response->getContent());
         self::assertSame($status, $response->getStatusCode());
     }
@@ -48,6 +46,9 @@ final class NullableResponderTest extends TestCase
         self::assertSame($expected, $actual);
     }
 
+    /**
+     * @return iterable<string, array{0: mixed, 1: bool}>
+     */
     public static function supportsProvider(): iterable
     {
         yield 'null' => [

@@ -65,7 +65,7 @@ final class CommandControllerTest extends TestCase
         $responder->expects(self::once())
             ->method('respond')
             ->with($result, 201)
-            ->willReturn(new Response(json_encode($result), 201, ['Content-Type' => 'application/json']));
+            ->willReturn(new Response((string) json_encode($result), 201, ['Content-Type' => 'application/json']));
 
         // Act
         $controller = new CommandController($messageBus, $validator, $statusResolver, $responder);
@@ -103,7 +103,7 @@ final class CommandControllerTest extends TestCase
         $responder = $this->createMock(ResponderInterface::class);
         $responder->method('respond')
             ->with($result, 200)
-            ->willReturn(new Response(json_encode($result), 200));
+            ->willReturn(new Response((string) json_encode($result), 200));
 
         // Act
         $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, validationEnabled: false);

@@ -27,11 +27,11 @@ final class StixxOpenApiCommandExtension extends Extension
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
-        /** @var array<string, mixed> $validationConfig */
-        $validationConfig = $config['validation'] ?? [];
+        /** @var array{enabled: bool, groups: list<string>} $validationConfig */
+        $validationConfig = $config['validation'];
 
-        $container->setParameter('stixx_openapi_command.validation.enabled', $validationConfig['enabled'] ?? true);
-        $container->setParameter('stixx_openapi_command.validation.groups', $validationConfig['groups'] ?? ['Default']);
+        $container->setParameter('stixx_openapi_command.validation.enabled', $validationConfig['enabled']);
+        $container->setParameter('stixx_openapi_command.validation.groups', $validationConfig['groups']);
 
         $container
             ->registerForAutoconfiguration(ResponderInterface::class)

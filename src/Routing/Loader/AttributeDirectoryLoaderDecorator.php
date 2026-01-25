@@ -29,9 +29,12 @@ final class AttributeDirectoryLoaderDecorator extends Loader
     ) {
     }
 
-    public function load(mixed $resource, ?string $type = null): ?RouteCollection
+    public function load(mixed $resource, ?string $type = null): RouteCollection
     {
-        $collection = $this->inner->load($resource, $type) ?? new RouteCollection();
+        $collection = $this->inner->load($resource, $type);
+        if (!$collection instanceof RouteCollection) {
+            $collection = new RouteCollection();
+        }
 
         if ($this->augmented) {
             return $collection;

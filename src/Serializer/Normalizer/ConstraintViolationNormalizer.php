@@ -33,6 +33,9 @@ final class ConstraintViolationNormalizer implements NormalizerInterface
      */
     private array $constMapCache = [];
 
+    /**
+     * @param array<string, mixed> $context
+     */
     public function supportsNormalization($data, ?string $format = null, array $context = []): bool
     {
         return $data instanceof ConstraintViolationInterface;
@@ -40,8 +43,9 @@ final class ConstraintViolationNormalizer implements NormalizerInterface
 
     /**
      * @param ConstraintViolationInterface $data
+     * @param array<string, mixed> $context
      *
-     * @return array{propertyPath:?string,message:string,code:?string,constraint:?string,error:?string}
+     * @return array{propertyPath: string|null, message: string, code: string|null, constraint: string|null, error: string|null}
      */
     public function normalize($data, ?string $format = null, array $context = []): array
     {
@@ -58,6 +62,7 @@ final class ConstraintViolationNormalizer implements NormalizerInterface
             $constraintName = $reflectionClass->getShortName();
 
             if ($code !== null) {
+                /** @var ReflectionClass<object> $reflectionClass */
                 $map = $this->constMapCache[$reflectionClass->getName()] ??= $this->buildConstantMap($reflectionClass);
                 $errorName = $map[$code] ?? null;
             }
@@ -65,7 +70,7 @@ final class ConstraintViolationNormalizer implements NormalizerInterface
 
         return [
             'propertyPath' => $violation->getPropertyPath() ?: null,
-            'message' => $violation->getMessage(),
+            'message' => (string) $violation->getMessage(),
             'code' => $code,
             'constraint' => $constraintName,
             'error' => $errorName,
@@ -81,6 +86,8 @@ final class ConstraintViolationNormalizer implements NormalizerInterface
     }
 
     /**
+     * @param ReflectionClass<object> $reflectionClass
+     *
      * @return array<string,string>
      */
     private function buildConstantMap(ReflectionClass $reflectionClass): array

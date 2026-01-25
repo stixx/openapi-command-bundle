@@ -21,8 +21,12 @@ use Throwable;
 
 final class ApiProblemException extends RuntimeException implements HttpExceptionInterface
 {
+    /** @var array<string, mixed> */
+    private readonly array $headers;
+
     /**
      * @param array<int, array<string, string|null>>|ConstraintViolationListInterface|null $violations
+     * @param array<string, mixed> $headers
      */
     public function __construct(
         private readonly int $statusCode,
@@ -32,8 +36,9 @@ final class ApiProblemException extends RuntimeException implements HttpExceptio
         private readonly ?string $instance = null,
         private readonly array|ConstraintViolationListInterface|null $violations = null,
         ?Throwable $previous = null,
-        private readonly array $headers = [],
+        array $headers = [],
     ) {
+        $this->headers = $headers;
         parent::__construct($detail ?? $title, 0, $previous);
     }
 
@@ -42,9 +47,15 @@ final class ApiProblemException extends RuntimeException implements HttpExceptio
         return $this->statusCode;
     }
 
+    /**
+     * @return array<string, string|string[]>
+     */
     public function getHeaders(): array
     {
-        return $this->headers;
+        /** @var array<string, string|string[]> $headers */
+        $headers = $this->headers;
+
+        return $headers;
     }
 
     public function getTitle(): string

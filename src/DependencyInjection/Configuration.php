@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\DependencyInjection;
 
+use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -24,7 +25,9 @@ final class Configuration implements ConfigurationInterface
     {
         $treeBuilder = new TreeBuilder(self::BUNDLE_ALIAS);
 
+        /** @var ArrayNodeDefinition $rootNode */
         $rootNode = $treeBuilder->getRootNode();
+        /* @phpstan-ignore-next-line */
         $rootNode
             ->children()
                 ->arrayNode('validation')

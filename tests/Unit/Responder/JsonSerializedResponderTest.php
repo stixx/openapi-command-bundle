@@ -62,6 +62,9 @@ final class JsonSerializedResponderTest extends TestCase
         self::assertSame($expected, $actual);
     }
 
+    /**
+     * @return iterable<string, array{0: mixed, 1: bool}>
+     */
     public static function supportsProvider(): iterable
     {
         yield 'object' => [

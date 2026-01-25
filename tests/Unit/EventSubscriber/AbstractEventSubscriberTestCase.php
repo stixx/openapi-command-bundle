@@ -22,6 +22,9 @@ use Symfony\Component\Routing\RouteCollection;
 
 abstract class AbstractEventSubscriberTestCase extends TestCase
 {
+    /**
+     * @return iterable<string, array{0: int, 1: string, 2: string}>
+     */
     public static function skipRequestProvider(): iterable
     {
         yield 'sub-request' => [
@@ -42,6 +45,7 @@ abstract class AbstractEventSubscriberTestCase extends TestCase
         $collection = new RouteCollection();
         $collection->add($routeName, new Route('/'.$routeName));
 
+        /** @var ServiceLocator<RouteCollection> $locator */
         $locator = new ServiceLocator([
             'default' => static fn () => $collection,
         ]);

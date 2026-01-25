@@ -34,6 +34,7 @@ final class CommandRouteClassLoaderTest extends TestCase
     {
         $loader = new CommandRouteClassLoader();
 
+        /** @phpstan-ignore-next-line */
         $collection = $loader->load('');
 
         self::assertCount(0, $collection->all());
@@ -43,6 +44,7 @@ final class CommandRouteClassLoaderTest extends TestCase
     {
         $loader = new CommandRouteClassLoader();
 
+        /** @phpstan-ignore-next-line */
         $collection = $loader->load('This\\Class\\DoesNotExist');
 
         self::assertCount(0, $collection->all());
@@ -60,7 +62,9 @@ final class CommandRouteClassLoaderTest extends TestCase
         }
 
         $loader = new CommandRouteClassLoader();
-        $collection = $loader->load(self::classNamespace('AbstractTmpCommand'));
+        /** @var class-string $className */
+        $className = self::classNamespace('AbstractTmpCommand');
+        $collection = $loader->load($className);
 
         self::assertCount(0, $collection->all());
     }
@@ -75,7 +79,9 @@ final class CommandRouteClassLoaderTest extends TestCase
         }
 
         $loader = new CommandRouteClassLoader();
-        $collection = $loader->load(self::classNamespace('NoOpsCommand'));
+        /** @var class-string $className */
+        $className = self::classNamespace('NoOpsCommand');
+        $collection = $loader->load($className);
 
         self::assertCount(0, $collection->all());
     }
@@ -91,8 +97,9 @@ final class CommandRouteClassLoaderTest extends TestCase
             PHP);
         }
 
+        /** @var class-string $fqcn */
         $fqcn = self::classNamespace('MappedCommand');
-        $loader = new CommandRouteClassLoader(controllerClasses: [$fqcn => true]);
+        $loader = new CommandRouteClassLoader(controllerClasses: [$fqcn => 'SomeController']);
         $collection = $loader->load($fqcn);
 
         self::assertCount(0, $collection->all());
@@ -111,7 +118,9 @@ final class CommandRouteClassLoaderTest extends TestCase
         }
 
         $loader = new CommandRouteClassLoader();
-        $collection = $loader->load(self::classNamespace('MultiOpsCommand'));
+        /** @var class-string $className */
+        $className = self::classNamespace('MultiOpsCommand');
+        $collection = $loader->load($className);
 
         self::assertCount(2, $collection->all());
         $routes = $collection->all();
@@ -135,6 +144,7 @@ final class CommandRouteClassLoaderTest extends TestCase
             PHP);
         }
 
+        /** @var class-string $fqcn */
         $fqcn = self::classNamespace('TwoGetNoIdCommand');
         $loader = new CommandRouteClassLoader();
         $collection = $loader->load($fqcn);
@@ -191,13 +201,25 @@ final class CommandRouteClassLoaderTest extends TestCase
 
         $loader = new CommandRouteClassLoader();
 
-        $opCtrlRoute = current($loader->load(self::classNamespace('OpControllerCmd'))->all());
+        /** @var class-string $opName */
+        $opName = self::classNamespace('OpControllerCmd');
+        $allOp = $loader->load($opName)->all();
+        $opCtrlRoute = current($allOp);
+        self::assertInstanceOf(\Symfony\Component\Routing\Route::class, $opCtrlRoute);
         self::assertSame(self::classNamespace('FakeControllerA'), $opCtrlRoute->getDefault('_controller'));
 
-        $classCtrlRoute = current($loader->load(self::classNamespace('ClassControllerCmd'))->all());
+        /** @var class-string $className */
+        $className = self::classNamespace('ClassControllerCmd');
+        $allClass = $loader->load($className)->all();
+        $classCtrlRoute = current($allClass);
+        self::assertInstanceOf(\Symfony\Component\Routing\Route::class, $classCtrlRoute);
         self::assertSame(self::classNamespace('FakeControllerB'), $classCtrlRoute->getDefault('_controller'));
 
-        $defaultRoute = current($loader->load(self::classNamespace('DefaultControllerCmd'))->all());
+        /** @var class-string $defaultName */
+        $defaultName = self::classNamespace('DefaultControllerCmd');
+        $allDefault = $loader->load($defaultName)->all();
+        $defaultRoute = current($allDefault);
+        self::assertInstanceOf(\Symfony\Component\Routing\Route::class, $defaultRoute);
         self::assertSame(CommandController::class, $defaultRoute->getDefault('_controller'));
     }
 
@@ -213,7 +235,9 @@ final class CommandRouteClassLoaderTest extends TestCase
         }
 
         $loader = new CommandRouteClassLoader();
-        $collection = $loader->load(self::classNamespace('WithOperationId'));
+        /** @var class-string $className */
+        $className = self::classNamespace('WithOperationId');
+        $collection = $loader->load($className);
         $names = array_keys($collection->all());
 
         self::assertSame(['my_op'], $names);

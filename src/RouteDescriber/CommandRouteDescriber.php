@@ -62,6 +62,7 @@ final class CommandRouteDescriber implements RouteDescriberInterface, ModelRegis
         }
 
         $pathItem = Util::getPath($api, $this->normalizePath($route->getPath()));
+        /** @var class-string $commandClass */
         $classReflector = new ReflectionClass($commandClass);
         $context = $this->createContextForCommandClass($classReflector, $pathItem);
 
@@ -89,6 +90,8 @@ final class CommandRouteDescriber implements RouteDescriberInterface, ModelRegis
     }
 
     /**
+     * @param ReflectionClass<object> $reflection
+     *
      * @return OA\AbstractAnnotation[]
      */
     private function getAttributesAsAnnotation(ReflectionClass $reflection, Context $context): array
@@ -114,12 +117,16 @@ final class CommandRouteDescriber implements RouteDescriberInterface, ModelRegis
         return $commandClass;
     }
 
+    /**
+     * @param ReflectionClass<object> $classReflector
+     */
     private function createContextForCommandClass(ReflectionClass $classReflector, OA\PathItem $pathItem): Context
     {
         $context = Util::createContext(['nested' => $pathItem], $pathItem->_context);
         $context->namespace = $classReflector->getNamespaceName();
         $context->class = $classReflector->getShortName();
-        $context->filename = $classReflector->getFileName();
+        $filename = $classReflector->getFileName();
+        $context->filename = is_string($filename) ? $filename : null;
 
         return $context;
     }
@@ -147,7 +154,7 @@ final class CommandRouteDescriber implements RouteDescriberInterface, ModelRegis
                 // Ensure the Command's operationId, when provided, overwrites any existing value.
                 // To avoid swagger-php "Multiple definitions" warnings, directly set it on the
                 // target operation and clear it from the annotation before merging.
-                if (property_exists($annotation, 'operationId') && Generator::UNDEFINED !== $annotation->operationId) {
+                if (Generator::UNDEFINED !== $annotation->operationId) {
                     $operation->operationId = $annotation->operationId;
                     $annotation->operationId = Generator::UNDEFINED;
                 }
@@ -159,6 +166,7 @@ final class CommandRouteDescriber implements RouteDescriberInterface, ModelRegis
 
             if ($annotation instanceof OA\Tag) {
                 $annotation->validate();
+                /* @phpstan-ignore-next-line */
                 $mergeProperties->tags[] = $annotation->name;
 
                 $tag = Util::getTag($api, $annotation->name);

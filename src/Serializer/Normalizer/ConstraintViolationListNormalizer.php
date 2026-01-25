@@ -32,6 +32,9 @@ final class ConstraintViolationListNormalizer implements NormalizerInterface, No
 {
     use NormalizerAwareTrait;
 
+    /**
+     * @param array<string, mixed> $context
+     */
     public function supportsNormalization($data, ?string $format = null, array $context = []): bool
     {
         return $data instanceof ConstraintViolationListInterface;
@@ -39,18 +42,23 @@ final class ConstraintViolationListNormalizer implements NormalizerInterface, No
 
     /**
      * @param ConstraintViolationListInterface $data
+     * @param array<string, mixed> $context
      *
      * @return array<int, array<string, mixed>>
      */
     public function normalize($data, ?string $format = null, array $context = []): array
     {
         $out = [];
+        /** @var ConstraintViolationInterface $violation */
         foreach ($data as $violation) {
-            if ($violation instanceof ConstraintViolationInterface) {
-                $out[] = $this->normalizer->normalize($violation, $format, $context);
+            $normalized = $this->normalizer->normalize($violation, $format, $context);
+            if (is_array($normalized)) {
+                /** @var array<string, mixed> $normalized */
+                $out[] = $normalized;
             }
         }
 
+        /** @var array<int, array<string, mixed>> $out */
         return $out;
     }
 

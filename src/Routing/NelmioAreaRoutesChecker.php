@@ -19,14 +19,17 @@ use Symfony\Component\Routing\RouteCollection;
 
 final readonly class NelmioAreaRoutesChecker
 {
+    /**
+     * @param ServiceLocator<RouteCollection> $routesLocator
+     */
     public function __construct(private ServiceLocator $routesLocator)
     {
     }
 
     public function isApiRoute(Request $request): bool
     {
-        $routeName = (string) $request->attributes->get('_route', '');
-        if ($routeName === '') {
+        $routeName = $request->attributes->get('_route', '');
+        if (!is_string($routeName) || $routeName === '') {
             return false;
         }
 

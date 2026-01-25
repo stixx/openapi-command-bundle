@@ -37,6 +37,11 @@ final class CommandRouteDescriberTest extends TestCase
 
         $inlineParameterDescriber = new FakeInlineParameterDescriber();
         $argumentMetadataFactory = new class () implements ArgumentMetadataFactoryInterface {
+            /**
+             * @param array<mixed>|object|string $controller
+             *
+             * @return ArgumentMetadata[]
+             */
             public function createArgumentMetadata(array|object|string $controller, ?ReflectionFunctionAbstract $reflector = null): array
             {
                 return [];
@@ -87,7 +92,6 @@ final class CommandRouteDescriberTest extends TestCase
 
         self::assertCount(1, $inlineParameterDescriber->calls);
         [$argMeta, $op] = $inlineParameterDescriber->calls[0];
-        self::assertInstanceOf(ArgumentMetadata::class, $argMeta);
         self::assertSame($operation, $op);
     }
 
@@ -131,6 +135,9 @@ final class CommandRouteDescriberTest extends TestCase
         self::assertCount(1, $inlineParameterDescriber->calls);
     }
 
+    /**
+     * @return iterable<string, array{0: string, 1: string, 2: string, 3: string, 4: int, 5: string}>
+     */
     public static function commandsProvider(): iterable
     {
         yield 'GET full featured' => ['GET', '/items', MockCommand\GetItemsCommand::class, 'list_items_full', 200, 'items'];
@@ -158,6 +165,11 @@ final class CommandRouteDescriberTest extends TestCase
             {
             }
 
+            /**
+             * @param array<mixed>|object|string $controller
+             *
+             * @return ArgumentMetadata[]
+             */
             public function createArgumentMetadata(array|object|string $controller, ?ReflectionFunctionAbstract $reflector = null): array
             {
                 return [new ArgumentMetadata('cmd', $this->class, false, false, null)];

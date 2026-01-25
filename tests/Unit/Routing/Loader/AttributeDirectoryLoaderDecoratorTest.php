@@ -48,12 +48,10 @@ final class AttributeDirectoryLoaderDecoratorTest extends TestCase
 
         // Act & Assert
         $first = $decorator->load('ignored');
-        self::assertInstanceOf(RouteCollection::class, $first);
         $route = array_keys($first->all());
         self::assertContains('api_test', $route, 'Expected route from AnnotatedCommand to be merged');
 
         $second = $decorator->load('ignored');
-        self::assertInstanceOf(RouteCollection::class, $second);
         self::assertCount(0, $second->all(), 'Second load returns inner collection without augmentation');
     }
 
