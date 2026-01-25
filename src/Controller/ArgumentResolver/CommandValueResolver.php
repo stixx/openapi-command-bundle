@@ -124,10 +124,9 @@ final readonly class CommandValueResolver implements ValueResolverInterface
         $queryData = $request->query->all();
         $filteredQuery = array_filter(
             $queryData,
-            static function ($value, $key): bool {
-                return is_string($key) && (is_scalar($value) || $value === null);
-            },
-            ARRAY_FILTER_USE_BOTH
+            static function ($value): bool {
+                return is_scalar($value);
+            }
         );
 
         return array_replace($routeData, $filteredQuery);

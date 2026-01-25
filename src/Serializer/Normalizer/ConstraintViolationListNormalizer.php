@@ -44,7 +44,7 @@ final class ConstraintViolationListNormalizer implements NormalizerInterface, No
      * @param ConstraintViolationListInterface $data
      * @param array<string, mixed> $context
      *
-     * @return array<int, array<string, mixed>>
+     * @return list<array>
      */
     public function normalize($data, ?string $format = null, array $context = []): array
     {
@@ -58,7 +58,7 @@ final class ConstraintViolationListNormalizer implements NormalizerInterface, No
             }
         }
 
-        /* @var array<int, array<string, mixed>> $out */
+        /* @var list<array> $out */
         return $out;
     }
 

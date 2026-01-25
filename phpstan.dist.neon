@@ -3,6 +3,4 @@ parameters:
     paths:
         - src/
         - tests/
-    scanDirectories:
-        - vendor/bin/.phpunit/phpunit/src
     treatPhpDocTypesAsCertain: false
