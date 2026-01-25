@@ -29,10 +29,16 @@ class StixxOpenApiCommandBundle extends Bundle
 
     public function getContainerExtension(): ?ExtensionInterface
     {
-        if (!isset($this->extension)) {
-            $this->extension = $this->createContainerExtension();
+        if (null === $this->extension) {
+            $extension = $this->createContainerExtension();
+
+            if ($extension instanceof ExtensionInterface) {
+                $this->extension = $extension;
+            } else {
+                $this->extension = false;
+            }
         }
 
-        return $this->extension;
+        return $this->extension ?: null;
     }
 }
