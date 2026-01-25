@@ -39,6 +39,8 @@ jobs:
           restore-keys: lint-composer-
       - name: Install dependencies
         run: composer install --prefer-dist
+      - name: Run simple-phpunit version check
+        run: ./vendor/bin/simple-phpunit --version
       - name: Run code style check
         run: composer cs-fixer -- --dry-run --diff
       - name: Run static analysis
