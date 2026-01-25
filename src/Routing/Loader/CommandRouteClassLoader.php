@@ -15,6 +15,7 @@ namespace Stixx\OpenApiCommandBundle\Routing\Loader;
 
 use OpenApi\Annotations\Operation;
 use OpenApi\Attributes as OA;
+use OpenApi\Generator;
 use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionMethod;
@@ -27,7 +28,7 @@ use Symfony\Component\Routing\RouteCollection;
 final class CommandRouteClassLoader extends AttributeClassLoader
 {
     /**
-     * @param list<string> $controllerClasses
+     * @param array<string, string> $controllerClasses
      */
     public function __construct(
         ?string $env = null,
@@ -108,14 +109,20 @@ final class CommandRouteClassLoader extends AttributeClassLoader
         return $collection;
     }
 
+    /**
+     * @param ReflectionClass<object> $class
+     */
     protected function configureRoute(Route $route, ReflectionClass $class, ReflectionMethod $method, object $attr): void
     {
     }
 
+    /**
+     * @param ReflectionClass<object> $class
+     */
     private function defaultNameFromClass(ReflectionClass $class): string
     {
         $short = $class->getShortName();
-        $base = strtolower(preg_replace('/[^A-Za-z0-9_]+/', '_', $short));
+        $base = strtolower(preg_replace('/[^A-Za-z0-9_]+/', '_', $short) ?? '');
 
         return 'command_'.$base;
     }
@@ -139,8 +146,8 @@ final class CommandRouteClassLoader extends AttributeClassLoader
      */
     private function methodsFromOperation(Operation $operation): array
     {
-        $method = property_exists($operation, 'method') ? ($operation->method ?? '') : '';
-        if ($method !== '') {
+        $method = $operation->method;
+        if ($method !== Generator::UNDEFINED && $method !== '') {
             return [strtoupper($method)];
         }
 
@@ -156,10 +163,13 @@ final class CommandRouteClassLoader extends AttributeClassLoader
         };
     }
 
+    /**
+     * @param ReflectionClass<object> $class
+     */
     private function routeNameFromOperation(Operation $operation, ReflectionClass $class): string
     {
-        $operationId = $operation->operationId ?? '';
-        if ($operationId !== '') {
+        $operationId = $operation->operationId;
+        if ($operationId !== Generator::UNDEFINED && $operationId !== '') {
             return $operationId;
         }
 
@@ -168,7 +178,7 @@ final class CommandRouteClassLoader extends AttributeClassLoader
 
     private function controllerFromVendorExtension(Operation $operation): ?string
     {
-        $x = $operation->x ?? null;
+        $x = $operation->x;
         if (is_array($x)) {
             $controller = $x['controller'] ?? null;
             if (is_string($controller) && $controller !== '') {
@@ -179,6 +189,9 @@ final class CommandRouteClassLoader extends AttributeClassLoader
         return null;
     }
 
+    /**
+     * @param ReflectionClass<object> $reflectionClass
+     */
     private function resolveClassLevelController(ReflectionClass $reflectionClass): ?string
     {
         $attrs = $reflectionClass->getAttributes(CommandObject::class, ReflectionAttribute::IS_INSTANCEOF);
@@ -186,7 +199,7 @@ final class CommandRouteClassLoader extends AttributeClassLoader
             return null;
         }
 
-        $commandObject = $attrs[0]?->newInstance();
+        $commandObject = $attrs[0]->newInstance();
         if (!$commandObject instanceof CommandObject) {
             return null;
         }

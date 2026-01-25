@@ -15,18 +15,19 @@ namespace Stixx\OpenApiCommandBundle\EventSubscriber;
 
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
 use Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface;
-use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutes;
+use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
 {
     public function __construct(
-        private NelmioAreaRoutes $nelmioAreaRoutes,
-        private SerializerInterface $serializer,
+        private NelmioAreaRoutesChecker $nelmioAreaRoutesChecker,
+        private NormalizerInterface $normalizer,
         private ExceptionToApiProblemTransformerInterface $exceptionTransformer,
     ) {
     }
@@ -44,7 +45,7 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
             return;
         }
 
-        if (!$this->nelmioAreaRoutes->isApiRoute($event->getRequest())) {
+        if (!$this->nelmioAreaRoutesChecker->isApiRoute($event->getRequest())) {
             return;
         }
 
@@ -54,7 +55,7 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
             $throwable = $this->exceptionTransformer->transform($throwable);
         }
 
-        $payload = $this->serializer->normalize($throwable, 'json');
+        $payload = $this->normalizer->normalize($throwable, JsonEncoder::FORMAT);
 
         $response = new JsonResponse($payload, $throwable->getStatusCode(), array_merge([
             'Content-Type' => 'application/problem+json',

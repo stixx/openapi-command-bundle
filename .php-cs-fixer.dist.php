@@ -33,6 +33,7 @@ EOF
         'phpdoc_align' => [
             'align' => 'left'
         ],
+        'ordered_class_elements' => true,
         'yoda_style' => false,
     ])
     ->setFinder($finder);

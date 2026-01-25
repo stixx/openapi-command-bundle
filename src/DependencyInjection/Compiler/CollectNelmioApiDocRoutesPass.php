@@ -26,6 +26,7 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
             return;
         }
 
+        /** @var list<string> $areas */
         $areas = (array) $container->getParameter('nelmio_api_doc.areas');
         $map = [];
 

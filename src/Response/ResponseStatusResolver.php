@@ -74,13 +74,10 @@ final class ResponseStatusResolver implements StatusResolverInterface
 
     private function first2xxFromOperation(Operation $operation): ?int
     {
-        $responses = $operation->responses ?? [];
+        $responses = $operation->responses;
 
         foreach ($responses as $response) {
-            $code = $response->response ?? null;
-            if ($code === null) {
-                continue;
-            }
+            $code = $response->response;
 
             if (is_string($code) && ctype_digit($code)) {
                 $code = (int) $code;

@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\EventSubscriber;
 
-use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutes;
+use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Stixx\OpenApiCommandBundle\Validator\RequestValidatorChain;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\KernelEvent;
@@ -23,7 +23,7 @@ final readonly class RequestValidatorSubscriber implements EventSubscriberInterf
 {
     public function __construct(
         private RequestValidatorChain $requestValidatorChain,
-        private NelmioAreaRoutes $nelmioAreaRoutes,
+        private NelmioAreaRoutesChecker $nelmioAreaRoutes,
     ) {
     }
 

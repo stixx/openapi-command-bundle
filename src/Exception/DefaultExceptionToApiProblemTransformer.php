@@ -49,12 +49,13 @@ final class DefaultExceptionToApiProblemTransformer implements ExceptionToApiPro
                 statusCode: $throwable->getStatusCode(),
                 title: $this->defaultTitleForStatus($throwable->getStatusCode()),
                 type: 'about:blank',
-                detail: $throwable->getMessage() ?? null,
+                detail: $throwable->getMessage(),
                 previous: $throwable,
+                /* @phpstan-ignore-next-line */
                 headers: $throwable->getHeaders()
             ),
             default => ApiProblemException::serverError(
-                detail: $throwable->getMessage() ?? null,
+                detail: $throwable->getMessage(),
             ),
         };
     }

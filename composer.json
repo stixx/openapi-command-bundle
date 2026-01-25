@@ -34,6 +34,10 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.91",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpstan/phpstan-symfony": "^2.0",
         "symfony/phpunit-bridge": "^8.0"
     },
     "suggest": {
@@ -41,9 +45,18 @@
         "symfony/security": "For using authentication and exception handling in your APIs."
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
     },
     "scripts": {
-        "test": "vendor/bin/simple-phpunit"
+        "test": "./vendor/bin/simple-phpunit",
+        "check": [
+            "@cs-fixer",
+            "@phpstan"
+        ],
+        "cs-fixer": "php -d memory_limit=-1 ./vendor/bin/php-cs-fixer fix",
+        "phpstan": "php -d memory_limit=-1 ./vendor/bin/phpstan analyse"
     }
 }

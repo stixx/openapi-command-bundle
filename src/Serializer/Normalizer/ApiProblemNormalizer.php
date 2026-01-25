@@ -26,6 +26,9 @@ final class ApiProblemNormalizer implements NormalizerInterface, NormalizerAware
     {
     }
 
+    /**
+     * @param array<string, mixed> $context
+     */
     public function supportsNormalization($data, ?string $format = null, array $context = []): bool
     {
         return $data instanceof ApiProblemException;
@@ -33,6 +36,7 @@ final class ApiProblemNormalizer implements NormalizerInterface, NormalizerAware
 
     /**
      * @param ApiProblemException $data
+     * @param array<string, mixed> $context
      *
      * @return array{type:string,title:string,status:int,detail?:string,instance?:string,violations?:mixed}
      */
