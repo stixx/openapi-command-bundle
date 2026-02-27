@@ -1,0 +1,41 @@
+language: "en"
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+  path_instructions:
+    - path: "**/*.php"
+      instructions: |
+        You are reviewing the `openapi-command-bundle` source code. This is a Symfony bundle that provides OpenAPI-driven command routing.
+        
+        Note: The bundle's core logic includes one main controller (`CommandController.php`), but it enforces an architecture where *users* of the bundle (host projects) do not create manual controllers for command-driven endpoints.
+        
+        General Principles:
+        - PHP version is 8.4+. Use modern PHP features (readonly classes, constructor property promotion, etc.).
+        - Follow Symfony and PSR-12 coding standards.
+        - No Yoda style: use `if ($a === $b)` instead of `if ($b === $a)`.
+        - Always include `declare(strict_types=1);` at the top of PHP files.
+        - Classes not intended for extension (especially tests) must be `final`.
+        
+        Architecture (Command Bus & OpenAPI):
+        - The bundle identifies "Command DTOs" in the host project via class-level OpenAPI attributes (e.g., `#[OA\Post]`, `#[OA\Get]`).
+        - It routes these DTOs to `CommandController` (or a custom override).
+        - Business logic must reside in message handlers (using `#[AsMessageHandler]`), not in the commands or the `CommandController`.
+        - Validation is handled via Symfony Validator constraints on DTO properties.
+        
+        Testing:
+        - Tests must follow the AAA (Arrange, Act, Assert) pattern with explicit comments.
+        - Aim for 100% coverage of logical scenarios.
+        - Use `#[DataProvider]` for multiple similar scenarios.
+        - Only test public methods.
+        - Tests are split into `tests/Unit` and `tests/Functional`.
+        
+        Tools:
+        - Code must pass PHPStan at the `max` level.
+        - Code must be formatted with `php-cs-fixer`.
+chat:
+  auto_reply: true
