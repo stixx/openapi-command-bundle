@@ -7,8 +7,11 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
+  path_filters:
+    - "!vendor/**"
+    - "!tests/Mock/**"
   path_instructions:
-    - path: "**/*.php"
+    - path: "{src,tests}/**/*.php"
       instructions: |
         You are reviewing the `openapi-command-bundle` source code. This is a Symfony bundle that provides OpenAPI-driven command routing.
         
