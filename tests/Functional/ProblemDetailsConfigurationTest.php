@@ -27,6 +27,8 @@ final class ProblemDetailsConfigurationTest extends AbstractKernelTestCase
 
         /** @var ApiDocGenerator $generator */
         $generator = $container->get('nelmio_api_doc.generator.default');
+
+        // Act
         /** @var array{components?: array{responses?: array<string, mixed>, schemas?: array<string, mixed>}} $spec */
         $spec = json_decode($generator->generate()->toJson(), true);
 
@@ -64,6 +66,7 @@ final class ProblemDetailsConfigurationTest extends AbstractKernelTestCase
         $generator = $container->get('nelmio_api_doc.generator.default');
 
         $prevErrorHandler = set_error_handler(static fn () => true);
+        // Act
         /** @var array{components?: array{responses?: array<string, mixed>}} $spec */
         $spec = json_decode($generator->generate()->toJson(), true);
         set_error_handler($prevErrorHandler);
@@ -88,6 +91,7 @@ final class ProblemDetailsConfigurationTest extends AbstractKernelTestCase
         $generator = $container->get('nelmio_api_doc.generator.default');
 
         $prevErrorHandler = set_error_handler(static fn () => true);
+        // Act
         /** @var array{components?: array{responses?: array<string, array{description?: string}>}} $spec */
         $spec = json_decode($generator->generate()->toJson(), true);
         set_error_handler($prevErrorHandler);

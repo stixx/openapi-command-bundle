@@ -125,7 +125,7 @@
                     "type": {
                         "description": "A URI reference [RFC3986] that identifies the problem type.",
                         "type": "string",
-                        "format": "url",
+                        "format": "uri-reference",
                         "default": "about:blank"
                     },
                     "title": {
@@ -193,6 +193,7 @@
                 "properties": {
                     "violations": {
                         "type": "array",
+                        "maxItems": 100,
                         "items": {
                             "$ref": "#/components/schemas/Violation"
                         }
@@ -200,7 +201,7 @@
                     "type": {
                         "description": "A URI reference [RFC3986] that identifies the problem type.",
                         "type": "string",
-                        "format": "url",
+                        "format": "uri-reference",
                         "default": "about:blank"
                     },
                     "title": {
@@ -229,8 +230,18 @@
                 },
                 "type": "object",
                 "example": {
+                    "type": "about:blank",
                     "title": "The request body contains errors.",
-                    "type": "about:blank"
+                    "status": 400,
+                    "detail": "Validation failed.",
+                    "violations": [
+                        {
+                            "propertyPath": "foo",
+                            "message": "This value should not be blank.",
+                            "code": "c1ac8c7d-eab5-458f-a950-fcf121d23059",
+                            "constraint": "NotBlank"
+                        }
+                    ]
                 }
             },
             "BookRequest": {
@@ -323,8 +334,10 @@
                                     "detail": "Body does not match schema",
                                     "violations": [
                                         {
-                                            "constraint": "openapi_request_validation",
-                                            "message": "Body does not match schema for content-type \"application/json\" for Request [post /api/example]"
+                                            "propertyPath": "body",
+                                            "message": "Body does not match schema for content-type \"application/json\" for Request [post /api/example]",
+                                            "code": "openapi_request_validation",
+                                            "constraint": "openapi_request_validation"
                                         }
                                     ]
                                 }

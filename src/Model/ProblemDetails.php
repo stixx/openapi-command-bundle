@@ -28,7 +28,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 class ProblemDetails
 {
     public function __construct(
-        #[OA\Property(description: 'A URI reference [RFC3986] that identifies the problem type.', format: 'url', default: 'about:blank')]
+        #[OA\Property(description: 'A URI reference [RFC3986] that identifies the problem type.', format: 'uri-reference', default: 'about:blank')]
         #[Assert\NotBlank]
         public string $type = 'about:blank',
         #[OA\Property(description: 'A short, human-readable summary of the problem type.', type: 'string', default: 'An error occurred')]
