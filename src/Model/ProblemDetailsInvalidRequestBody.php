@@ -19,12 +19,22 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(
     title: 'InvalidRequestBody',
     properties: [
-        new OA\Property(property: 'violations', type: 'array', items: new OA\Items(ref: new Model(type: Violation::class))),
+        new OA\Property(property: 'violations', type: 'array', items: new OA\Items(ref: new Model(type: Violation::class)), maxItems: 100),
     ],
-    example: new OA\Schema(
-        title: 'The request body contains errors.',
-        type: 'about:blank',
-    )
+    example: [
+        'type' => 'about:blank',
+        'title' => 'The request body contains errors.',
+        'status' => 400,
+        'detail' => 'Validation failed.',
+        'violations' => [
+            [
+                'propertyPath' => 'foo',
+                'message' => 'This value should not be blank.',
+                'code' => 'c1ac8c7d-eab5-458f-a950-fcf121d23059',
+                'constraint' => 'NotBlank',
+            ],
+        ],
+    ]
 )]
 final class ProblemDetailsInvalidRequestBody extends ProblemDetails
 {
