@@ -9,6 +9,16 @@
             "post": {
                 "summary": "Create a book",
                 "operationId": "post_command_createbookcommand",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BookRequest"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
                         "description": "Book created",
@@ -37,6 +47,16 @@
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BookRequest"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Book updated",
@@ -73,6 +93,27 @@
     },
     "components": {
         "schemas": {
+            "BookRequest": {
+                "title": "BookRequest",
+                "description": "Request payload for a book",
+                "required": [
+                    "title"
+                ],
+                "properties": {
+                    "title": {
+                        "description": "The title of the book",
+                        "type": "string"
+                    },
+                    "author": {
+                        "description": "The author of the book",
+                        "type": "string",
+                        "maxLength": 100,
+                        "minLength": 1,
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "BookResource": {
                 "title": "BookResource",
                 "description": "A book resource",

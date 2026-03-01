@@ -88,6 +88,7 @@ final class BundleInitializationTest extends AbstractKernelTestCase
     #[WithoutErrorHandler]
     public function testBundleWithCustomConfiguration(): void
     {
+        // Arrange
         $kernel = $this->createKernelWithConfig(static function (Kernel $kernel): void {
             $kernel->addTestConfig(__DIR__.'/Resources/config/custom.php');
         });

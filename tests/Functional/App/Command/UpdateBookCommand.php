@@ -15,12 +15,16 @@ namespace Stixx\OpenApiCommandBundle\Tests\Functional\App\Command;
 
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
+use Stixx\OpenApiCommandBundle\Tests\Functional\App\Model\BookRequest;
 use Stixx\OpenApiCommandBundle\Tests\Functional\App\Model\BookResource;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[OA\Put(
     path: '/api/books/{id}',
     summary: 'Update a book',
+    requestBody: new OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(ref: new Model(type: BookRequest::class))
+    ),
     responses: [
         new OA\Response(
             response: 200,
@@ -29,16 +33,8 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
     ]
 )]
-final class UpdateBookCommand
+final class UpdateBookCommand extends BookRequest
 {
-    public function __construct(
-        #[Assert\NotBlank]
-        #[OA\Parameter(name: 'id', description: 'The book ID', in: 'path', required: true)]
-        public string $id,
-        #[Assert\NotBlank]
-        public string $title,
-        #[Assert\Length(min: 1, max: 100)]
-        public ?string $author = null,
-    ) {
-    }
+    #[OA\Parameter(name: 'id', description: 'The book ID', in: 'path', required: true)]
+    public string $id;
 }
