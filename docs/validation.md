@@ -1,6 +1,6 @@
 # Validation & Error Handling
 
-The **OpenAPI Command Bundle** integrates with the Symfony Validator component to ensure your command DTOs are valid before they reach your message handlers. It also provides a robust error handling mechanism that returns RFC 7807 compliant Problem Details responses.
+The **OpenAPI Command Bundle** integrates with the Symfony Validator component to ensure your command DTOs are valid before they reach your message handlers. It also provides a robust error-handling mechanism that returns RFC 7807-compliant Problem Details responses.
 
 ## Command Validation
 

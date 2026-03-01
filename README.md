@@ -97,7 +97,7 @@ final class CreateProjectHandler
 The bundle automatically registers the route `/api/projects` (POST).
 
 ```bash
-curl -X POST /api/projects \
+curl -X POST http://localhost:3000/api/projects \
      -H "Content-Type: application/json" \
      -d '{"name": "New Project", "description": "This is a project description"}'
 ```

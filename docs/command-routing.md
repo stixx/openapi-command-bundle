@@ -76,7 +76,7 @@ Starting with this version, you do not need to add any custom route import for c
 
 How it works
 - The bundle decorates Symfony’s `AttributeDirectoryLoader` (the same mechanism used to load controller routes from attributes).
-- During the normal route building process, we automatically scan your project’s `%kernel.project_dir%/src` directory and add routes for command classes that meet the criteria: have class-level OpenAPI operation attributes (e.g., `#[OA\Post]`, `#[OA\Get]`, …) and are not controllers.
+- During the normal route-building process, we automatically scan your project’s `%kernel.project_dir%/src` directory and add routes for command classes that meet the criteria: have class-level OpenAPI operation attributes (e.g., `#[OA\Post]`, `#[OA\Get]`, …) and are not controllers.
 - This happens once per router build and coexists with your existing controller routes and any manually configured routes.
 
 
