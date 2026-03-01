@@ -34,6 +34,9 @@ final class ConfigurationTest extends TestCase
                 'enabled' => true,
                 'groups' => ['Default'],
             ],
+            'openapi' => [
+                'problem_details' => true,
+            ],
         ];
         self::assertSame($expected, $config);
     }
@@ -54,6 +57,15 @@ final class ConfigurationTest extends TestCase
         $config = $processor->processConfiguration($configuration, [$customConfig]);
 
         // Assert
-        self::assertSame($customConfig, $config);
+        $expected = [
+            'validation' => [
+                'enabled' => false,
+                'groups' => ['Custom', 'Special'],
+            ],
+            'openapi' => [
+                'problem_details' => true,
+            ],
+        ];
+        self::assertSame($expected, $config);
     }
 }

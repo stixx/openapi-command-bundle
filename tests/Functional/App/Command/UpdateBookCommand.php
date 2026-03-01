@@ -31,6 +31,9 @@ use Stixx\OpenApiCommandBundle\Tests\Functional\App\Model\BookResource;
             description: 'Book updated',
             content: new OA\JsonContent(ref: new Model(type: BookResource::class))
         ),
+        new OA\Response(ref: '#/components/responses/InvalidRequestProblemDetailsResponse', response: 400),
+        new OA\Response(ref: '#/components/responses/ResourceNotFoundProblemDetailsResponse', response: 404),
+        new OA\Response(ref: '#/components/responses/DefaultProblemDetailsResponse', response: 500),
     ]
 )]
 final class UpdateBookCommand extends BookRequest
