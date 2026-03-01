@@ -10,6 +10,7 @@
 >
     <php>
         <env name="SYMFONY_PHPUNIT_VERSION" value="12.4" />
+        <server name="SYMFONY_DEPRECATIONS_HELPER" value="max[total]=0" />
     </php>
 
     <testsuites>
@@ -21,9 +22,9 @@
         </testsuite>
     </testsuites>
 
-    <coverage>
+    <source>
         <include>
             <directory>./src/</directory>
         </include>
-    </coverage>
+    </source>
 </phpunit>

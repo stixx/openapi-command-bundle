@@ -42,7 +42,7 @@ final class StixxOpenApiCommandExtension extends Extension
             ->addTag(ValidatorInterface::TAG_NAME);
 
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__.'/../../config'));
-        $this->registerCommonConfiguration($loader);
+        $this->registerCommonConfiguration($loader, $container);
     }
 
     public function getAlias(): string
@@ -50,7 +50,7 @@ final class StixxOpenApiCommandExtension extends Extension
         return Configuration::BUNDLE_ALIAS;
     }
 
-    private function registerCommonConfiguration(PhpFileLoader $loader): void
+    private function registerCommonConfiguration(PhpFileLoader $loader, ContainerBuilder $container): void
     {
         $loader->load('controller.php');
         $loader->load('response.php');
@@ -59,5 +59,7 @@ final class StixxOpenApiCommandExtension extends Extension
         $loader->load('validators.php');
         $loader->load('openapi.php');
         $loader->load('serializer.php');
+
+        $container->setParameter('stixx_openapi_command.controller_classes', []);
     }
 }

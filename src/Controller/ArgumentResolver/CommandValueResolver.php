@@ -113,8 +113,7 @@ final readonly class CommandValueResolver implements ValueResolverInterface
         $routeData = array_filter(
             $attributes,
             static function ($value, $key): bool {
-                return is_string($key)
-                    && $key !== ''
+                return $key !== ''
                     && $key[0] !== '_'
                     && (is_scalar($value) || $value === null);
             },

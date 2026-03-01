@@ -7,6 +7,7 @@ use Stixx\OpenApiCommandBundle\Serializer\Normalizer\ConstraintViolationListNorm
 use Stixx\OpenApiCommandBundle\Serializer\Normalizer\ConstraintViolationNormalizer;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
+use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 use Symfony\Component\Serializer\Serializer;
@@ -14,13 +15,11 @@ use Symfony\Component\Serializer\Serializer;
 return static function (ContainerConfigurator $configurator): void {
     $services = $configurator->services()
         ->defaults()
-            ->autowire()
-            ->autoconfigure(false)
             ->private();
 
     $services
         ->set(ApiProblemNormalizer::class)
-            ->arg('$debug', '%kernel.debug%')
+            ->arg('$debug', param('kernel.debug'))
             ->tag('serializer.normalizer');
     $services
         ->set(ConstraintViolationNormalizer::class)
