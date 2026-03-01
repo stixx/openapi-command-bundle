@@ -13,15 +13,63 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\DependencyInjection;
 
+use Stixx\OpenApiCommandBundle\Model\ProblemDetails;
+use Stixx\OpenApiCommandBundle\Model\ProblemDetailsInvalidRequestBody;
+use Stixx\OpenApiCommandBundle\Model\Violation;
 use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
 use Stixx\OpenApiCommandBundle\Validator\ValidatorInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
+use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+use Symfony\Component\Yaml\Yaml;
 
-final class StixxOpenApiCommandExtension extends Extension
+final class StixxOpenApiCommandExtension extends Extension implements PrependExtensionInterface
 {
+    public function prepend(ContainerBuilder $container): void
+    {
+        $configs = $container->getExtensionConfig($this->getAlias());
+        /** @var array{openapi: array{problem_details: bool}} $config */
+        $config = $this->processConfiguration(new Configuration(), $configs);
+
+        if (!$config['openapi']['problem_details']) {
+            return;
+        }
+
+        $problemDetailsConfigPath = __DIR__.'/../Resources/specifications/nelmio_problem_details.yaml';
+        if (!file_exists($problemDetailsConfigPath)) {
+            return;
+        }
+
+        $problemDetailsConfig = Yaml::parseFile($problemDetailsConfigPath);
+
+        if (is_array($problemDetailsConfig) && isset($problemDetailsConfig['nelmio_api_doc']) && is_array($problemDetailsConfig['nelmio_api_doc'])) {
+            /** @var array<string, mixed> $nelmioConfig */
+            $nelmioConfig = $problemDetailsConfig['nelmio_api_doc'];
+            $container->prependExtensionConfig('nelmio_api_doc', $nelmioConfig);
+        }
+
+        $container->prependExtensionConfig('nelmio_api_doc', [
+            'models' => [
+                'names' => [
+                    [
+                        'alias' => 'ProblemDetails',
+                        'type' => ProblemDetails::class,
+                    ],
+                    [
+                        'alias' => 'Violation',
+                        'type' => Violation::class,
+                    ],
+                    [
+                        'alias' => 'ProblemDetailsInvalidRequestBody',
+                        'type' => ProblemDetailsInvalidRequestBody::class,
+                    ],
+                ],
+            ],
+        ]);
+    }
+
     public function load(array $configs, ContainerBuilder $container): void
     {
         $configuration = new Configuration();

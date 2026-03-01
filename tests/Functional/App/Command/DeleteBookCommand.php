@@ -18,6 +18,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[OA\Delete(path: '/api/books/{id}', summary: 'Delete a book')]
 #[OA\Response(response: 204, description: 'Book deleted')]
+#[OA\Response(ref: '#/components/responses/ResourceNotFoundProblemDetailsResponse', response: 404)]
+#[OA\Response(ref: '#/components/responses/DefaultProblemDetailsResponse', response: 500)]
 final class DeleteBookCommand
 {
     public function __construct(

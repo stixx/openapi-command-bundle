@@ -1,0 +1,92 @@
+nelmio_api_doc:
+  documentation:
+    components:
+      responses:
+        InvalidRequestProblemDetailsResponse:
+          description: RFC7807 Problem Details
+          content:
+            application/problem+json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/ProblemDetailsInvalidRequestBody'
+                  - $ref: '#/components/schemas/ProblemDetails'
+              examples:
+                invalidJsonInRequestBody:
+                  summary: Invalid JSON in Request Body
+                  value:
+                    type: 'about:blank'
+                    title: 'The request body contains errors'
+                    status: 400
+                    detail: 'Validation failed.'
+                    violations:
+                      - propertyPath: 'foo'
+                        message: 'This value should not be blank.'
+                        code: c1ac8c7d-eab5-458f-a950-fcf121d23059
+                        constraint: NotBlank
+                        error: "NOT_EQUAL_ERROR"
+                invalidRequestBody:
+                  summary: Invalid Request Body
+                  value:
+                    type: 'about:blank'
+                    title: 'The request body contains errors'
+                    status: 400
+                    detail: 'Body does not match schema'
+                    violations:
+                      - propertyPath: 'body'
+                        message: 'Body does not match schema for content-type "application/json" for Request [post /api/example]'
+                        code: 'openapi_request_validation'
+                        constraint: 'openapi_request_validation'
+        UnauthorizedProblemDetailsResponse:
+          description: RFC7807 Unauthorized Problem Details
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+              example:
+                type: 'about:blank'
+                title: 'Unauthorized'
+                status: 401
+                detail: 'The authentication token is missing or invalid.'
+        ForbiddenProblemDetailsResponse:
+          description: RFC7807 Forbidden Problem Details
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+              example:
+                type: 'about:blank'
+                title: 'Forbidden'
+                status: 403
+                detail: 'You are not allowed to perform this action.'
+        ResourceNotFoundProblemDetailsResponse:
+          description: RFC7807 Resource Not Found Problem Details
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+              example:
+                type: 'about:blank'
+                title: 'Resource Not Found'
+                status: 404
+                detail: 'The requested resource was not found.'
+        ConflictProblemDetailsResponse:
+          description: RFC7807 Conflict Problem Details
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+              example:
+                type: 'about:blank'
+                title: 'Conflict'
+                status: 409
+                detail: 'The resource already exists.'
+        DefaultProblemDetailsResponse:
+          description: RFC7807 Default Problem Details
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+              example:
+                type: 'about:blank'
+                title: 'An error occurred'
+                status: 500

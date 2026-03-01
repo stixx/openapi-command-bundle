@@ -39,6 +39,14 @@ final class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+                ->arrayNode('openapi')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('problem_details')
+                            ->defaultTrue()
+                        ->end()
+                    ->end()
+                ->end()
             ->end();
 
         return $treeBuilder;
