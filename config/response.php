@@ -10,14 +10,12 @@ use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
 use Stixx\OpenApiCommandBundle\Response\ResponseStatusResolver;
 use Stixx\OpenApiCommandBundle\Response\StatusResolverInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
-
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 
 return static function (ContainerConfigurator $configurator): void {
     $services = $configurator->services()
         ->defaults()
-            ->autowire()
-            ->autoconfigure(false)
             ->private();
 
     $services
@@ -25,14 +23,14 @@ return static function (ContainerConfigurator $configurator): void {
         ->arg('$responders', tagged_iterator(ResponderInterface::TAG_NAME));
     $services->alias(ResponderInterface::class, ResponderChain::class);
 
-    $services
-        ->instanceof(ResponderInterface::class)
-        ->tag(ResponderInterface::TAG_NAME);
-
     $services->set(ResponseStatusResolver::class);
     $services->alias(StatusResolverInterface::class, ResponseStatusResolver::class);
 
-    $services->set(JsonResponder::class);
-    $services->set(JsonSerializedResponder::class);
-    $services->set(NullableResponder::class);
+    $services->set(JsonResponder::class)
+        ->tag(ResponderInterface::TAG_NAME);
+    $services->set(JsonSerializedResponder::class)
+        ->arg('$serializer', service('serializer'))
+        ->tag(ResponderInterface::TAG_NAME);
+    $services->set(NullableResponder::class)
+        ->tag(ResponderInterface::TAG_NAME);
 };

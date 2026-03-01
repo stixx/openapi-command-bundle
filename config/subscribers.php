@@ -6,14 +6,14 @@ use Stixx\OpenApiCommandBundle\EventSubscriber\ApiExceptionSubscriber;
 use Stixx\OpenApiCommandBundle\EventSubscriber\RequestValidatorSubscriber;
 use Stixx\OpenApiCommandBundle\Exception\DefaultExceptionToApiProblemTransformer;
 use Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface;
+use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
+use Stixx\OpenApiCommandBundle\Validator\RequestValidatorChain;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $configurator): void {
     $services = $configurator->services()
         ->defaults()
-            ->autowire()
-            ->autoconfigure(false)
             ->private();
 
     $services
@@ -24,9 +24,13 @@ return static function (ContainerConfigurator $configurator): void {
 
     $services
         ->set(ApiExceptionSubscriber::class)
-            ->arg('$serializer', service('stixx_openapi_command.problem_serializer'))
+            ->arg('$nelmioAreaRoutesChecker', service(NelmioAreaRoutesChecker::class))
+            ->arg('$normalizer', service('stixx_openapi_command.problem_serializer'))
+            ->arg('$exceptionTransformer', service(ExceptionToApiProblemTransformerInterface::class))
             ->tag('kernel.event_subscriber');
     $services
         ->set(RequestValidatorSubscriber::class)
+            ->arg('$requestValidatorChain', service(RequestValidatorChain::class))
+            ->arg('$nelmioAreaRoutes', service(NelmioAreaRoutesChecker::class))
             ->tag('kernel.event_subscriber');
 };

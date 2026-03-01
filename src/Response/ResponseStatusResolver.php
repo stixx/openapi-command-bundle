@@ -75,6 +75,9 @@ final class ResponseStatusResolver implements StatusResolverInterface
     private function first2xxFromOperation(Operation $operation): ?int
     {
         $responses = $operation->responses;
+        if (!is_iterable($responses)) {
+            return null;
+        }
 
         foreach ($responses as $response) {
             $code = $response->response;

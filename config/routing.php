@@ -12,8 +12,6 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 return static function (ContainerConfigurator $configurator): void {
     $services = $configurator->services()
         ->defaults()
-            ->autowire()
-            ->autoconfigure(false)
             ->private();
 
     $services
@@ -22,7 +20,9 @@ return static function (ContainerConfigurator $configurator): void {
 
     $services
         ->set(CommandRouteClassLoader::class)
-            ->arg('$controllerClasses', param('stixx_openapi_command.controller_classes'));
+        ->arg('$env', param('kernel.environment'))
+        ->arg('$controllerClasses', param('stixx_openapi_command.controller_classes'))
+        ->tag('routing.loader');
 
     $services
         ->set(AttributeDirectoryLoaderDecorator::class)

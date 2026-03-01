@@ -1,0 +1,144 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "",
+        "version": "0.0.0"
+    },
+    "paths": {
+        "/api/books": {
+            "post": {
+                "summary": "Create a book",
+                "operationId": "post_command_createbookcommand",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BookRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Book created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BookResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/books/{id}": {
+            "put": {
+                "summary": "Update a book",
+                "operationId": "put_command_updatebookcommand",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BookRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Book updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BookResource"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Delete a book",
+                "operationId": "delete_command_deletebookcommand",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Book deleted"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "BookRequest": {
+                "title": "BookRequest",
+                "description": "Request payload for a book",
+                "required": [
+                    "title"
+                ],
+                "properties": {
+                    "title": {
+                        "description": "The title of the book",
+                        "type": "string"
+                    },
+                    "author": {
+                        "description": "The author of the book",
+                        "type": "string",
+                        "maxLength": 100,
+                        "minLength": 1,
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "BookResource": {
+                "title": "BookResource",
+                "description": "A book resource",
+                "required": [
+                    "id",
+                    "title"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "The unique identifier of the book",
+                        "type": "string"
+                    },
+                    "title": {
+                        "description": "The title of the book",
+                        "type": "string"
+                    },
+                    "author": {
+                        "description": "The author of the book",
+                        "type": "string",
+                        "default": null,
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            }
+        }
+    }
+}
