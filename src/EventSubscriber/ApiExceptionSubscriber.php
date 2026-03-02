@@ -35,7 +35,7 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::EXCEPTION => ['onKernelException', 256],
+            KernelEvents::EXCEPTION => ['onKernelException', -10],
         ];
     }
 
