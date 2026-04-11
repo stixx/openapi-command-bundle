@@ -15,6 +15,7 @@ namespace Stixx\OpenApiCommandBundle\Tests\Unit\EventSubscriber;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
+use stdClass;
 use Stixx\OpenApiCommandBundle\EventSubscriber\ApiExceptionSubscriber;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
 use Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface;
@@ -23,6 +24,8 @@ use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Throwable;
 
@@ -143,6 +146,40 @@ final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
         self::assertSame($expectedTitle, $data['title']);
         self::assertSame($expectedStatus, $data['status']);
         self::assertSame('about:blank', $data['type']);
+    }
+
+    public function testUnwrapsHandlerFailedExceptionBeforeTransforming(): void
+    {
+        // Arrange
+        $kernel = $this->createMock(KernelInterface::class);
+        $request = new Request();
+        $cause = new RuntimeException('the real cause');
+        $handlerFailed = new HandlerFailedException(new Envelope(new stdClass()), [$cause]);
+
+        $event = new ExceptionEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST, $handlerFailed);
+
+        $routes = $this->createNelmioAreaRoutesWithRouteName('api_route');
+        $request->attributes->set('_route', 'api_route');
+
+        $apiProblem = ApiProblemException::serverError(detail: 'the real cause');
+
+        $transformer = $this->createMock(ExceptionToApiProblemTransformerInterface::class);
+        $transformer->expects(self::once())
+            ->method('transform')
+            ->with($cause) // receives the unwrapped cause, not the HandlerFailedException
+            ->willReturn($apiProblem);
+
+        $normalizer = $this->createMock(NormalizerInterface::class);
+        $normalizer->method('normalize')->willReturn(['status' => 500, 'title' => 'An error occurred.', 'type' => 'about:blank']);
+
+        $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer);
+
+        // Act
+        $subscriber->onKernelException($event);
+
+        // Assert
+        self::assertTrue($event->isPropagationStopped());
+        self::assertSame(500, $event->getResponse()?->getStatusCode());
     }
 
     /**

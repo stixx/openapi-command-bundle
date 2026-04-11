@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Throwable;
 
 final class DefaultExceptionToApiProblemTransformerTest extends TestCase
@@ -61,6 +62,13 @@ final class DefaultExceptionToApiProblemTransformerTest extends TestCase
     {
         yield 'AccessDeniedHttpException' => [
             new AccessDeniedHttpException('Forbidden message'),
+            Response::HTTP_FORBIDDEN,
+            'Forbidden',
+            'You are not allowed to perform this action.',
+        ];
+
+        yield 'AccessDeniedException (Security layer)' => [
+            new AccessDeniedException('Missing permission: manage_roles'),
             Response::HTTP_FORBIDDEN,
             'Forbidden',
             'You are not allowed to perform this action.',
