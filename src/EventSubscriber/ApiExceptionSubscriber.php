@@ -20,6 +20,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
@@ -50,6 +51,13 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
         }
 
         $throwable = $event->getThrowable();
+
+        // Unwrap HandlerFailedException so the actual cause can be transformed correctly.
+        // Messenger wraps handler and middleware exceptions in HandlerFailedException; without
+        // unwrapping, all handler errors fall through to the default 500 case.
+        if ($throwable instanceof HandlerFailedException) {
+            $throwable = array_values($throwable->getWrappedExceptions())[0] ?? $throwable;
+        }
 
         if (!$throwable instanceof ApiProblemException) {
             $throwable = $this->exceptionTransformer->transform($throwable);

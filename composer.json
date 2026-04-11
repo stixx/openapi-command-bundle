@@ -40,7 +40,8 @@
         "phpstan/phpstan": "^2.1",
         "phpstan/phpstan-phpunit": "^2.0",
         "phpstan/phpstan-symfony": "^2.0",
-        "symfony/phpunit-bridge": "^8.0"
+        "symfony/phpunit-bridge": "^8.0",
+        "symfony/security-core": "^7.3 || ^8.0"
     },
     "suggest": {
         "nijens/openapi-bundle": "For creating REST APIs from your OpenAPI specification.",

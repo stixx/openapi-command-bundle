@@ -26,9 +26,11 @@ final class DefaultExceptionToApiProblemTransformer implements ExceptionToApiPro
     public function transform(Throwable $throwable): ApiProblemException
     {
         $authenticationExceptionClass = 'Symfony\\Component\\Security\\Core\\Exception\\AuthenticationException';
+        $accessDeniedExceptionClass = 'Symfony\\Component\\Security\\Core\\Exception\\AccessDeniedException';
 
         return match (true) {
             (class_exists($authenticationExceptionClass) && is_a($throwable, $authenticationExceptionClass)) => ApiProblemException::unauthenticated(),
+            (class_exists($accessDeniedExceptionClass) && is_a($throwable, $accessDeniedExceptionClass)) => ApiProblemException::forbidden(),
             $throwable instanceof AccessDeniedHttpException => ApiProblemException::forbidden(),
             $throwable instanceof NotFoundHttpException => ApiProblemException::notFound(),
             $throwable instanceof OpenApiValidationFailed => ApiProblemException::badRequest(
