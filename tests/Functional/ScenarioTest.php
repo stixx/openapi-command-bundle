@@ -128,11 +128,11 @@ final class ScenarioTest extends AbstractKernelTestCase
         $response = $kernel->handle($request);
 
         // Assert
-        self::assertSame(400, $response->getStatusCode());
+        self::assertSame(422, $response->getStatusCode());
         self::assertSame('application/problem+json', $response->headers->get('Content-Type'));
         $data = json_decode($response->getContent() ?: 'null', true, 512, JSON_THROW_ON_ERROR);
         self::assertIsArray($data);
-        self::assertSame(400, $data['status'] ?? null);
+        self::assertSame(422, $data['status'] ?? null);
         self::assertSame('Validation failed', $data['detail'] ?? null);
         self::assertArrayHasKey('violations', $data);
     }
@@ -160,11 +160,11 @@ final class ScenarioTest extends AbstractKernelTestCase
         $response = $kernel->handle($request);
 
         // Assert
-        self::assertSame(400, $response->getStatusCode());
+        self::assertSame(422, $response->getStatusCode());
         self::assertSame('application/problem+json', $response->headers->get('Content-Type'));
         $data = json_decode($response->getContent() ?: 'null', true, 512, JSON_THROW_ON_ERROR);
         self::assertIsArray($data);
-        self::assertSame(400, $data['status'] ?? null);
+        self::assertSame(422, $data['status'] ?? null);
         self::assertSame('Validation failed', $data['detail'] ?? null);
         self::assertArrayHasKey('violations', $data);
     }

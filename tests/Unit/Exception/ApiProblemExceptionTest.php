@@ -159,4 +159,36 @@ final class ApiProblemExceptionTest extends TestCase
         self::assertSame('The request body contains errors', $exception->getTitle());
         self::assertSame($list, $exception->getViolations());
     }
+
+    public function testUnprocessableEntityIncludesViolationsArray(): void
+    {
+        // Arrange
+        $violations = [
+            ['constraint' => 'unique_email', 'message' => 'already exists'],
+        ];
+
+        // Act
+        $exception = ApiProblemException::unprocessableEntity(detail: 'Validation failed', violations: $violations);
+
+        // Assert
+        self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $exception->getStatusCode());
+        self::assertSame('The request body could not be processed', $exception->getTitle());
+        self::assertSame('about:blank', $exception->getType());
+        self::assertSame('Validation failed', $exception->getDetail());
+        self::assertSame($violations, $exception->getViolations());
+    }
+
+    public function testUnprocessableEntityAcceptsConstraintViolationList(): void
+    {
+        // Arrange
+        $list = $this->createMock(ConstraintViolationListInterface::class);
+
+        // Act
+        $exception = ApiProblemException::unprocessableEntity(violations: $list);
+
+        // Assert
+        self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $exception->getStatusCode());
+        self::assertSame('The request body could not be processed', $exception->getTitle());
+        self::assertSame($list, $exception->getViolations());
+    }
 }
