@@ -67,7 +67,7 @@ readonly class CommandController
     {
         $violations = $this->validator->validate(value: $command, groups: $this->validationGroups);
         if ($violations->count() > 0) {
-            throw ApiProblemException::badRequest(detail: 'Validation failed', violations: $violations);
+            throw ApiProblemException::unprocessableEntity(detail: 'Validation failed', violations: $violations);
         }
     }
 }
