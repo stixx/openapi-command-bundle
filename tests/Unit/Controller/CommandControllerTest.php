@@ -117,8 +117,6 @@ final class CommandControllerTest extends TestCase
     public function testInvokeThrowsApiProblemExceptionWhenValidationFails(): void
     {
         // Arrange
-        $this->expectException(ApiProblemException::class);
-
         $command = new ExampleCommand();
         $request = new Request();
 
@@ -142,7 +140,14 @@ final class CommandControllerTest extends TestCase
 
         // Act
         $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, validationEnabled: true);
-        $controller($request, $command);
+
+        try {
+            $controller($request, $command);
+            self::fail('Expected ApiProblemException to be thrown.');
+        } catch (ApiProblemException $exception) {
+            // Assert
+            self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $exception->getStatusCode());
+        }
     }
 
     public function testInvokeRethrowsPreviousExceptionFromHandlerFailedException(): void

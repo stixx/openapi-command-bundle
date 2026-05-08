@@ -68,6 +68,7 @@ final class DefaultExceptionToApiProblemTransformer implements ExceptionToApiPro
             Response::HTTP_BAD_REQUEST === $status => 'Bad Request',
             Response::HTTP_UNAUTHORIZED === $status => 'Unauthorized',
             Response::HTTP_FORBIDDEN === $status => 'Forbidden',
+            Response::HTTP_UNPROCESSABLE_ENTITY === $status => 'Unprocessable Entity',
             default => 'An error occurred.',
         };
     }

@@ -130,6 +130,20 @@ final class ApiProblemException extends RuntimeException implements HttpExceptio
         );
     }
 
+    /**
+     * @param array<int, array<string, string|null>>|ConstraintViolationListInterface $violations
+     */
+    public static function unprocessableEntity(string $title = 'The request body could not be processed', ?string $detail = null, array|ConstraintViolationListInterface $violations = []): self
+    {
+        return new self(
+            statusCode: Response::HTTP_UNPROCESSABLE_ENTITY,
+            title: $title,
+            type: 'about:blank',
+            detail: $detail,
+            violations: $violations
+        );
+    }
+
     public static function serverError(?string $detail = null): self
     {
         return new self(
