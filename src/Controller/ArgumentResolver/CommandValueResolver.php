@@ -102,8 +102,8 @@ final readonly class CommandValueResolver implements ValueResolverInterface
     }
 
     /**
-     * Collects scalar route attributes (excluding keys starting with "_")
-     * merged with scalar query parameters; query values may override route ones.
+     * Collects scalar route attributes (excluding keys starting with "_") merged with scalar query
+     * parameters. Path attributes are authoritative — `/books/{id}` cannot be redirected by `?id=...`.
      *
      * @return array<string, scalar|null>
      */
@@ -128,7 +128,7 @@ final readonly class CommandValueResolver implements ValueResolverInterface
             }
         );
 
-        return array_replace($routeData, $filteredQuery);
+        return array_replace($filteredQuery, $routeData);
     }
 
     /**

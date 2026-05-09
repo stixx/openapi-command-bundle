@@ -7,6 +7,7 @@ use Stixx\OpenApiCommandBundle\Responder\JsonSerializedResponder;
 use Stixx\OpenApiCommandBundle\Responder\NullableResponder;
 use Stixx\OpenApiCommandBundle\Responder\ResponderChain;
 use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
+use Stixx\OpenApiCommandBundle\Responder\ScalarResponder;
 use Stixx\OpenApiCommandBundle\Response\ResponseStatusResolver;
 use Stixx\OpenApiCommandBundle\Response\StatusResolverInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -30,6 +31,8 @@ return static function (ContainerConfigurator $configurator): void {
         ->tag(ResponderInterface::TAG_NAME);
     $services->set(JsonSerializedResponder::class)
         ->arg('$serializer', service('serializer'))
+        ->tag(ResponderInterface::TAG_NAME);
+    $services->set(ScalarResponder::class)
         ->tag(ResponderInterface::TAG_NAME);
     $services->set(NullableResponder::class)
         ->tag(ResponderInterface::TAG_NAME);
