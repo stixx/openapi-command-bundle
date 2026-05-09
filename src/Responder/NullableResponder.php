@@ -15,7 +15,7 @@ namespace Stixx\OpenApiCommandBundle\Responder;
 
 use Symfony\Component\HttpFoundation\Response;
 
-final class NullableResponder implements ResponderInterface
+final readonly class NullableResponder implements ResponderInterface
 {
     public function respond(mixed $result, int $status): Response
     {
@@ -24,6 +24,6 @@ final class NullableResponder implements ResponderInterface
 
     public function supports(mixed $result): bool
     {
-        return empty($result) && !is_array($result);
+        return $result === null;
     }
 }
