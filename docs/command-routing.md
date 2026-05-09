@@ -313,14 +313,6 @@ Content-Type: application/json
 The bundle provides a `CommandRouteDescriber` so your routes appear in Nelmio ApiDoc automatically. If you use Nelmio areas, the bundle also exposes a helper (`NelmioAreaRoutesChecker`) that can recognize whether a request targets a documented API route. Routes generated from OpenAPI attributes are compiled into Symfony’s router, so they are visible in `bin/console debug:router`.
 
 
-## Migration note
-
-The previously introduced AsCommandRoute attribute and the temporary Symfony #[Route]-on-command approach are no longer supported to avoid confusion. Use OpenAPI operation attributes on the command class instead. You may override the controller via an OpenAPI vendor extension (x: { controller: FQCN }) or via a class-level #[CommandObject(controller: ...)].
-
-Note about CommandRouteTaggedPass
-- Earlier versions compiled route metadata via a DI compiler pass (`CommandRouteTaggedPass`) into a container parameter consumed by a loader. The bundle now uses Symfony-style filesystem scanning with attribute loaders (`AttributeDirectoryLoaderDecorator` + `CommandRouteClassLoader`). `CommandRouteTaggedPass` is no longer registered or used at runtime; it remains in the codebase only for backward-compatibility reference and may be removed in a future major release.
-
-
 ## Troubleshooting
 
 - My routes don’t show up

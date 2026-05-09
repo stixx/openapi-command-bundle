@@ -17,6 +17,7 @@ The bundle recognizes the following class-level attributes:
 - `#[OA\Delete]`
 - `#[OA\Options]`
 - `#[OA\Head]`
+- `#[OA\Trace]`
 
 ### Example
 

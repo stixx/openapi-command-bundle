@@ -40,7 +40,7 @@ final class CreateUserCommand
 }
 ```
 
-If a request fails validation, the bundle will interrupt the flow and return a `400 Bad Request` response with violation details.
+If a request fails validation, the bundle will interrupt the flow and return a `422 Unprocessable Entity` response with violation details. Mapping/decode failures (malformed JSON, missing required fields the serializer cannot fill in) return `400 Bad Request` instead.
 
 ### Configuration
 
@@ -74,21 +74,21 @@ Problem responses use the `application/problem+json` media type.
 ```json
 {
   "type": "about:blank",
-  "title": "Validation failed",
-  "status": 400,
-  "detail": "Validation failed",
+  "title": "The request body could not be processed",
+  "status": 422,
   "violations": [
     {
       "propertyPath": "email",
-      "title": "This value is not a valid email address.",
-      "parameters": {
-        "{{ value }}": "\"invalid-email\""
-      },
-      "type": "urn:uuid:bd79c0ab-ddb3-4675-903c-8b6141c2f08b"
+      "message": "This value is not a valid email address.",
+      "code": "bd79c0ab-ddb3-4675-903c-8b6141c2f08b",
+      "constraint": "Email",
+      "error": "INVALID_FORMAT_ERROR"
     }
   ]
 }
 ```
+
+> **Note**: `detail` is only emitted when `kernel.debug` is `true` (development environment). In production, `detail` is suppressed to avoid leaking exception messages to clients. Public-facing context belongs in `title`; the per-property reason is in each violation's `message`.
 
 ### Mapping Errors
 
@@ -105,9 +105,9 @@ If the request body cannot be mapped to your command DTO (e.g., missing required
 
 ---
 
-## Disabling Problem Details
+## Documenting Problem Details in OpenAPI
 
-If you prefer to handle errors yourself or don't want to use the Problem Details format, you can disable it:
+By default the bundle prepends a small set of reusable response components — `DefaultProblemDetailsResponse`, `ResourceNotFoundProblemDetailsResponse`, etc. — to your NelmioApiDoc configuration so your generated OpenAPI document describes the error shape. To opt out:
 
 ```yaml
 stixx_openapi_command:
@@ -115,7 +115,7 @@ stixx_openapi_command:
         problem_details: false
 ```
 
-When disabled, the bundle will not prepend Problem Details models to your NelmioApiDoc configuration, but it will still throw exceptions that you can catch in your own event listeners.
+> **What this flag does and doesn't do.** Setting `problem_details: false` only affects the *generated OpenAPI documentation* — the response components stop being prepended, so your Swagger UI won't show problem-detail schemas. **The runtime behavior is unchanged**: `ApiExceptionSubscriber` still catches exceptions on API routes and returns `application/problem+json` responses. To replace the runtime behavior entirely, override the bundle's `ExceptionToApiProblemTransformerInterface` (see [Extension Points](extension-points.md#custom-exception-transformers-exceptiontoapiproblemtransformerinterface)) or register your own higher-priority `kernel.exception` listener.
 
 ---
 
