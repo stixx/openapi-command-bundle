@@ -58,17 +58,17 @@ final class NullableResponderTest extends TestCase
 
         yield 'empty string' => [
             '',
-            true,
+            false,
         ];
 
         yield 'false' => [
             false,
-            true,
+            false,
         ];
 
         yield 'zero' => [
             0,
-            true,
+            false,
         ];
 
         yield 'empty array' => [

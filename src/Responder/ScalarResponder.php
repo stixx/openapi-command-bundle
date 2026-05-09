@@ -13,11 +13,10 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Responder;
 
-use JsonSerializable;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
-final readonly class JsonResponder implements ResponderInterface
+final readonly class ScalarResponder implements ResponderInterface
 {
     public function respond(mixed $result, int $status): Response
     {
@@ -26,6 +25,6 @@ final readonly class JsonResponder implements ResponderInterface
 
     public function supports(mixed $result): bool
     {
-        return $result instanceof JsonSerializable;
+        return is_scalar($result);
     }
 }
