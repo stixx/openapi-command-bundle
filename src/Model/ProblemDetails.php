@@ -17,6 +17,9 @@ use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Constraints as Assert;
 
+/**
+ * @api
+ */
 #[OA\Schema(
     title: 'ProblemDetails',
     required: ['type', 'title', 'status'],

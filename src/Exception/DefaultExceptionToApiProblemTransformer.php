@@ -21,6 +21,9 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
+/**
+ * @internal
+ */
 final class DefaultExceptionToApiProblemTransformer implements ExceptionToApiProblemTransformerInterface
 {
     public function transform(Throwable $throwable): ApiProblemException

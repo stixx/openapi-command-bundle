@@ -17,6 +17,9 @@ use ReflectionClass;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Validator\ConstraintViolationInterface;
 
+/**
+ * @internal
+ */
 final class ConstraintViolationNormalizer implements NormalizerInterface
 {
     /**

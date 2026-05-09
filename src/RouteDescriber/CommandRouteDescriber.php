@@ -30,6 +30,9 @@ use stdClass;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadataFactoryInterface;
 use Symfony\Component\Routing\Route;
 
+/**
+ * @internal
+ */
 final class CommandRouteDescriber implements RouteDescriberInterface, ModelRegistryAwareInterface
 {
     use ModelRegistryAwareTrait;

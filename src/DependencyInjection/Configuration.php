@@ -16,6 +16,9 @@ namespace Stixx\OpenApiCommandBundle\DependencyInjection;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
+/**
+ * @internal
+ */
 final class Configuration implements ConfigurationInterface
 {
     public const string BUNDLE_ALIAS = 'stixx_openapi_command';

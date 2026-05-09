@@ -19,6 +19,9 @@ use Nelmio\ApiDocBundle\ApiDocGenerator;
 use Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface;
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * @internal
+ */
 final class RequestValidator implements ValidatorInterface
 {
     private ?OpenApiRequestValidator $cachedValidator = null;

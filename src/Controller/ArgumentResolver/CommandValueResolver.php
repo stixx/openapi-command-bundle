@@ -24,6 +24,9 @@ use Symfony\Component\Serializer\Exception\NotEncodableValueException;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 
+/**
+ * @internal
+ */
 final readonly class CommandValueResolver implements ValueResolverInterface
 {
     public function __construct(

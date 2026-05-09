@@ -15,6 +15,9 @@ namespace Stixx\OpenApiCommandBundle\Validator;
 
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * @api
+ */
 interface ValidatorInterface
 {
     public const string TAG_NAME = 'stixx_openapi_command.request.validator';

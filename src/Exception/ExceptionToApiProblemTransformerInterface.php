@@ -15,6 +15,9 @@ namespace Stixx\OpenApiCommandBundle\Exception;
 
 use Throwable;
 
+/**
+ * @api
+ */
 interface ExceptionToApiProblemTransformerInterface
 {
     public function transform(Throwable $throwable): ApiProblemException;

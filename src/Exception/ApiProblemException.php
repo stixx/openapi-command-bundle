@@ -19,6 +19,9 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Throwable;
 
+/**
+ * @api
+ */
 final class ApiProblemException extends RuntimeException implements HttpExceptionInterface
 {
     /** @var array<string, mixed> */

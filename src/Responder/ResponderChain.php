@@ -14,6 +14,9 @@ namespace Stixx\OpenApiCommandBundle\Responder;
 use OutOfBoundsException;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * @internal
+ */
 final readonly class ResponderChain implements ResponderInterface
 {
     /**

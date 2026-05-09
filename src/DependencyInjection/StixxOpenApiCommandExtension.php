@@ -25,6 +25,9 @@ use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\Yaml\Yaml;
 
+/**
+ * @internal
+ */
 final class StixxOpenApiCommandExtension extends Extension implements PrependExtensionInterface
 {
     public function prepend(ContainerBuilder $container): void

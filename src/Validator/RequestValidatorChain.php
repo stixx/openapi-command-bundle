@@ -15,6 +15,9 @@ namespace Stixx\OpenApiCommandBundle\Validator;
 
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * @internal
+ */
 final readonly class RequestValidatorChain implements ValidatorInterface
 {
     /**

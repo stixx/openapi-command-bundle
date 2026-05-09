@@ -15,6 +15,9 @@ namespace Stixx\OpenApiCommandBundle\Response;
 
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * @api
+ */
 interface StatusResolverInterface
 {
     public function resolve(Request $request, object $command): int;

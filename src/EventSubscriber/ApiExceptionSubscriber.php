@@ -26,6 +26,9 @@ use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Throwable;
 
+/**
+ * @internal
+ */
 final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
 {
     public function __construct(

@@ -20,6 +20,9 @@ use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\SerializerInterface;
 use Traversable;
 
+/**
+ * @internal
+ */
 final readonly class JsonSerializedResponder implements ResponderInterface
 {
     public function __construct(private SerializerInterface $serializer)

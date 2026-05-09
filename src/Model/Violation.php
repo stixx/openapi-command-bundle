@@ -15,6 +15,9 @@ namespace Stixx\OpenApiCommandBundle\Model;
 
 use OpenApi\Attributes as OA;
 
+/**
+ * @api
+ */
 #[OA\Schema(
     required: [
         'propertyPath',

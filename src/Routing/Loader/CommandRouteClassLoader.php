@@ -25,6 +25,9 @@ use Symfony\Component\Routing\Loader\AttributeClassLoader;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 
+/**
+ * @internal
+ */
 final class CommandRouteClassLoader extends AttributeClassLoader
 {
     /**

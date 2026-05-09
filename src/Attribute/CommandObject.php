@@ -16,6 +16,9 @@ namespace Stixx\OpenApiCommandBundle\Attribute;
 use Attribute;
 use Stixx\OpenApiCommandBundle\Controller\CommandController;
 
+/**
+ * @api
+ */
 #[Attribute(Attribute::TARGET_PARAMETER | Attribute::TARGET_CLASS)]
 final class CommandObject
 {

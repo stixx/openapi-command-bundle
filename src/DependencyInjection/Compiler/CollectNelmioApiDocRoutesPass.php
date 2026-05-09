@@ -19,6 +19,9 @@ use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
+/**
+ * @internal
+ */
 final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
