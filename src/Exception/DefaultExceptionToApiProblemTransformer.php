@@ -53,6 +53,7 @@ final class DefaultExceptionToApiProblemTransformer implements ExceptionToApiPro
                 type: 'about:blank',
                 detail: $throwable->getMessage(),
                 previous: $throwable,
+                // HttpExceptionInterface::getHeaders() is typed as plain `array`; the constructor wants array<string, mixed>.
                 /* @phpstan-ignore-next-line */
                 headers: $throwable->getHeaders()
             ),
@@ -68,6 +69,11 @@ final class DefaultExceptionToApiProblemTransformer implements ExceptionToApiPro
             Response::HTTP_BAD_REQUEST === $status => 'Bad Request',
             Response::HTTP_UNAUTHORIZED === $status => 'Unauthorized',
             Response::HTTP_FORBIDDEN === $status => 'Forbidden',
+            Response::HTTP_NOT_FOUND === $status => 'Not Found',
+            Response::HTTP_METHOD_NOT_ALLOWED === $status => 'Method Not Allowed',
+            Response::HTTP_NOT_ACCEPTABLE === $status => 'Not Acceptable',
+            Response::HTTP_CONFLICT === $status => 'Conflict',
+            Response::HTTP_UNSUPPORTED_MEDIA_TYPE === $status => 'Unsupported Media Type',
             Response::HTTP_UNPROCESSABLE_ENTITY === $status => 'Unprocessable Entity',
             default => 'An error occurred.',
         };

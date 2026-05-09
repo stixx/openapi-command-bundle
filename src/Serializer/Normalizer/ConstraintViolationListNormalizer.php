@@ -13,15 +13,6 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Serializer\Normalizer;
 
-/*
- * This file is part of the StixxOpenApiCommandBundle package.
- *
- * (c) Stixx
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareTrait;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;

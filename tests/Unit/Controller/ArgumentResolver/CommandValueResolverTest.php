@@ -137,7 +137,7 @@ final class CommandValueResolverTest extends TestCase
             ),
             new ArgumentMetadata('command', stdClass::class, false, false, null, false, [new CommandObject()]),
             [
-                'key' => 'queryValue',
+                'key' => 'routeValue',
                 'other' => 'routeOther',
                 'unique' => 'bodyUnique',
             ],
@@ -153,7 +153,7 @@ final class CommandValueResolverTest extends TestCase
             new ArgumentMetadata('command', stdClass::class, false, false, null, false, [new CommandObject()]),
             [
                 'body' => 'value',
-                'override' => 'query',
+                'override' => 'route',
                 'route' => 'value',
                 'query' => 'value',
             ],
