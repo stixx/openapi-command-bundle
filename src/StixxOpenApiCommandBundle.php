@@ -27,6 +27,9 @@ class StixxOpenApiCommandBundle extends Bundle
         $container->addCompilerPass(new CollectControllerClassesPass());
     }
 
+    // Override needed: the parent's default alias for "StixxOpenApiCommandBundle" is
+    // "stixx_open_api_command" (camelCase split on every boundary). We expose the bundle as
+    // "stixx_openapi_command" instead, so we keep our DI extension's alias.
     public function getContainerExtension(): ?ExtensionInterface
     {
         if (null === $this->extension) {

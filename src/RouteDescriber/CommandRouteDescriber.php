@@ -37,15 +37,16 @@ final class CommandRouteDescriber implements RouteDescriberInterface, ModelRegis
     use SetsContextTrait;
 
     /**
+     * @var array<string, OA\AbstractAnnotation[]>
+     */
+    private array $attributesCache = [];
+
+    /**
      * @param iterable<RouteArgumentDescriberInterface> $inlineParameterDescribers
      */
     public function __construct(
         private readonly ArgumentMetadataFactoryInterface $argumentMetadataFactory,
         private readonly iterable $inlineParameterDescribers,
-        /**
-         * @var array<string, OA\AbstractAnnotation[]>
-         */
-        private array $attributesCache = [],
     ) {
     }
 
