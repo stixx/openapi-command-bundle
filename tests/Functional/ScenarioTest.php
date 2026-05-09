@@ -168,4 +168,47 @@ final class ScenarioTest extends AbstractKernelTestCase
         self::assertSame('Validation failed', $data['detail'] ?? null);
         self::assertArrayHasKey('violations', $data);
     }
+
+    #[WithoutErrorHandler]
+    public function testUnknownApiPathReturnsProblemJson(): void
+    {
+        // Arrange
+        $kernel = $this->createKernelWithConfig(static function (Kernel $kernel): void {
+            $kernel->addTestConfig(__DIR__.'/Resources/config/scenario.php');
+        });
+
+        $request = Request::create('/api/does-not-exist');
+
+        // Act
+        $response = $kernel->handle($request);
+
+        // Assert: a 404 inside the API area must produce problem+json, not the framework HTML page.
+        self::assertSame(404, $response->getStatusCode());
+        self::assertSame('application/problem+json', $response->headers->get('Content-Type'));
+        $data = json_decode($response->getContent() ?: 'null', true, 512, JSON_THROW_ON_ERROR);
+        self::assertIsArray($data);
+        self::assertSame(404, $data['status'] ?? null);
+    }
+
+    #[WithoutErrorHandler]
+    public function testWrongMethodOnApiPathReturnsProblemJson(): void
+    {
+        // Arrange
+        $kernel = $this->createKernelWithConfig(static function (Kernel $kernel): void {
+            $kernel->addTestConfig(__DIR__.'/Resources/config/scenario.php');
+        });
+
+        // /api/books/{id} only allows PUT and DELETE — POST should produce a 405.
+        $request = Request::create('/api/books/1', 'POST');
+
+        // Act
+        $response = $kernel->handle($request);
+
+        // Assert
+        self::assertSame(405, $response->getStatusCode());
+        self::assertSame('application/problem+json', $response->headers->get('Content-Type'));
+        $data = json_decode($response->getContent() ?: 'null', true, 512, JSON_THROW_ON_ERROR);
+        self::assertIsArray($data);
+        self::assertSame(405, $data['status'] ?? null);
+    }
 }
