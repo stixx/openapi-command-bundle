@@ -16,6 +16,7 @@ namespace Stixx\OpenApiCommandBundle\Tests\Unit\Validator;
 use League\OpenAPIValidation\PSR7\Exception\ValidationFailed;
 use Nelmio\ApiDocBundle\ApiDocGenerator;
 use Nelmio\ApiDocBundle\Describer\DescriberInterface;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use OpenApi\Annotations\Info;
 use OpenApi\Annotations\OpenApi;
 use OpenApi\Annotations\Parameter;
@@ -26,6 +27,7 @@ use OpenApi\Annotations\Schema;
 use OpenApi\Context;
 use PHPUnit\Framework\TestCase;
 use Stixx\OpenApiCommandBundle\Validator\RequestValidator;
+use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 use Symfony\Component\HttpFoundation\Request;
 
 final class RequestValidatorTest extends TestCase
@@ -35,8 +37,7 @@ final class RequestValidatorTest extends TestCase
         // Arrange
         $describer = $this->createDescriber([]);
 
-        $apiDocGenerator = new ApiDocGenerator([$describer], []);
-        $validator = new RequestValidator($apiDocGenerator);
+        $validator = new RequestValidator(new ApiDocGenerator([$describer], []), $this->createPsrHttpFactory());
 
         $request = Request::create('/test', 'POST');
 
@@ -60,8 +61,7 @@ final class RequestValidatorTest extends TestCase
             ]),
         ]);
 
-        $apiDocGenerator = new ApiDocGenerator([$describer], []);
-        $validator = new RequestValidator($apiDocGenerator);
+        $validator = new RequestValidator(new ApiDocGenerator([$describer], []), $this->createPsrHttpFactory());
 
         $request = Request::create('/test', 'POST');
         // The request is missing the 'X-Required-Header' defined in the OpenAPI spec above
@@ -69,6 +69,51 @@ final class RequestValidatorTest extends TestCase
         // Act & Assert
         $this->expectException(ValidationFailed::class);
         $validator->validate($request);
+    }
+
+    public function testValidateOnlyGeneratesOpenApiDocumentOnce(): void
+    {
+        // Arrange
+        $describer = new class () implements DescriberInterface {
+            public int $describeCalls = 0;
+
+            public function describe(OpenApi $api): void
+            {
+                ++$this->describeCalls;
+
+                $api->openapi = '3.0.0';
+                $api->info = new Info(['title' => 'Test', 'version' => '1.0.0', '_context' => new Context(['version' => '3.0.0'], null)]);
+                $api->paths = [
+                    new PathItem([
+                        'path' => '/test',
+                        'post' => new Post([
+                            'responses' => [
+                                new Response(['response' => '200', 'description' => 'OK', '_context' => new Context(['version' => '3.0.0'], null)]),
+                            ],
+                            '_context' => new Context(['version' => '3.0.0'], null),
+                        ]),
+                        '_context' => new Context(['version' => '3.0.0'], null),
+                    ]),
+                ];
+            }
+        };
+
+        $validator = new RequestValidator(new ApiDocGenerator([$describer], []), $this->createPsrHttpFactory());
+
+        // Act
+        $validator->validate(Request::create('/test', 'POST'));
+        $validator->validate(Request::create('/test', 'POST'));
+        $validator->validate(Request::create('/test', 'POST'));
+
+        // Assert: the OpenAPI document is built once and reused for subsequent requests.
+        self::assertSame(1, $describer->describeCalls);
+    }
+
+    private function createPsrHttpFactory(): PsrHttpFactory
+    {
+        $psr17 = new Psr17Factory();
+
+        return new PsrHttpFactory($psr17, $psr17, $psr17, $psr17);
     }
 
     /**

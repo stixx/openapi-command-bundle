@@ -148,6 +148,43 @@ final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
         self::assertSame('about:blank', $data['type']);
     }
 
+    public function testFallsBackToProblemJsonWhenNormalizerThrows(): void
+    {
+        // Arrange
+        $kernel = $this->createMock(KernelInterface::class);
+        $request = new Request();
+        $event = new ExceptionEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST, new RuntimeException('boom'));
+
+        $routes = $this->createNelmioAreaRoutesWithRouteName('api_route');
+        $request->attributes->set('_route', 'api_route');
+
+        $transformer = $this->createMock(ExceptionToApiProblemTransformerInterface::class);
+        $transformer->method('transform')->willReturn(ApiProblemException::serverError());
+
+        $normalizer = $this->createMock(NormalizerInterface::class);
+        $normalizer->method('normalize')->willThrowException(new RuntimeException('normalizer exploded'));
+
+        $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer);
+
+        // Act
+        $subscriber->onKernelException($event);
+
+        // Assert: a normalizer failure must not leak HTML; a static problem+json 500 is returned instead.
+        self::assertTrue($event->isPropagationStopped());
+        $response = $event->getResponse();
+        self::assertNotNull($response);
+        self::assertSame(500, $response->getStatusCode());
+        self::assertSame('application/problem+json', $response->headers->get('Content-Type'));
+
+        $content = $response->getContent();
+        self::assertIsString($content);
+        /** @var array<string, mixed> $data */
+        $data = json_decode($content, true);
+        self::assertSame('about:blank', $data['type']);
+        self::assertSame('An error occurred.', $data['title']);
+        self::assertSame(500, $data['status']);
+    }
+
     public function testUnwrapsHandlerFailedExceptionBeforeTransforming(): void
     {
         // Arrange
