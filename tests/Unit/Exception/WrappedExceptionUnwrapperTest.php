@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\Exception;
 
 use LogicException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use stdClass;
@@ -21,6 +22,7 @@ use Stixx\OpenApiCommandBundle\Exception\WrappedExceptionUnwrapper;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\DelayedMessageHandlingException;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
+use Throwable;
 
 final class WrappedExceptionUnwrapperTest extends TestCase
 {
@@ -37,62 +39,53 @@ final class WrappedExceptionUnwrapperTest extends TestCase
         self::assertSame($throwable, $result);
     }
 
-    public function testUnwrapsHandlerFailedExceptionToFirstCause(): void
+    #[DataProvider('wrappedExceptionScenarios')]
+    public function testUnwrapsWrappedExceptionToFirstLeafCause(Throwable $wrapped, Throwable $expectedCause): void
     {
         // Arrange
         $unwrapper = new WrappedExceptionUnwrapper();
-        $cause = new RuntimeException('the real cause');
-        $wrapper = new HandlerFailedException(new Envelope(new stdClass()), [$cause]);
 
         // Act
-        $result = $unwrapper->unwrap($wrapper);
+        $result = $unwrapper->unwrap($wrapped);
 
         // Assert
-        self::assertSame($cause, $result);
+        self::assertSame($expectedCause, $result);
     }
 
-    public function testUnwrapsFirstCauseWhenMultipleHandlersFailed(): void
+    /**
+     * @return iterable<string, array{0: Throwable, 1: Throwable}>
+     */
+    public static function wrappedExceptionScenarios(): iterable
     {
-        // Arrange
-        $unwrapper = new WrappedExceptionUnwrapper();
-        $first = new RuntimeException('first handler');
-        $second = new LogicException('second handler');
-        $wrapper = new HandlerFailedException(new Envelope(new stdClass()), [$first, $second]);
+        $envelope = new Envelope(new stdClass());
 
-        // Act
-        $result = $unwrapper->unwrap($wrapper);
+        $singleCause = new RuntimeException('the real cause');
+        yield 'single-handler HFE returns first cause' => [
+            new HandlerFailedException($envelope, [$singleCause]),
+            $singleCause,
+        ];
 
-        // Assert
-        self::assertSame($first, $result);
-    }
+        $firstFailure = new RuntimeException('first handler');
+        $secondFailure = new LogicException('second handler');
+        yield 'multi-handler HFE returns the first wrapped exception' => [
+            new HandlerFailedException($envelope, [$firstFailure, $secondFailure]),
+            $firstFailure,
+        ];
 
-    public function testUnwrapsNestedHandlerFailedExceptionRecursively(): void
-    {
-        // Arrange — simulates a handler that itself dispatched a command which then failed.
-        $unwrapper = new WrappedExceptionUnwrapper();
+        // Simulates a handler that dispatched a command which then itself failed.
         $rootCause = new RuntimeException('root');
-        $inner = new HandlerFailedException(new Envelope(new stdClass()), [$rootCause]);
-        $outer = new HandlerFailedException(new Envelope(new stdClass()), [$inner]);
+        $innerWrapper = new HandlerFailedException($envelope, [$rootCause]);
+        yield 'nested HFE recurses to the leaf root cause' => [
+            new HandlerFailedException($envelope, [$innerWrapper]),
+            $rootCause,
+        ];
 
-        // Act
-        $result = $unwrapper->unwrap($outer);
-
-        // Assert
-        self::assertSame($rootCause, $result);
-    }
-
-    public function testUnwrapsDelayedMessageHandlingException(): void
-    {
-        // Arrange — DelayedMessageHandlingException implements WrappedExceptionsInterface
-        // through the same trait, so the unwrapper handles it identically.
-        $unwrapper = new WrappedExceptionUnwrapper();
-        $cause = new RuntimeException('delayed');
-        $wrapper = new DelayedMessageHandlingException([$cause], new Envelope(new stdClass()));
-
-        // Act
-        $result = $unwrapper->unwrap($wrapper);
-
-        // Assert
-        self::assertSame($cause, $result);
+        // DelayedMessageHandlingException uses the same WrappedExceptionsTrait, so the
+        // unwrapper handles it identically to HandlerFailedException.
+        $delayedCause = new RuntimeException('delayed');
+        yield 'DelayedMessageHandlingException returns wrapped cause' => [
+            new DelayedMessageHandlingException([$delayedCause], $envelope),
+            $delayedCause,
+        ];
     }
 }
