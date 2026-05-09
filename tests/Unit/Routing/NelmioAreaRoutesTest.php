@@ -123,4 +123,72 @@ final class NelmioAreaRoutesTest extends TestCase
 
         self::assertFalse($checker->isApiRoute($request));
     }
+
+    public function testFallsBackToPathPatternWhenRouteIsMissing(): void
+    {
+        // Simulates the 404 case: Symfony throws NotFoundHttpException before _route is set.
+        /** @var ServiceLocator<RouteCollection> $locator */
+        $locator = new ServiceLocator([]);
+        $checker = new NelmioAreaRoutesChecker($locator, ['default' => ['^/api']]);
+
+        $request = Request::create('/api/missing');
+
+        self::assertTrue($checker->isApiRoute($request));
+    }
+
+    public function testFallsBackToPathPatternWhenRouteIsEmpty(): void
+    {
+        // Simulates the 405 case: known path, wrong verb — _route is set to '' by the kernel.
+        /** @var ServiceLocator<RouteCollection> $locator */
+        $locator = new ServiceLocator([]);
+        $checker = new NelmioAreaRoutesChecker($locator, ['default' => ['^/api']]);
+
+        $request = Request::create('/api/books/1', 'PATCH');
+        $request->attributes->set('_route', '');
+
+        self::assertTrue($checker->isApiRoute($request));
+    }
+
+    public function testPathPatternFallbackDoesNotMatchNonApiPath(): void
+    {
+        /** @var ServiceLocator<RouteCollection> $locator */
+        $locator = new ServiceLocator([]);
+        $checker = new NelmioAreaRoutesChecker($locator, ['default' => ['^/api']]);
+
+        $request = Request::create('/admin/dashboard');
+
+        self::assertFalse($checker->isApiRoute($request));
+    }
+
+    public function testRouteNameMatchTakesPrecedenceOverPathPattern(): void
+    {
+        // A matched route in a non-API area should still win over a path pattern that would match.
+        $collection = new RouteCollection();
+        $collection->add('public_route', new Route('/api/public'));
+
+        /** @var ServiceLocator<RouteCollection> $locator */
+        $locator = new ServiceLocator([
+            'public' => static fn () => $collection,
+        ]);
+        $checker = new NelmioAreaRoutesChecker($locator, ['admin' => ['^/admin']]);
+
+        $request = Request::create('/api/public');
+        $request->attributes->set('_route', 'public_route');
+
+        self::assertTrue($checker->isApiRoute($request));
+    }
+
+    public function testMultipleAreasWithDifferentPathPatterns(): void
+    {
+        /** @var ServiceLocator<RouteCollection> $locator */
+        $locator = new ServiceLocator([]);
+        $checker = new NelmioAreaRoutesChecker($locator, [
+            'public' => ['^/api/public'],
+            'internal' => ['^/api/internal'],
+        ]);
+
+        self::assertTrue($checker->isApiRoute(Request::create('/api/public/users')));
+        self::assertTrue($checker->isApiRoute(Request::create('/api/internal/metrics')));
+        self::assertFalse($checker->isApiRoute(Request::create('/api/other')));
+    }
 }

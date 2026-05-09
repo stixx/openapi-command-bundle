@@ -16,7 +16,8 @@ return static function (ContainerConfigurator $configurator): void {
 
     $services
         ->set(NelmioAreaRoutesChecker::class)
-            ->arg('$routesLocator', service('stixx_openapi_command.nelmio.routes_locator'));
+            ->arg('$routesLocator', service('stixx_openapi_command.nelmio.routes_locator'))
+            ->arg('$pathPatterns', param('stixx_openapi_command.nelmio.path_patterns'));
 
     $services
         ->set(CommandRouteClassLoader::class)
