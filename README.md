@@ -13,7 +13,7 @@ By using standard OpenAPI operation attributes (from `zircote/swagger-php`) dire
 - **OpenAPI-Driven Routing**: Define your API endpoints directly on your command DTOs using `#[OA\Post]`, `#[OA\Get]`, `#[OA\Put]`, etc.
 - **No Manual Controllers**: A single `CommandController` handles all generated routes by default.
 - **Automatic Deserialization**: Automatically maps JSON request bodies, route parameters, and query parameters to your command DTOs.
-- **Built-in Validation**: Integrates with Symfony Validator to ensure your commands are valid before they reach your handlers.
+- **Two-Layer Validation**: Each request is checked against the OpenAPI schema (headers, query parameters, body shape via `league/openapi-psr7-validator`) *and* the deserialized command is validated with Symfony Validator constraints before it reaches your handler.
 - **Messenger Integration**: Dispatches your commands directly to the Symfony Messenger bus.
 - **Auto-Generated Documentation**: Seamlessly integrates with `NelmioApiDocBundle` to include your command-based routes in your OpenAPI/Swagger documentation.
 - **Problem Details Support**: Returns RFC 7807 compliant error responses for validation and mapping errors.
@@ -129,6 +129,32 @@ For more detailed information, please refer to the following documentation:
 - [Command Routing & Request Handling](docs/command-routing.md)
 - [Validation & Error Handling](docs/validation.md)
 - [OpenAPI Integration](docs/openapi.md)
+- [Extension Points](docs/extension-points.md)
+
+## Stability & supported API
+
+The bundle distinguishes a small public API surface from its internal implementation. Public surface is the contract you can safely depend on; internals can change in any release.
+
+**Public (`@api`)** — guaranteed BC across minor releases:
+
+| Type | What it is |
+|---|---|
+| `Stixx\OpenApiCommandBundle\StixxOpenApiCommandBundle` | Bundle entry point |
+| `Stixx\OpenApiCommandBundle\Attribute\CommandObject` | Marker attribute for command arguments |
+| `Stixx\OpenApiCommandBundle\Exception\ApiProblemException` | Throw this from your code to express RFC 7807 problems |
+| `Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface` | Replace to customize how exceptions become problem responses |
+| `Stixx\OpenApiCommandBundle\Responder\ResponderInterface` | Implement to handle custom result shapes (CSV, XML, …) |
+| `Stixx\OpenApiCommandBundle\Response\StatusResolverInterface` | Replace to customize status code resolution |
+| `Stixx\OpenApiCommandBundle\Validator\ValidatorInterface` | Implement to add custom request-level validation |
+| `Stixx\OpenApiCommandBundle\Model\ProblemDetails` | OpenAPI schema model — reference from your annotations |
+| `Stixx\OpenApiCommandBundle\Model\ProblemDetailsInvalidRequestBody` | OpenAPI schema model — reference from your annotations |
+| `Stixx\OpenApiCommandBundle\Model\Violation` | OpenAPI schema model — reference from your annotations |
+
+**Internal (`@internal`)** — everything else, including default implementations like `JsonResponder`, `DefaultExceptionToApiProblemTransformer`, `RequestValidator`, the controllers, DI extension, compiler passes, route loaders, and event subscribers. Do not extend or rely on these directly; replace them through the `@api` interfaces above.
+
+The bundle's configuration schema (the keys under `stixx_openapi_command:`) is also part of the supported API.
+
+See [Extension Points](docs/extension-points.md) for a worked example of each extension interface.
 
 ## Requirements
 
