@@ -13,28 +13,36 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Validator;
 
+use League\OpenAPIValidation\PSR7\RequestValidator as OpenApiRequestValidator;
 use League\OpenAPIValidation\PSR7\ValidatorBuilder;
 use Nelmio\ApiDocBundle\ApiDocGenerator;
-use Nyholm\Psr7\Factory\Psr17Factory;
-use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
+use Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface;
 use Symfony\Component\HttpFoundation\Request;
 
-final readonly class RequestValidator implements ValidatorInterface
+final class RequestValidator implements ValidatorInterface
 {
+    private ?OpenApiRequestValidator $cachedValidator = null;
+
     public function __construct(
-        private ApiDocGenerator $apiDocGenerator,
+        private readonly ApiDocGenerator $apiDocGenerator,
+        private readonly HttpMessageFactoryInterface $psrHttpFactory,
     ) {
     }
 
     public function validate(Request $request): void
     {
+        $psrRequest = $this->psrHttpFactory->createRequest($request);
+        $this->getValidator()->validate($psrRequest);
+    }
+
+    private function getValidator(): OpenApiRequestValidator
+    {
+        if ($this->cachedValidator !== null) {
+            return $this->cachedValidator;
+        }
+
         $apiDoc = $this->apiDocGenerator->generate();
 
-        $psr17Factory = new Psr17Factory();
-        $psrHttpFactory = new PsrHttpFactory($psr17Factory, $psr17Factory, $psr17Factory, $psr17Factory);
-        $psrRequest = $psrHttpFactory->createRequest($request);
-
-        $validatorBuilder = new ValidatorBuilder()->fromJson($apiDoc->toJson())->getRequestValidator();
-        $validatorBuilder->validate($psrRequest);
+        return $this->cachedValidator = new ValidatorBuilder()->fromJson($apiDoc->toJson())->getRequestValidator();
     }
 }
