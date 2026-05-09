@@ -19,6 +19,7 @@ use stdClass;
 use Stixx\OpenApiCommandBundle\EventSubscriber\ApiExceptionSubscriber;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
 use Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface;
+use Stixx\OpenApiCommandBundle\Exception\WrappedExceptionUnwrapper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -45,7 +46,7 @@ final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
 
         $normalizer = $this->createMock(NormalizerInterface::class);
         $transformer = $this->createMock(ExceptionToApiProblemTransformerInterface::class);
-        $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer);
+        $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer, new WrappedExceptionUnwrapper());
 
         // Act
         $subscriber->onKernelException($event);
@@ -80,7 +81,7 @@ final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
             ->willReturn(['detail' => 'bad', 'violations' => $violations, 'status' => 400, 'title' => 'The request body contains errors', 'type' => 'about:blank']);
 
         $transformer = $this->createMock(ExceptionToApiProblemTransformerInterface::class);
-        $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer);
+        $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer, new WrappedExceptionUnwrapper());
 
         // Act
         $subscriber->onKernelException($event);
@@ -128,7 +129,7 @@ final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
             ->with($apiProblem, 'json')
             ->willReturn(['title' => $expectedTitle, 'status' => $expectedStatus, 'type' => 'about:blank']);
 
-        $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer);
+        $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer, new WrappedExceptionUnwrapper());
 
         // Act
         $subscriber->onKernelException($event);
@@ -164,7 +165,7 @@ final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
         $normalizer = $this->createMock(NormalizerInterface::class);
         $normalizer->method('normalize')->willThrowException(new RuntimeException('normalizer exploded'));
 
-        $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer);
+        $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer, new WrappedExceptionUnwrapper());
 
         // Act
         $subscriber->onKernelException($event);
@@ -209,7 +210,7 @@ final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
         $normalizer = $this->createMock(NormalizerInterface::class);
         $normalizer->method('normalize')->willReturn(['status' => 500, 'title' => 'An error occurred.', 'type' => 'about:blank']);
 
-        $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer);
+        $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer, new WrappedExceptionUnwrapper());
 
         // Act
         $subscriber->onKernelException($event);

@@ -17,6 +17,7 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Stixx\OpenApiCommandBundle\Controller\CommandController;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
+use Stixx\OpenApiCommandBundle\Exception\WrappedExceptionUnwrapper;
 use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
 use Stixx\OpenApiCommandBundle\Response\StatusResolverInterface;
 use Stixx\OpenApiCommandBundle\Tests\Mock\Command\ExampleCommand;
@@ -68,7 +69,7 @@ final class CommandControllerTest extends TestCase
             ->willReturn(new Response((string) json_encode($result), 201, ['Content-Type' => 'application/json']));
 
         // Act
-        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder);
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, new WrappedExceptionUnwrapper());
         $response = $controller($request, $command);
 
         // Assert
@@ -106,7 +107,7 @@ final class CommandControllerTest extends TestCase
             ->willReturn(new Response((string) json_encode($result), 200));
 
         // Act
-        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, validationEnabled: false);
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, new WrappedExceptionUnwrapper(), validationEnabled: false);
         $response = $controller($request, $command);
 
         // Assert
@@ -139,7 +140,7 @@ final class CommandControllerTest extends TestCase
         $responder = $this->createMock(ResponderInterface::class);
 
         // Act
-        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, validationEnabled: true);
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, new WrappedExceptionUnwrapper(), validationEnabled: true);
 
         try {
             $controller($request, $command);
@@ -177,7 +178,7 @@ final class CommandControllerTest extends TestCase
         $responder = $this->createMock(ResponderInterface::class);
 
         // Act
-        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, validationEnabled: true);
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, new WrappedExceptionUnwrapper(), validationEnabled: true);
 
         // Assert
         try {
