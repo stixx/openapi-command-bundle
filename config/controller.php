@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Stixx\OpenApiCommandBundle\Controller\ArgumentResolver\CommandValueResolver;
 use Stixx\OpenApiCommandBundle\Controller\CommandController;
+use Stixx\OpenApiCommandBundle\Exception\WrappedExceptionUnwrapper;
 use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
 use Stixx\OpenApiCommandBundle\Response\StatusResolverInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -25,6 +26,7 @@ return static function (ContainerConfigurator $configurator): void {
             ->arg('$validator', service(ValidatorInterface::class))
             ->arg('$statusResolver', service(StatusResolverInterface::class))
             ->arg('$responder', service(ResponderInterface::class))
+            ->arg('$exceptionUnwrapper', service(WrappedExceptionUnwrapper::class))
             ->arg('$validationEnabled', param('stixx_openapi_command.validation.enabled'))
             ->arg('$validationGroups', param('stixx_openapi_command.validation.groups'));
 

@@ -15,6 +15,7 @@ namespace Stixx\OpenApiCommandBundle\Controller;
 
 use Stixx\OpenApiCommandBundle\Attribute\CommandObject;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
+use Stixx\OpenApiCommandBundle\Exception\WrappedExceptionUnwrapper;
 use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
 use Stixx\OpenApiCommandBundle\Response\StatusResolverInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,6 +34,7 @@ readonly class CommandController
         private ValidatorInterface $validator,
         private StatusResolverInterface $statusResolver,
         private ResponderInterface $responder,
+        private WrappedExceptionUnwrapper $exceptionUnwrapper,
         private bool $validationEnabled = true,
         /** @var string[] */
         private array $validationGroups = ['Default'],
@@ -52,9 +54,7 @@ readonly class CommandController
         try {
             $envelope = $this->commandBus->dispatch($command);
         } catch (HandlerFailedException $exception) {
-            $previousException = $exception->getPrevious();
-
-            throw $previousException ?? $exception;
+            throw $this->exceptionUnwrapper->unwrap($exception);
         }
 
         $handled = $envelope->last(HandledStamp::class);

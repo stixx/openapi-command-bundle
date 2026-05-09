@@ -15,13 +15,13 @@ namespace Stixx\OpenApiCommandBundle\EventSubscriber;
 
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
 use Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface;
+use Stixx\OpenApiCommandBundle\Exception\WrappedExceptionUnwrapper;
 use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Throwable;
@@ -32,6 +32,7 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
         private NelmioAreaRoutesChecker $nelmioAreaRoutesChecker,
         private NormalizerInterface $normalizer,
         private ExceptionToApiProblemTransformerInterface $exceptionTransformer,
+        private WrappedExceptionUnwrapper $exceptionUnwrapper,
     ) {
     }
 
@@ -64,12 +65,9 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
 
     private function buildProblemResponse(Throwable $throwable): JsonResponse
     {
-        // Unwrap HandlerFailedException so the actual cause can be transformed correctly.
-        // Messenger wraps handler and middleware exceptions in HandlerFailedException; without
-        // unwrapping, all handler errors fall through to the default 500 case.
-        if ($throwable instanceof HandlerFailedException) {
-            $throwable = array_values($throwable->getWrappedExceptions())[0] ?? $throwable;
-        }
+        // Messenger wraps handler errors in HandlerFailedException; unwrap so the actual
+        // cause is what gets transformed (or used directly when it is already an ApiProblem).
+        $throwable = $this->exceptionUnwrapper->unwrap($throwable);
 
         if (!$throwable instanceof ApiProblemException) {
             $throwable = $this->exceptionTransformer->transform($throwable);
