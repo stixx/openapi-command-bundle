@@ -18,6 +18,9 @@ use Symfony\Component\Serializer\Normalizer\NormalizerAwareInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareTrait;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
+/**
+ * @internal
+ */
 final class ApiProblemNormalizer implements NormalizerInterface, NormalizerAwareInterface
 {
     use NormalizerAwareTrait;

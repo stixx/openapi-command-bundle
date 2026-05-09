@@ -27,6 +27,9 @@ use Symfony\Component\Messenger\Stamp\HandledStamp;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Throwable;
 
+/**
+ * @internal
+ */
 readonly class CommandController
 {
     public function __construct(

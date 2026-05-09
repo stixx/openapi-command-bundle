@@ -16,6 +16,9 @@ namespace Stixx\OpenApiCommandBundle\Exception;
 use Symfony\Component\Messenger\Exception\WrappedExceptionsInterface;
 use Throwable;
 
+/**
+ * @internal
+ */
 final readonly class WrappedExceptionUnwrapper
 {
     public function unwrap(Throwable $throwable): Throwable

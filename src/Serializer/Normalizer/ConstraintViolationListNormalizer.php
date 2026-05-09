@@ -19,6 +19,9 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Validator\ConstraintViolationInterface;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
+/**
+ * @internal
+ */
 final class ConstraintViolationListNormalizer implements NormalizerInterface, NormalizerAwareInterface
 {
     use NormalizerAwareTrait;

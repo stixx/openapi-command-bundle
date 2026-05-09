@@ -16,6 +16,9 @@ namespace Stixx\OpenApiCommandBundle\Responder;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * @internal
+ */
 final readonly class ScalarResponder implements ResponderInterface
 {
     public function respond(mixed $result, int $status): Response

@@ -15,6 +15,9 @@ namespace Stixx\OpenApiCommandBundle\Responder;
 
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * @api
+ */
 interface ResponderInterface
 {
     public const string TAG_NAME = 'stixx_openapi_command.response.responder';

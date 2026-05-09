@@ -16,6 +16,9 @@ namespace Stixx\OpenApiCommandBundle\Routing\Loader;
 use Symfony\Component\Config\FileLocatorInterface;
 use Symfony\Component\Routing\Loader\AttributeDirectoryLoader;
 
+/**
+ * @internal
+ */
 final class CommandRouteDirectoryLoader extends AttributeDirectoryLoader
 {
     public const string TYPE = 'stixx_openapi_command.command_attributes';

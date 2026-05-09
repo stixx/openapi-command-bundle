@@ -18,6 +18,9 @@ use Symfony\Component\Config\Loader\Loader;
 use Symfony\Component\Routing\Loader\AttributeDirectoryLoader;
 use Symfony\Component\Routing\RouteCollection;
 
+/**
+ * @internal
+ */
 final class AttributeDirectoryLoaderDecorator extends Loader
 {
     public function __construct(

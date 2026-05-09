@@ -19,6 +19,9 @@ use ReflectionAttribute;
 use ReflectionClass;
 use Symfony\Component\HttpFoundation\Request;
 
+/**
+ * @internal
+ */
 final class ResponseStatusResolver implements StatusResolverInterface
 {
     public function resolve(Request $request, object $command): int

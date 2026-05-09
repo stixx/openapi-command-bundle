@@ -16,6 +16,9 @@ namespace Stixx\OpenApiCommandBundle\Model;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 
+/**
+ * @api
+ */
 #[OA\Schema(
     title: 'InvalidRequestBody',
     properties: [

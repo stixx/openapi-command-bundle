@@ -19,6 +19,9 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\KernelEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
+/**
+ * @internal
+ */
 final readonly class RequestValidatorSubscriber implements EventSubscriberInterface
 {
     public function __construct(

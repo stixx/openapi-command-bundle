@@ -17,6 +17,9 @@ use JsonSerializable;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * @internal
+ */
 final readonly class JsonResponder implements ResponderInterface
 {
     public function respond(mixed $result, int $status): Response
