@@ -1,6 +1,15 @@
 # Validation & Error Handling
 
-The **OpenAPI Command Bundle** integrates with the Symfony Validator component to ensure your command DTOs are valid before they reach your message handlers. It also provides a robust error-handling mechanism that returns RFC 7807-compliant Problem Details responses.
+The bundle validates incoming requests in two distinct layers, and provides RFC 7807-compliant Problem Details responses when either layer rejects the request.
+
+| Layer | What it validates | Driven by | When it runs |
+|---|---|---|---|
+| **OpenAPI request validation** | Headers, query parameters, path parameters, body shape — anything described in the OpenAPI document | `league/openapi-psr7-validator` via the bundle's `RequestValidator` | `kernel.request` — *before* deserialization |
+| **Symfony Validator** | Constraints declared on your command DTO properties (`#[Assert\NotBlank]`, `#[Assert\Email]`, …) | `symfony/validator` via the controller | After deserialization, *before* dispatch |
+
+Both run automatically on every request to a Nelmio API area. Disabling one does not disable the other; see [Configuration](#configuration) below for the toggle.
+
+You can also plug in your own request-level validators alongside the OpenAPI one — see [Extending Request Validation](#extending-request-validation) further down.
 
 ## Command Validation
 
@@ -156,4 +165,4 @@ All tagged validators are executed in a chain during the `kernel.request` event,
 
 ## Customizing Error Responses
 
-The bundle uses an `ExceptionToApiProblemTransformer` to convert internal exceptions into `ApiProblemException`. You can decorate or override this service if you need to customize how specific exceptions are mapped to problem details.
+The bundle uses an `ExceptionToApiProblemTransformer` to convert internal exceptions into `ApiProblemException`. You can decorate or override this service if you need to customize how specific exceptions are mapped to problem details — see [Extension Points → Custom exception transformers](extension-points.md#custom-exception-transformers-exceptiontoapiproblemtransformerinterface) for a worked example.
