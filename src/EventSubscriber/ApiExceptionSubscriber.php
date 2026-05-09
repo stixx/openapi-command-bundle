@@ -77,9 +77,12 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
 
         $payload = $this->normalizer->normalize($throwable, JsonEncoder::FORMAT);
 
-        return new JsonResponse($payload, $throwable->getStatusCode(), array_merge([
-            'Content-Type' => 'application/problem+json',
-        ], $throwable->getHeaders()));
+        // Throwable headers (e.g. Allow on 405, Retry-After on 503) are kept, but our problem+json
+        // Content-Type must take precedence to stay RFC 7807 compliant.
+        return new JsonResponse($payload, $throwable->getStatusCode(), array_merge(
+            $throwable->getHeaders(),
+            ['Content-Type' => 'application/problem+json'],
+        ));
     }
 
     private function buildFallbackResponse(): JsonResponse
