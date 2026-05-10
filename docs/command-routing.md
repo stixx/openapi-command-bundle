@@ -23,51 +23,95 @@ Important: Commands must NOT be controllers
 
 ## Request lifecycle
 
-The following sequence diagram illustrates the lifecycle of a request handled by the **OpenAPI Command Bundle**, from the initial HTTP request to the final response.
+A successful request flows through the bundle in two phases: a `kernel.request` validation phase, then controller execution. Anything that throws — at any step — is caught by `ApiExceptionSubscriber` and rendered as an RFC 7807 problem response (the second diagram below).
+
+### Happy path
 
 ```mermaid
 sequenceDiagram
     participant Client
-    participant Symfony as Symfony Kernel
-    participant Validator as RequestValidatorSubscriber
+    participant Kernel as Symfony Kernel
+    participant Areas as NelmioAreaRoutesChecker
+    participant ReqSub as RequestValidatorSubscriber
+    participant Chain as RequestValidatorChain
+    participant ApiV as RequestValidator (OpenAPI)
     participant Resolver as CommandValueResolver
     participant Controller as CommandController
-    participant Messenger as MessageBusInterface
+    participant Bus as MessageBusInterface
     participant Status as StatusResolverInterface
     participant Responder as ResponderChain
 
-    Client->>Symfony: HTTP Request (JSON)
-    Symfony->>Validator: kernel.request event
-    Validator->>Validator: Run tagged validators (RequestValidatorChain)
-    Note over Validator: Throws BadRequestHttpException if validation fails
-    
-    Symfony->>Resolver: Resolve command DTO
-    Resolver->>Resolver: Decode JSON body
-    Resolver->>Resolver: Merge route and query parameters
-    Resolver->>Resolver: Denormalize into Command DTO
-    Note over Resolver: Throws BadRequestHttpException if mapping fails
-    
-    Symfony->>Controller: Invoke CommandController(Request, Command)
-    
-    Controller->>Controller: Validate Command DTO (Symfony Validator)
-    Note over Controller: Throws ApiProblemException if validation fails
-    
-    Controller->>Messenger: Dispatch Command
-    Messenger->>Messenger: Execute Message Handler
-    Messenger-->>Controller: Return Handler Result
-    Note over Controller: Catch HandlerFailedException and rethrow actual cause
-    
-    Controller->>Status: Resolve HTTP Status Code
-    Status-->>Controller: status code (e.g., 201)
-    
+    Client->>Kernel: HTTP Request
+    Kernel->>ReqSub: kernel.request (priority 7)
+    ReqSub->>Areas: isApiRoute(request)?
+    alt route inside a Nelmio API area
+        ReqSub->>Chain: validate(request)
+        Chain->>ApiV: validate(request)
+        Note over ApiV: Validates against the generated OpenAPI document<br/>via league/openapi-psr7-validator<br/>(headers, query, path, body shape).<br/>Throws ValidationFailed on mismatch.
+        Chain->>Chain: Run user-tagged ValidatorInterface services
+    else non-API route
+        ReqSub-->>Kernel: skip
+    end
+
+    Kernel->>Resolver: resolve(Request, ArgumentMetadata)
+    Resolver->>Resolver: Decode JSON body (when present)
+    Resolver->>Resolver: Collect scalar route + query params (route attributes win on collision)
+    Resolver->>Resolver: Denormalize into Command DTO via Symfony Serializer
+    Note over Resolver: BadRequestHttpException on JSON decode<br/>or denormalization failure
+
+    Kernel->>Controller: __invoke(Request, Command)
+    Controller->>Controller: Symfony Validator on the DTO
+    Note over Controller: ApiProblemException::unprocessableEntity (422)<br/>on constraint violations
+
+    Controller->>Bus: dispatch(Command)
+    Bus->>Bus: Execute message handler
+    Bus-->>Controller: Envelope (HandledStamp::getResult())
+    Note over Controller: HandlerFailedException is caught and<br/>WrappedExceptionUnwrapper unwraps to the leaf cause<br/>(recursive — covers nested handlers and DelayedMessageHandlingException)
+
+    Controller->>Status: resolve(Request, Command)
+    Note over Status: Reads first 2xx from the OpenAPI operation;<br/>falls back to 201 (POST) / 204 (DELETE) / 200
+    Status-->>Controller: status code
     Controller->>Responder: respond(result, status)
-    Responder->>Responder: Find supporting Responder (e.g., JsonResponder)
-    Responder-->>Controller: Response object
-    
-    Controller-->>Symfony: Return Response
-    Symfony-->>Client: HTTP Response (JSON)
-    
-    Note over Symfony, Client: ApiExceptionSubscriber handles exceptions and returns Problem Details (RFC 7807)
+    Responder->>Responder: First responder whose supports($result) returns true
+    Note over Responder: Built-in chain: JsonResponder (JsonSerializable) →<br/>JsonSerializedResponder (objects/arrays) →<br/>ScalarResponder (string/int/float/bool) →<br/>NullableResponder (null only)
+    Responder-->>Controller: Response
+    Controller-->>Kernel: Response
+    Kernel-->>Client: HTTP Response
+```
+
+### Exception path
+
+```mermaid
+sequenceDiagram
+    participant Source as Throwable raised<br/>(validator, resolver,<br/>controller, handler, ...)
+    participant Kernel as Symfony Kernel
+    participant ExSub as ApiExceptionSubscriber
+    participant Areas as NelmioAreaRoutesChecker
+    participant Unwrap as WrappedExceptionUnwrapper
+    participant Trans as ExceptionToApiProblemTransformer
+    participant Norm as ApiProblemNormalizer
+    participant Client
+
+    Source->>Kernel: throw
+    Kernel->>ExSub: kernel.exception (priority -10)
+    ExSub->>Areas: isApiRoute(request)?
+    Note over Areas: Match _route in any area's RouteCollection,<br/>OR fall back to path_patterns regex<br/>(covers 404 / 405 where _route is unset)
+    alt non-API route
+        ExSub-->>Kernel: skip → framework default error page
+    end
+    ExSub->>Unwrap: unwrap(throwable)
+    Unwrap-->>ExSub: leaf cause
+    alt leaf is already ApiProblemException
+        Note over ExSub: Use as-is (preserves status, title, detail, violations)
+    else any other Throwable
+        ExSub->>Trans: transform(cause)
+        Trans-->>ExSub: ApiProblemException
+    end
+    ExSub->>Norm: normalize(problem, "json")
+    Norm-->>ExSub: payload
+    ExSub->>ExSub: Build JsonResponse (HTTP status from problem)
+    Note over ExSub: Throwable headers (Allow on 405, Retry-After on 503, ...)<br/>are preserved, but Content-Type is locked to<br/>application/problem+json (RFC 7807).<br/>If anything above throws, a static problem+json 500 is emitted instead.
+    ExSub-->>Client: HTTP Response
 ```
 
 ## No extra routes configuration required
@@ -267,14 +311,6 @@ Content-Type: application/json
 ## OpenAPI / NelmioApiDoc
 
 The bundle provides a `CommandRouteDescriber` so your routes appear in Nelmio ApiDoc automatically. If you use Nelmio areas, the bundle also exposes a helper (`NelmioAreaRoutesChecker`) that can recognize whether a request targets a documented API route. Routes generated from OpenAPI attributes are compiled into Symfony’s router, so they are visible in `bin/console debug:router`.
-
-
-## Migration note
-
-The previously introduced AsCommandRoute attribute and the temporary Symfony #[Route]-on-command approach are no longer supported to avoid confusion. Use OpenAPI operation attributes on the command class instead. You may override the controller via an OpenAPI vendor extension (x: { controller: FQCN }) or via a class-level #[CommandObject(controller: ...)].
-
-Note about CommandRouteTaggedPass
-- Earlier versions compiled route metadata via a DI compiler pass (`CommandRouteTaggedPass`) into a container parameter consumed by a loader. The bundle now uses Symfony-style filesystem scanning with attribute loaders (`AttributeDirectoryLoaderDecorator` + `CommandRouteClassLoader`). `CommandRouteTaggedPass` is no longer registered or used at runtime; it remains in the codebase only for backward-compatibility reference and may be removed in a future major release.
 
 
 ## Troubleshooting
