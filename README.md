@@ -158,7 +158,7 @@ See [Extension Points](docs/extension-points.md) for a worked example of each ex
 
 ## Requirements
 
-- PHP 8.4 or 8.5
+- PHP 8.4+
 - Symfony 7.3+ or 8.0+
 
 ## License
