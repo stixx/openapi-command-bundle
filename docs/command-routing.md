@@ -42,38 +42,38 @@ sequenceDiagram
     participant Responder as ResponderChain
 
     Client->>Kernel: HTTP Request
-    Kernel->>ReqSub: kernel.request (priority 7)
-    ReqSub->>Areas: isApiRoute(request)?
+    Kernel->>ReqSub: kernel.request, priority 7
+    ReqSub->>Areas: isApiRoute?
     alt route inside a Nelmio API area
-        ReqSub->>Chain: validate(request)
-        Chain->>ApiV: validate(request)
-        Note over ApiV: Validates against the generated OpenAPI document<br/>via league/openapi-psr7-validator<br/>(headers, query, path, body shape).<br/>Throws ValidationFailed on mismatch.
+        ReqSub->>Chain: validate
+        Chain->>ApiV: validate
+        Note over ApiV: Validates against the generated OpenAPI document<br/>via league/openapi-psr7-validator —<br/>headers, query, path, body shape.<br/>Throws ValidationFailed on mismatch.
         Chain->>Chain: Run user-tagged ValidatorInterface services
     else non-API route
         ReqSub-->>Kernel: skip
     end
 
-    Kernel->>Resolver: resolve(Request, ArgumentMetadata)
-    Resolver->>Resolver: Decode JSON body (when present)
-    Resolver->>Resolver: Collect scalar route + query params (route attributes win on collision)
+    Kernel->>Resolver: resolve command argument
+    Resolver->>Resolver: Decode JSON body when present
+    Resolver->>Resolver: Collect scalar route + query params,<br/>route attributes win on collision
     Resolver->>Resolver: Denormalize into Command DTO via Symfony Serializer
     Note over Resolver: BadRequestHttpException on JSON decode<br/>or denormalization failure
 
-    Kernel->>Controller: __invoke(Request, Command)
+    Kernel->>Controller: __invoke
     Controller->>Controller: Symfony Validator on the DTO
-    Note over Controller: ApiProblemException::unprocessableEntity (422)<br/>on constraint violations
+    Note over Controller: ApiProblemException::unprocessableEntity, 422,<br/>on constraint violations
 
-    Controller->>Bus: dispatch(Command)
+    Controller->>Bus: dispatch
     Bus->>Bus: Execute message handler
-    Bus-->>Controller: Envelope (HandledStamp::getResult())
-    Note over Controller: HandlerFailedException is caught and<br/>WrappedExceptionUnwrapper unwraps to the leaf cause<br/>(recursive — covers nested handlers and DelayedMessageHandlingException)
+    Bus-->>Controller: Envelope with HandledStamp::getResult
+    Note over Controller: HandlerFailedException is caught and<br/>WrappedExceptionUnwrapper unwraps to the leaf cause —<br/>recursive, covers nested handlers<br/>and DelayedMessageHandlingException.
 
-    Controller->>Status: resolve(Request, Command)
-    Note over Status: Reads first 2xx from the OpenAPI operation;<br/>falls back to 201 (POST) / 204 (DELETE) / 200
+    Controller->>Status: resolve
+    Note over Status: Reads first 2xx from the OpenAPI operation,<br/>falls back to 201 for POST, 204 for DELETE, 200 otherwise.
     Status-->>Controller: status code
-    Controller->>Responder: respond(result, status)
-    Responder->>Responder: First responder whose supports($result) returns true
-    Note over Responder: Built-in chain: JsonResponder (JsonSerializable) →<br/>JsonSerializedResponder (objects/arrays) →<br/>ScalarResponder (string/int/float/bool) →<br/>NullableResponder (null only)
+    Controller->>Responder: respond with result, status
+    Responder->>Responder: First responder whose supports returns true
+    Note over Responder: Built-in chain:<br/>JsonResponder for JsonSerializable →<br/>JsonSerializedResponder for objects, arrays →<br/>ScalarResponder for string, int, float, bool →<br/>NullableResponder for null only.
     Responder-->>Controller: Response
     Controller-->>Kernel: Response
     Kernel-->>Client: HTTP Response
@@ -83,7 +83,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant Source as Throwable raised<br/>(validator, resolver,<br/>controller, handler, ...)
+    participant Source as Throwable raised anywhere —<br/>validator, resolver, controller, handler, ...
     participant Kernel as Symfony Kernel
     participant ExSub as ApiExceptionSubscriber
     participant Areas as NelmioAreaRoutesChecker
@@ -93,24 +93,24 @@ sequenceDiagram
     participant Client
 
     Source->>Kernel: throw
-    Kernel->>ExSub: kernel.exception (priority -10)
-    ExSub->>Areas: isApiRoute(request)?
-    Note over Areas: Match _route in any area's RouteCollection,<br/>OR fall back to path_patterns regex<br/>(covers 404 / 405 where _route is unset)
+    Kernel->>ExSub: kernel.exception, priority -10
+    ExSub->>Areas: isApiRoute?
+    Note over Areas: Match _route in any area's RouteCollection,<br/>OR fall back to path_patterns regex —<br/>covers 404, 405 where _route is unset.
     alt non-API route
         ExSub-->>Kernel: skip → framework default error page
     end
-    ExSub->>Unwrap: unwrap(throwable)
+    ExSub->>Unwrap: unwrap throwable
     Unwrap-->>ExSub: leaf cause
     alt leaf is already ApiProblemException
-        Note over ExSub: Use as-is (preserves status, title, detail, violations)
+        Note over ExSub: Use as-is — preserves status, title, detail, violations.
     else any other Throwable
-        ExSub->>Trans: transform(cause)
+        ExSub->>Trans: transform cause
         Trans-->>ExSub: ApiProblemException
     end
-    ExSub->>Norm: normalize(problem, "json")
+    ExSub->>Norm: normalize problem
     Norm-->>ExSub: payload
-    ExSub->>ExSub: Build JsonResponse (HTTP status from problem)
-    Note over ExSub: Throwable headers (Allow on 405, Retry-After on 503, ...)<br/>are preserved, but Content-Type is locked to<br/>application/problem+json (RFC 7807).<br/>If anything above throws, a static problem+json 500 is emitted instead.
+    ExSub->>ExSub: Build JsonResponse with status from the problem
+    Note over ExSub: Throwable headers — Allow on 405, Retry-After on 503, ... —<br/>are preserved, but Content-Type is locked to<br/>application/problem+json per RFC 7807.<br/>If anything above throws, a static problem+json 500<br/>is emitted instead.
     ExSub-->>Client: HTTP Response
 ```
 
