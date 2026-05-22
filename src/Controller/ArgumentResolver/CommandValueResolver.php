@@ -14,6 +14,8 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Controller\ArgumentResolver;
 
 use JsonException;
+use ReflectionClass;
+use ReflectionNamedType;
 use Stixx\OpenApiCommandBundle\Attribute\CommandObject;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Request;
@@ -54,6 +56,8 @@ final readonly class CommandValueResolver implements ValueResolverInterface
         if ($params !== []) {
             $payload = array_replace($payload, $params);
         }
+
+        $payload = $this->coerceScalarsAgainstConstructor($payload, $type);
 
         yield $this->denormalizeToType($payload, $type);
     }
@@ -147,6 +151,61 @@ final readonly class CommandValueResolver implements ValueResolverInterface
         }
 
         return $decoded;
+    }
+
+    /**
+     * Coerces string scalars in `$payload` to the declared `int`/`float`/`bool` types of the
+     * target class's constructor parameters. HTTP query strings deliver every value as a
+     * string; without this, Symfony's denormalizer rejects `"1"` for a typed `int $page`
+     * with `NotNormalizableValueException`. Invalid input (e.g. `?page=foo` against an int
+     * parameter) is left as a string so the validator surfaces its normal 400 error rather
+     * than silently coercing to `0`.
+     *
+     * @param array<string, mixed> $payload
+     *
+     * @return array<string, mixed>
+     */
+    private function coerceScalarsAgainstConstructor(array $payload, string $type): array
+    {
+        if (!class_exists($type)) {
+            return $payload;
+        }
+
+        $reflection = new ReflectionClass($type);
+        $constructor = $reflection->getConstructor();
+        if ($constructor === null) {
+            return $payload;
+        }
+
+        foreach ($constructor->getParameters() as $parameter) {
+            $name = $parameter->getName();
+            if (!array_key_exists($name, $payload)) {
+                continue;
+            }
+
+            $value = $payload[$name];
+            if (!is_string($value)) {
+                continue;
+            }
+
+            $parameterType = $parameter->getType();
+            if (!$parameterType instanceof ReflectionNamedType) {
+                continue;
+            }
+
+            $coerced = match ($parameterType->getName()) {
+                'int'   => filter_var($value, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE),
+                'float' => filter_var($value, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE),
+                'bool'  => filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+                default => null,
+            };
+
+            if ($coerced !== null) {
+                $payload[$name] = $coerced;
+            }
+        }
+
+        return $payload;
     }
 
     /**

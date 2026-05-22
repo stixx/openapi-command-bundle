@@ -212,6 +212,113 @@ final class CommandValueResolverTest extends TestCase
     }
 
     /**
+     * @param array<string, mixed> $expectedPayload
+     */
+    #[DataProvider('provideQueryParameterCoercionCases')]
+    public function testResolveCoercesQueryScalarsAgainstConstructorTypes(Request $request, array $expectedPayload): void
+    {
+        // Arrange — the resolver must coerce string query params (`"1"`, `"true"`, `"1.5"`)
+        // to the declared scalar constructor parameter types before handing off to the
+        // denormalizer. Without coercion, Symfony's ObjectNormalizer rejects strings for
+        // typed scalar properties, producing a 400 on every paginated list endpoint.
+        $argument = new ArgumentMetadata(
+            'command',
+            CommandValueResolverTestPaginatedCommand::class,
+            false,
+            false,
+            null,
+            false,
+            [new CommandObject()]
+        );
+
+        $this->serializer->expects($this->once())
+            ->method('denormalize')
+            ->with($expectedPayload, CommandValueResolverTestPaginatedCommand::class)
+            ->willReturn(new stdClass());
+
+        // Act
+        iterator_to_array($this->resolver->resolve($request, $argument));
+
+        // Assert — expectation verified by mock `with()` matcher.
+    }
+
+    /**
+     * @return iterable<string, array{Request, array<string, mixed>}>
+     */
+    public static function provideQueryParameterCoercionCases(): iterable
+    {
+        yield 'string "1" coerces to int 1 for typed int parameter' => [
+            new Request(query: ['page' => '1']),
+            ['page' => 1],
+        ];
+
+        yield 'string "1.5" coerces to float 1.5 for typed float parameter' => [
+            new Request(query: ['ratio' => '1.5']),
+            ['ratio' => 1.5],
+        ];
+
+        yield 'string "true" coerces to bool true for typed bool parameter' => [
+            new Request(query: ['archived' => 'true']),
+            ['archived' => true],
+        ];
+
+        yield 'string "false" coerces to bool false for typed bool parameter' => [
+            new Request(query: ['archived' => 'false']),
+            ['archived' => false],
+        ];
+
+        yield 'invalid int string stays as string so validator surfaces its error' => [
+            new Request(query: ['page' => 'not-a-number']),
+            ['page' => 'not-a-number'],
+        ];
+
+        yield 'string "1" stays as string for typed string parameter' => [
+            new Request(query: ['status' => '1']),
+            ['status' => '1'],
+        ];
+
+        yield 'union-typed parameter is skipped (int|string stays string)' => [
+            new Request(query: ['limit' => '25']),
+            ['limit' => '25'],
+        ];
+
+        yield 'missing constructor parameter key is left alone' => [
+            new Request(query: ['unknownParameter' => '1']),
+            ['unknownParameter' => '1'],
+        ];
+
+        yield 'route attribute string coerces to int the same as a query string' => [
+            new Request(attributes: ['page' => '7']),
+            ['page' => 7],
+        ];
+    }
+
+    public function testResolveSkipsCoercionWhenTargetClassHasNoConstructor(): void
+    {
+        // Arrange
+        $request = new Request(query: ['page' => '1']);
+        $argument = new ArgumentMetadata(
+            'command',
+            stdClass::class,
+            false,
+            false,
+            null,
+            false,
+            [new CommandObject()]
+        );
+
+        $this->serializer->expects($this->once())
+            ->method('denormalize')
+            ->with(['page' => '1'], stdClass::class)
+            ->willReturn(new stdClass());
+
+        // Act
+        iterator_to_array($this->resolver->resolve($request, $argument));
+
+        // Assert — expectation verified by mock.
+    }
+
+    /**
      * @param array<string, mixed> $query
      * @param array<string, mixed> $attributes
      */
@@ -221,5 +328,23 @@ final class CommandValueResolverTest extends TestCase
         $request->headers->set('Content-Type', 'application/json');
 
         return $request;
+    }
+}
+
+/**
+ * Test-only command class exercising every parameter type variation the coercion
+ * logic needs to recognise. Kept in the same file to avoid scattering test fixtures.
+ *
+ * @internal
+ */
+final readonly class CommandValueResolverTestPaginatedCommand
+{
+    public function __construct(
+        public int $page = 1,
+        public float $ratio = 0.0,
+        public bool $archived = false,
+        public string $status = '',
+        public int|string $limit = 20,
+    ) {
     }
 }
