@@ -291,6 +291,31 @@ final class CommandValueResolverTest extends TestCase
             new Request(attributes: ['page' => '7']),
             ['page' => 7],
         ];
+
+        yield 'zero coerces to int 0 (verifies the strict !== null guard rather than a truthy check)' => [
+            new Request(query: ['page' => '0']),
+            ['page' => 0],
+        ];
+
+        yield 'zero-point-zero coerces to float 0.0 (verifies the strict !== null guard)' => [
+            new Request(query: ['ratio' => '0.0']),
+            ['ratio' => 0.0],
+        ];
+
+        yield 'negative integer string coerces to a negative int' => [
+            new Request(query: ['page' => '-1']),
+            ['page' => -1],
+        ];
+
+        yield 'zero from a route attribute coerces to int 0 the same as from a query string' => [
+            new Request(attributes: ['page' => '0']),
+            ['page' => 0],
+        ];
+
+        yield 'negative integer from a route attribute coerces to a negative int' => [
+            new Request(attributes: ['page' => '-3']),
+            ['page' => -3],
+        ];
     }
 
     public function testResolveSkipsCoercionWhenTargetClassHasNoConstructor(): void

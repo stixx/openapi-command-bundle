@@ -154,12 +154,8 @@ final readonly class CommandValueResolver implements ValueResolverInterface
     }
 
     /**
-     * Coerces string scalars in `$payload` to the declared `int`/`float`/`bool` types of the
-     * target class's constructor parameters. HTTP query strings deliver every value as a
-     * string; without this, Symfony's denormalizer rejects `"1"` for a typed `int $page`
-     * with `NotNormalizableValueException`. Invalid input (e.g. `?page=foo` against an int
-     * parameter) is left as a string so the validator surfaces its normal 400 error rather
-     * than silently coercing to `0`.
+     * Coerces query/route string scalars to the declared `int`/`float`/`bool` constructor types.
+     * Invalid input stays as a string so the denormalizer surfaces its normal error.
      *
      * @param array<string, mixed> $payload
      *
