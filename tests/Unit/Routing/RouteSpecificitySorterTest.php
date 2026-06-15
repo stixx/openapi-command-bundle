@@ -76,4 +76,19 @@ final class RouteSpecificitySorterTest extends TestCase
         // Assert
         self::assertSame(['alpha', 'beta'], $sorted);
     }
+
+    public function testItPreservesExistingRoutePriorities(): void
+    {
+        // Arrange — a non-default priority must survive the rebuild into the sorted collection.
+        $routes = new RouteCollection();
+        $routes->add('low', new Route('/api/books/{id}'));
+        $routes->add('high', new Route('/api/books/{id}/reviews'), 10);
+
+        // Act
+        $sorted = (new RouteSpecificitySorter())->sort($routes);
+
+        // Assert
+        self::assertSame(10, $sorted->getPriority('high'));
+        self::assertNull($sorted->getPriority('low'));
+    }
 }

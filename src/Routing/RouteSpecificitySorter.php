@@ -54,7 +54,7 @@ final class RouteSpecificitySorter
 
         $sorted = new RouteCollection();
         foreach ($names as $name) {
-            $sorted->add($name, $all[$name]);
+            $sorted->add($name, $all[$name], $routes->getPriority($name) ?? 0);
         }
 
         return $sorted;
