@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Routing\Loader;
 
+use Stixx\OpenApiCommandBundle\Routing\RouteSpecificitySorter;
 use Symfony\Component\Config\FileLocatorInterface;
 use Symfony\Component\Config\Loader\Loader;
 use Symfony\Component\Routing\Loader\AttributeDirectoryLoader;
@@ -49,7 +50,7 @@ final class AttributeDirectoryLoaderDecorator extends Loader
 
         $commands = $commandDirLoader->load($projectDirectory, 'attribute');
         if ($commands instanceof RouteCollection) {
-            $collection->addCollection($commands);
+            $collection->addCollection((new RouteSpecificitySorter())->sort($commands));
         }
 
         return $collection;

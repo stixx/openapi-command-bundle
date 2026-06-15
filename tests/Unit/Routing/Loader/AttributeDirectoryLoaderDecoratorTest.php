@@ -55,6 +55,24 @@ final class AttributeDirectoryLoaderDecoratorTest extends TestCase
         self::assertCount(0, $second->all(), 'Second load returns inner collection without augmentation');
     }
 
+    public function testCommandRoutesAreOrderedMostSpecificFirst(): void
+    {
+        // Arrange — the fixture filenames scan as CollectionItemCommand (/api/items/{id}) before
+        // CollectionLiteralCommand (/api/items/featured), so without specificity ordering the
+        // placeholder route would be registered first and swallow the literal one.
+        $this->inner->method('load')->willReturn(new RouteCollection());
+
+        $locator = new FileLocator([$this->projectDir]);
+        $decorator = new AttributeDirectoryLoaderDecorator($this->inner, $locator, new CommandRouteClassLoader(), $this->projectDir);
+
+        // Act
+        $names = array_keys($decorator->load('ignored')->all());
+        $itemRoutes = array_values(array_filter($names, static fn (string $name): bool => str_starts_with($name, 'items_')));
+
+        // Assert
+        self::assertSame(['items_featured', 'items_item'], $itemRoutes);
+    }
+
     public function testSupportsDelegatesToInner(): void
     {
         // Arrange
