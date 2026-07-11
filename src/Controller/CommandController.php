@@ -41,6 +41,7 @@ readonly class CommandController
         private bool $validationEnabled = true,
         /** @var string[] */
         private array $validationGroups = ['Default'],
+        private ?string $cacheControl = 'no-store',
     ) {
     }
 
@@ -63,7 +64,13 @@ readonly class CommandController
         $handled = $envelope->last(HandledStamp::class);
         $result = $handled?->getResult();
 
-        return $this->responder->respond($result, $this->statusResolver->resolve($request, $command));
+        $response = $this->responder->respond($result, $this->statusResolver->resolve($request, $command));
+
+        if ($this->cacheControl !== null && $this->cacheControl !== '') {
+            $response->headers->set('Cache-Control', $this->cacheControl);
+        }
+
+        return $response;
     }
 
     private function validateCommand(object $command): void

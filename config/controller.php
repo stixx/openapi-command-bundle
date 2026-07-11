@@ -28,7 +28,8 @@ return static function (ContainerConfigurator $configurator): void {
             ->arg('$responder', service(ResponderInterface::class))
             ->arg('$exceptionUnwrapper', service(WrappedExceptionUnwrapper::class))
             ->arg('$validationEnabled', param('stixx_openapi_command.validation.enabled'))
-            ->arg('$validationGroups', param('stixx_openapi_command.validation.groups'));
+            ->arg('$validationGroups', param('stixx_openapi_command.validation.groups'))
+            ->arg('$cacheControl', param('stixx_openapi_command.cache_control'));
 
     $services
         ->set(CommandValueResolver::class)

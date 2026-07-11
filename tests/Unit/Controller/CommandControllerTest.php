@@ -151,6 +151,99 @@ final class CommandControllerTest extends TestCase
         }
     }
 
+    public function testInvokeSetsDefaultCacheControlHeader(): void
+    {
+        // Arrange
+        $command = new ExampleCommand();
+        $request = new Request();
+
+        $validator = $this->createMock(ValidatorInterface::class);
+        $violations = $this->createMock(ConstraintViolationListInterface::class);
+        $violations->method('count')->willReturn(0);
+        $validator->method('validate')->willReturn($violations);
+
+        $result = ['ok' => true];
+        $envelope = new Envelope($command, [new HandledStamp($result, 'handler')]);
+
+        $messageBus = $this->createMock(MessageBusInterface::class);
+        $messageBus->method('dispatch')->willReturn($envelope);
+
+        $statusResolver = $this->createMock(StatusResolverInterface::class);
+        $statusResolver->method('resolve')->willReturn(200);
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->method('respond')->willReturn(new Response((string) json_encode($result), 200));
+
+        // Act
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, new WrappedExceptionUnwrapper());
+        $response = $controller($request, $command);
+
+        // Assert — Symfony's ResponseHeaderBag appends 'private' when no 'public' directive is present
+        self::assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+    }
+
+    public function testInvokeOmitsCacheControlHeaderWhenDisabled(): void
+    {
+        // Arrange
+        $command = new ExampleCommand();
+        $request = new Request();
+
+        $validator = $this->createMock(ValidatorInterface::class);
+        $violations = $this->createMock(ConstraintViolationListInterface::class);
+        $violations->method('count')->willReturn(0);
+        $validator->method('validate')->willReturn($violations);
+
+        $result = ['ok' => true];
+        $envelope = new Envelope($command, [new HandledStamp($result, 'handler')]);
+
+        $messageBus = $this->createMock(MessageBusInterface::class);
+        $messageBus->method('dispatch')->willReturn($envelope);
+
+        $statusResolver = $this->createMock(StatusResolverInterface::class);
+        $statusResolver->method('resolve')->willReturn(200);
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->method('respond')->willReturn(new Response((string) json_encode($result), 200));
+
+        // Act
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, new WrappedExceptionUnwrapper(), cacheControl: null);
+        $response = $controller($request, $command);
+
+        // Assert — Symfony sets a computed default; the controller must not override it
+        self::assertNotSame('no-store', $response->headers->get('Cache-Control'));
+    }
+
+    public function testInvokeSetsCustomCacheControlHeader(): void
+    {
+        // Arrange
+        $command = new ExampleCommand();
+        $request = new Request();
+
+        $validator = $this->createMock(ValidatorInterface::class);
+        $violations = $this->createMock(ConstraintViolationListInterface::class);
+        $violations->method('count')->willReturn(0);
+        $validator->method('validate')->willReturn($violations);
+
+        $result = ['ok' => true];
+        $envelope = new Envelope($command, [new HandledStamp($result, 'handler')]);
+
+        $messageBus = $this->createMock(MessageBusInterface::class);
+        $messageBus->method('dispatch')->willReturn($envelope);
+
+        $statusResolver = $this->createMock(StatusResolverInterface::class);
+        $statusResolver->method('resolve')->willReturn(200);
+
+        $responder = $this->createMock(ResponderInterface::class);
+        $responder->method('respond')->willReturn(new Response((string) json_encode($result), 200));
+
+        // Act
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, new WrappedExceptionUnwrapper(), cacheControl: 'no-cache, private');
+        $response = $controller($request, $command);
+
+        // Assert
+        self::assertSame('no-cache, private', $response->headers->get('Cache-Control'));
+    }
+
     public function testInvokeRethrowsPreviousExceptionFromHandlerFailedException(): void
     {
         // Arrange

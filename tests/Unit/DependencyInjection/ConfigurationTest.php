@@ -34,6 +34,7 @@ final class ConfigurationTest extends TestCase
                 'enabled' => true,
                 'groups' => ['Default'],
             ],
+            'cache_control' => 'no-store',
             'openapi' => [
                 'problem_details' => true,
             ],
@@ -62,6 +63,7 @@ final class ConfigurationTest extends TestCase
                 'enabled' => false,
                 'groups' => ['Custom', 'Special'],
             ],
+            'cache_control' => 'no-store',
             'openapi' => [
                 'problem_details' => true,
             ],
