@@ -66,7 +66,7 @@ readonly class CommandController
 
         $response = $this->responder->respond($result, $this->statusResolver->resolve($request, $command));
 
-        if ($this->cacheControl !== null && $this->cacheControl !== '') {
+        if (!empty($this->cacheControl)) {
             $response->headers->set('Cache-Control', $this->cacheControl);
         }
 
