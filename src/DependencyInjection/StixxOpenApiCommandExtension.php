@@ -83,6 +83,9 @@ final class StixxOpenApiCommandExtension extends Extension implements PrependExt
 
         $container->setParameter('stixx_openapi_command.validation.enabled', $validationConfig['enabled']);
         $container->setParameter('stixx_openapi_command.validation.groups', $validationConfig['groups']);
+        /** @var ?string $cacheControl */
+        $cacheControl = $config['cache_control'];
+        $container->setParameter('stixx_openapi_command.cache_control', $cacheControl);
 
         $container
             ->registerForAutoconfiguration(ResponderInterface::class)
