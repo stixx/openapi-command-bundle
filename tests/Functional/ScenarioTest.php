@@ -170,6 +170,69 @@ final class ScenarioTest extends AbstractKernelTestCase
     }
 
     #[WithoutErrorHandler]
+    public function testResponseIncludesDefaultCacheControlHeader(): void
+    {
+        // Arrange
+        $kernel = $this->createKernelWithConfig(static function (Kernel $kernel): void {
+            $kernel->addTestConfig(__DIR__.'/Resources/config/scenario.php');
+        });
+
+        $payload = ['title' => 'Clean Code', 'author' => 'Robert C. Martin'];
+        $request = Request::create('/api/books', 'POST', content: json_encode($payload, JSON_THROW_ON_ERROR));
+        $request->headers->set('Content-Type', 'application/json');
+
+        // Act
+        $response = $kernel->handle($request);
+
+        // Assert
+        self::assertSame(201, $response->getStatusCode());
+        self::assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+    }
+
+    #[WithoutErrorHandler]
+    public function testResponseOmitsCacheControlWhenDisabled(): void
+    {
+        // Arrange
+        $kernel = $this->createKernelWithConfig(static function (Kernel $kernel): void {
+            $kernel->addTestConfig(__DIR__.'/Resources/config/scenario.php');
+            $kernel->addTestConfig(__DIR__.'/Resources/config/cache_control_disabled.php');
+        });
+
+        $payload = ['title' => 'Clean Code', 'author' => 'Robert C. Martin'];
+        $request = Request::create('/api/books', 'POST', content: json_encode($payload, JSON_THROW_ON_ERROR));
+        $request->headers->set('Content-Type', 'application/json');
+
+        // Act
+        $response = $kernel->handle($request);
+
+        // Assert
+        self::assertSame(201, $response->getStatusCode());
+        self::assertStringNotContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+    }
+
+    #[WithoutErrorHandler]
+    public function testResponseIncludesCustomCacheControlHeader(): void
+    {
+        // Arrange
+        $kernel = $this->createKernelWithConfig(static function (Kernel $kernel): void {
+            $kernel->addTestConfig(__DIR__.'/Resources/config/scenario.php');
+            $kernel->addTestConfig(__DIR__.'/Resources/config/cache_control_custom.php');
+        });
+
+        $payload = ['title' => 'Clean Code', 'author' => 'Robert C. Martin'];
+        $request = Request::create('/api/books', 'POST', content: json_encode($payload, JSON_THROW_ON_ERROR));
+        $request->headers->set('Content-Type', 'application/json');
+
+        // Act
+        $response = $kernel->handle($request);
+
+        // Assert
+        self::assertSame(201, $response->getStatusCode());
+        self::assertStringContainsString('no-cache', (string) $response->headers->get('Cache-Control'));
+        self::assertStringContainsString('must-revalidate', (string) $response->headers->get('Cache-Control'));
+    }
+
+    #[WithoutErrorHandler]
     public function testUnknownApiPathReturnsProblemJson(): void
     {
         // Arrange

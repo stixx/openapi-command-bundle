@@ -210,7 +210,7 @@ final class CommandControllerTest extends TestCase
         $response = $controller($request, $command);
 
         // Assert — Symfony sets a computed default; the controller must not override it
-        self::assertNotSame('no-store', $response->headers->get('Cache-Control'));
+        self::assertStringNotContainsString('no-store', (string) $response->headers->get('Cache-Control'));
     }
 
     public function testInvokeSetsCustomCacheControlHeader(): void
