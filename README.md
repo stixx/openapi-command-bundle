@@ -118,7 +118,7 @@ stixx_openapi_command:
     validation:
         enabled: true
         groups: ['Default']
-    cache_control: 'no-store' # Set on every command response (null to disable)
+    cache_control: 'no-store' # Any valid Cache-Control directives, or null to disable
     openapi:
         problem_details: true  # Enable RFC 7807 problem details for errors
 ```
