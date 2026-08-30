@@ -21,7 +21,8 @@ use Stixx\OpenApiCommandBundle\Exception\{DefaultExceptionToApiProblemTransforme
 use Stixx\OpenApiCommandBundle\Responder\{JsonResponder, JsonSerializedResponder, NullableResponder, ResponderChain, ResponderInterface};
 use Stixx\OpenApiCommandBundle\Response\{ResponseStatusResolver, StatusResolverInterface};
 use Stixx\OpenApiCommandBundle\RouteDescriber\CommandRouteDescriber;
-use Stixx\OpenApiCommandBundle\Routing\Loader\{AttributeDirectoryLoaderDecorator, CommandRouteClassLoader};
+use Stixx\OpenApiCommandBundle\Routing\CommandRouteDiscovery;
+use Stixx\OpenApiCommandBundle\Routing\Loader\{CommandRouteClassLoader, CommandRouteDirectoryLoader, RouterLoaderDecorator};
 use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Stixx\OpenApiCommandBundle\Serializer\Normalizer\{ApiProblemNormalizer, ConstraintViolationListNormalizer, ConstraintViolationNormalizer};
 use Stixx\OpenApiCommandBundle\Tests\Functional\App\Kernel;
@@ -70,7 +71,9 @@ final class BundleInitializationTest extends AbstractKernelTestCase
         // Routing
         $this->assertTrue($container->has(NelmioAreaRoutesChecker::class));
         $this->assertTrue($container->has(CommandRouteClassLoader::class));
-        $this->assertTrue($container->has(AttributeDirectoryLoaderDecorator::class));
+        $this->assertTrue($container->has(CommandRouteDirectoryLoader::class));
+        $this->assertTrue($container->has(CommandRouteDiscovery::class));
+        $this->assertTrue($container->has(RouterLoaderDecorator::class));
 
         // Validators
         $this->assertTrue($container->has(RequestValidatorChain::class));

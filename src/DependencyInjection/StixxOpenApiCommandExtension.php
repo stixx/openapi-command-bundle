@@ -87,6 +87,10 @@ final class StixxOpenApiCommandExtension extends Extension implements PrependExt
         $cacheControl = $config['cache_control'];
         $container->setParameter('stixx_openapi_command.cache_control', $cacheControl);
 
+        /** @var list<string> $commandPaths */
+        $commandPaths = $config['command_paths'];
+        $container->setParameter('stixx_openapi_command.command_paths', $commandPaths);
+
         $container
             ->registerForAutoconfiguration(ResponderInterface::class)
             ->addTag(ResponderInterface::TAG_NAME);

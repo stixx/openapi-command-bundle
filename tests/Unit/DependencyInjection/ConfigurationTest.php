@@ -35,11 +35,25 @@ final class ConfigurationTest extends TestCase
                 'groups' => ['Default'],
             ],
             'cache_control' => 'no-store',
+            'command_paths' => ['%kernel.project_dir%/src'],
             'openapi' => [
                 'problem_details' => true,
             ],
         ];
         self::assertSame($expected, $config);
+    }
+
+    public function testCommandPathsCanBeEmptiedToDisableDiscovery(): void
+    {
+        // Arrange
+        $configuration = new Configuration();
+        $processor = new Processor();
+
+        // Act
+        $config = $processor->processConfiguration($configuration, [['command_paths' => []]]);
+
+        // Assert
+        self::assertSame([], $config['command_paths']);
     }
 
     public function testCustomConfig(): void
@@ -64,6 +78,7 @@ final class ConfigurationTest extends TestCase
                 'groups' => ['Custom', 'Special'],
             ],
             'cache_control' => 'no-store',
+            'command_paths' => ['%kernel.project_dir%/src'],
             'openapi' => [
                 'problem_details' => true,
             ],
