@@ -8,9 +8,14 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [Unreleased]
 
+## [0.12.4] - 2026-08-30
+
+Documentation only — no code changes since `0.12.3`.
+
 ### Added
 
-- This changelog.
+- This changelog. Released so that it ships with the package rather than only appearing on the default
+  branch; `0.12.3` and earlier tags do not contain it.
 
 ## [0.12.3] - 2026-08-30
 
@@ -203,7 +208,8 @@ Installing it with Composer is not enough. See the README's installation section
   details outside debug mode, and a `CommandValueResolver` that supports list endpoints and the combination of
   parameters with a request body.
 
-[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.12.3...HEAD
+[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.12.4...HEAD
+[0.12.4]: https://github.com/stixx/openapi-command-bundle/compare/0.12.3...0.12.4
 [0.12.3]: https://github.com/stixx/openapi-command-bundle/compare/0.12.2...0.12.3
 [0.12.2]: https://github.com/stixx/openapi-command-bundle/compare/0.12.1...0.12.2
 [0.12.1]: https://github.com/stixx/openapi-command-bundle/compare/0.12.0...0.12.1
