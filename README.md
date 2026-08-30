@@ -155,6 +155,7 @@ stixx_openapi_command:
 
 For more detailed information, please refer to the following documentation:
 
+- [Changelog](CHANGELOG.md) — release history and upgrade notes
 - [Command Routing & Request Handling](docs/command-routing.md)
 - [Validation & Error Handling](docs/validation.md)
 - [OpenAPI Integration](docs/openapi.md)
