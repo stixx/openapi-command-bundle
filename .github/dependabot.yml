@@ -1,0 +1,22 @@
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - '*'
+    commit-message:
+      prefix: ci
+
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+    # Not a mistake: 0 disables version updates, leaving security updates only.
+    open-pull-requests-limit: 0
+    commit-message:
+      prefix: chore

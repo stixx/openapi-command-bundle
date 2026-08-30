@@ -38,7 +38,7 @@ jobs:
           key: lint-composer-${{ hashFiles('**/composer.json') }}
           restore-keys: lint-composer-
       - name: Install dependencies
-        run: composer install --prefer-dist
+        run: composer update --prefer-dist
       - name: Run simple-phpunit version check
         run: ./vendor/bin/simple-phpunit --version
       - name: Run code style check
