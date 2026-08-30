@@ -105,8 +105,7 @@ final class NelmioAreaRoutesTest extends TestCase
 
     public function testNonRouteCollectionServiceOnlySkipsItsOwnArea(): void
     {
-        // Arrange — the unusable entry comes first, so bailing out on it would leave the area that
-        // actually holds the route unchecked.
+        // Arrange — order matters: the unusable entry must come before the area holding the route.
         $notARouteCollection = static fn () => (object) ['not' => 'a route collection'];
 
         $collection = new RouteCollection();
