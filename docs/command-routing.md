@@ -138,6 +138,7 @@ Notes
 - Only classes that are annotated with OpenAPI operation attributes (e.g., `#[OA\Post]`) at class level and are not recognized controllers (`AbstractController`, `#[AsController]`, or having method-level `#[Route]`) will produce routes.
   - Because of this, ensure your commands are plain DTOs and do not extend `AbstractController`, do not use `#[AsController]`, and do not declare method-level `#[Route]` attributes.
 - If a route name is already present in the collection — because you imported the command explicitly — the bundle leaves your route alone rather than replacing it.
+- Two different command classes resolving to the same route name is an error, and the container fails to compile naming both classes. Without `operationId` the name is derived from the class short name, so `Billing\CreateInvoiceCommand` and `Sales\CreateInvoiceCommand` both resolve to `command_createinvoicecommand`; give at least one of them an explicit `operationId`. Loading the same class twice — via discovery and an explicit import — is not a conflict.
 
 ### Declaring command routes explicitly
 

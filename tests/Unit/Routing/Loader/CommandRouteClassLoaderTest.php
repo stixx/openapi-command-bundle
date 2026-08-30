@@ -13,10 +13,12 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\Routing\Loader;
 
+use LogicException;
 use PHPUnit\Framework\TestCase;
 use Stixx\OpenApiCommandBundle\Attribute\CommandObject;
 use Stixx\OpenApiCommandBundle\Controller\CommandController;
 use Stixx\OpenApiCommandBundle\Routing\Loader\CommandRouteClassLoader;
+use Stixx\OpenApiCommandBundle\Tests\Mock\Routing\duplicates\{DuplicateAlphaCommand, DuplicateBetaCommand};
 
 /**
  * Tests for CommandRouteClassLoader.
@@ -241,6 +243,34 @@ final class CommandRouteClassLoaderTest extends TestCase
         $names = array_keys($collection->all());
 
         self::assertSame(['my_op'], $names);
+    }
+
+    public function testTwoCommandsClaimingTheSameRouteNameFail(): void
+    {
+        // Arrange — per-class collections are merged with addCollection(), which would otherwise let one
+        // command silently overwrite the other's endpoint.
+        $loader = new CommandRouteClassLoader();
+        $loader->load(DuplicateAlphaCommand::class);
+
+        // Assert
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('both produce the route name "duplicate_operation"');
+
+        // Act
+        $loader->load(DuplicateBetaCommand::class);
+    }
+
+    public function testLoadingTheSameCommandTwiceIsNotAConflict(): void
+    {
+        // Arrange — discovery and an explicit route import can both reach the same class.
+        $loader = new CommandRouteClassLoader();
+        $loader->load(DuplicateAlphaCommand::class);
+
+        // Act
+        $collection = $loader->load(DuplicateAlphaCommand::class);
+
+        // Assert
+        self::assertSame(['duplicate_operation'], array_keys($collection->all()));
     }
 
     private static function classNamespace(string $short): string

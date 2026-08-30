@@ -83,6 +83,10 @@ final class RouterLoaderDecorator implements LoaderInterface
         $this->inner->setResolver($resolver);
     }
 
+    /**
+     * Nothing in the framework calls import() on `routing.loader`, but it is public on the decorated loader,
+     * so it is delegated rather than dropped: decorating a service should not shrink its surface.
+     */
     public function import(mixed $resource, ?string $type = null): mixed
     {
         return $this->inner->import($resource, $type);
