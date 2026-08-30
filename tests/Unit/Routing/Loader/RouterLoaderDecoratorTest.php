@@ -70,6 +70,19 @@ final class RouterLoaderDecoratorTest extends TestCase
         self::assertSame($explicit, $collection->get('api_test'));
     }
 
+    public function testCacheResourcesAreAddedToTheApplicationCollection(): void
+    {
+        // Arrange
+        $this->inner->method('load')->willReturn(new RouteCollection());
+
+        // Act
+        $collection = $this->createDecorator()->load('routing.yaml');
+
+        // Assert — without these the router cache never notices a command file changing.
+        self::assertInstanceOf(RouteCollection::class, $collection);
+        self::assertNotEmpty($collection->getResources());
+    }
+
     public function testNonRouteCollectionResultsPassThroughUntouched(): void
     {
         // Arrange

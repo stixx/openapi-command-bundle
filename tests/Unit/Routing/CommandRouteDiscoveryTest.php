@@ -53,6 +53,17 @@ final class CommandRouteDiscoveryTest extends TestCase
         self::assertSame(['items_featured', 'items_item'], $itemRoutes);
     }
 
+    public function testDiscoveredRoutesKeepTheirCacheResources(): void
+    {
+        // Arrange — resources are what invalidate the router cache when a command file changes.
+
+        // Act
+        $resources = $this->createDiscovery([$this->commandDir])->discover()->getResources();
+
+        // Assert
+        self::assertNotEmpty($resources, 'Sorting must not drop the loader resources');
+    }
+
     public function testNonExistentPathsAreSkipped(): void
     {
         // Act

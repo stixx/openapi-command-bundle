@@ -31,8 +31,9 @@ use Symfony\Component\Routing\RouteCollection;
  */
 final class RouterLoaderDecorator implements LoaderInterface
 {
-    // $inner is the abstract Loader, not LoaderInterface: MicroKernelTrait passes this service to
-    // configureRoutes(), where RoutingConfigurator::import() calls import() — declared only on Loader.
+    // getResolver() is load-bearing: MicroKernelTrait::loadRoutes() calls it on this service to resolve the
+    // kernel's own loader. $inner is the abstract Loader so import() can be delegated too, which the
+    // interface does not declare.
     public function __construct(
         private readonly Loader $inner,
         private readonly CommandRouteDiscovery $discovery,
@@ -46,14 +47,22 @@ final class RouterLoaderDecorator implements LoaderInterface
             return $collection;
         }
 
-        foreach ($this->discovery->discover()->all() as $name => $route) {
+        $discovered = $this->discovery->discover();
+
+        foreach ($discovered->all() as $name => $route) {
             // Keep a route the application already declared: re-adding moves it to the end of the
             // collection, changing which route matches first.
             if ($collection->get($name) !== null) {
                 continue;
             }
 
-            $collection->add($name, $route);
+            $collection->add($name, $route, $discovered->getPriority($name) ?? 0);
+        }
+
+        // Without these the router cache never sees command files change, so new or edited commands
+        // do not show up until the cache is cleared by hand.
+        foreach ($discovered->getResources() as $resource) {
+            $collection->addResource($resource);
         }
 
         return $collection;

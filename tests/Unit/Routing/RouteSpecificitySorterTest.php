@@ -15,6 +15,7 @@ namespace Stixx\OpenApiCommandBundle\Tests\Unit\Routing;
 
 use PHPUnit\Framework\TestCase;
 use Stixx\OpenApiCommandBundle\Routing\RouteSpecificitySorter;
+use Symfony\Component\Config\Resource\FileResource;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 
@@ -90,5 +91,19 @@ final class RouteSpecificitySorterTest extends TestCase
         // Assert
         self::assertSame(10, $sorted->getPriority('high'));
         self::assertNull($sorted->getPriority('low'));
+    }
+
+    public function testItPreservesCacheResources(): void
+    {
+        // Arrange — resources drive router cache invalidation, so the rebuild must not drop them.
+        $routes = new RouteCollection();
+        $routes->add('alpha', new Route('/api/books'));
+        $routes->addResource(new FileResource(__FILE__));
+
+        // Act
+        $sorted = (new RouteSpecificitySorter())->sort($routes);
+
+        // Assert
+        self::assertEquals([new FileResource(__FILE__)], $sorted->getResources());
     }
 }

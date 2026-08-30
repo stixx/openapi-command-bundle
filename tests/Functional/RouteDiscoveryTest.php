@@ -51,6 +51,14 @@ final class RouteDiscoveryTest extends AbstractKernelTestCase
 
         self::assertNotNull($routes->get('command_updatebookcommand'));
         self::assertNotNull($routes->get('command_deletebookcommand'));
+
+        // The command directory must be among the router's cache resources, or editing a command
+        // will not invalidate the route cache.
+        $resources = array_map(strval(...), $routes->getResources());
+        self::assertNotEmpty(
+            array_filter($resources, static fn (string $r): bool => str_contains($r, 'App/Command')),
+            'Expected a cache resource covering the scanned command directory'
+        );
     }
 
     #[WithoutErrorHandler]
