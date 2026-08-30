@@ -1,0 +1,26 @@
+version: 2
+
+updates:
+  # Actions are referenced by floating major tags, so a moved tag runs new code in CI with repository
+  # credentials. Keeping them current is the point of this entry.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - '*'
+    commit-message:
+      prefix: ci
+
+  # Security updates only. Consumers resolve against composer.json and never see this package's
+  # composer.lock, so routine lock bumps would be noise; open-pull-requests-limit: 0 disables version
+  # updates while leaving Dependabot security updates enabled.
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    commit-message:
+      prefix: chore
