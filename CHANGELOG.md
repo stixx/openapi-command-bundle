@@ -8,12 +8,21 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [Unreleased]
 
+### Added
+
+- This changelog.
+
 ## [0.12.3] - 2026-08-30
 
 Identical in content to `0.12.2` — same commit, no code difference. `0.12.2` was published to Packagist from a
 mis-tagged commit and could not be corrected in place, because Packagist will not re-point an existing version
 at a different commit. `0.12.3` re-releases the same code under a fresh number. If you are on `0.12.2` from
 GitHub you already have this code; Composer users should take `0.12.3`.
+
+The `0.12.2...0.12.3` comparison below is empty, as the two tags point at the same commit. Coming from
+Packagist, where `0.12.2` does not exist, the changes you are picking up are those in
+[`0.12.1...0.12.3`](https://github.com/stixx/openapi-command-bundle/compare/0.12.1...0.12.3) — the `0.12.2`
+entry below.
 
 ## [0.12.2] - 2026-08-30
 
@@ -195,7 +204,7 @@ Installing it with Composer is not enough. See the README's installation section
   parameters with a request body.
 
 [Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.12.3...HEAD
-[0.12.3]: https://github.com/stixx/openapi-command-bundle/compare/0.12.1...0.12.3
+[0.12.3]: https://github.com/stixx/openapi-command-bundle/compare/0.12.2...0.12.3
 [0.12.2]: https://github.com/stixx/openapi-command-bundle/compare/0.12.1...0.12.2
 [0.12.1]: https://github.com/stixx/openapi-command-bundle/compare/0.12.0...0.12.1
 [0.12.0]: https://github.com/stixx/openapi-command-bundle/compare/0.11.2...0.12.0
