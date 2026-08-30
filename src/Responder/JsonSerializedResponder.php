@@ -41,7 +41,6 @@ final readonly class JsonSerializedResponder implements ResponderInterface
             return false;
         }
 
-        // Traversable needs no branch of its own: it is an interface, so every implementation is an object.
         return is_object($result) || is_array($result);
     }
 }
