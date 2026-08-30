@@ -14,9 +14,10 @@ updates:
     commit-message:
       prefix: ci
 
-  # Security updates only. Consumers resolve against composer.json and never see this package's
-  # composer.lock, so routine lock bumps would be noise; open-pull-requests-limit: 0 disables version
-  # updates while leaving Dependabot security updates enabled.
+  # Security updates only. This package ships no lock file, so there is nothing to bump routinely and a
+  # security update means raising a constraint in composer.json — which is the action that actually
+  # protects consumers. open-pull-requests-limit: 0 disables version updates; security updates are
+  # governed by the repository setting and still apply.
   - package-ecosystem: composer
     directory: /
     schedule:
