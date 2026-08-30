@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Routing\Loader;
 
+use LogicException;
 use OpenApi\Annotations\Operation;
 use OpenApi\Attributes as OA;
 use OpenApi\Generator;
@@ -30,6 +31,13 @@ use Symfony\Component\Routing\RouteCollection;
  */
 final class CommandRouteClassLoader extends AttributeClassLoader
 {
+    /**
+     * Route name => the command class that claimed it, across every class this loader has seen.
+     *
+     * @var array<string, class-string>
+     */
+    private array $routeOwners = [];
+
     /**
      * @param array<string, string> $controllerClasses
      */
@@ -106,6 +114,7 @@ final class CommandRouteClassLoader extends AttributeClassLoader
 
             $name = $this->routeNameFromOperation($operation, $reflectionClass);
             $finalName = $this->ensureUniqueName($collection, $name);
+            $this->assertNameIsNotTakenByAnotherCommand($finalName, $class);
             $collection->add($finalName, $route);
         }
 
@@ -128,6 +137,26 @@ final class CommandRouteClassLoader extends AttributeClassLoader
         $base = strtolower(preg_replace('/[^A-Za-z0-9_]+/', '_', $short) ?? '');
 
         return 'command_'.$base;
+    }
+
+    /**
+     * Route names are unique per class via {@see ensureUniqueName()}, but each class is loaded into its own
+     * collection and those are merged with addCollection(), which overwrites by name. Two commands deriving
+     * the same name would silently cost one of them its endpoint, so fail loudly instead.
+     *
+     * Loading the same class twice — discovery plus an explicit import — is not a conflict.
+     *
+     * @param class-string $class
+     */
+    private function assertNameIsNotTakenByAnotherCommand(string $name, string $class): void
+    {
+        $owner = $this->routeOwners[$name] ?? null;
+
+        if ($owner !== null && $owner !== $class) {
+            throw new LogicException(sprintf('Command classes "%s" and "%s" both produce the route name "%s". Set a distinct operationId on one of their OpenAPI operation attributes.', $owner, $class, $name));
+        }
+
+        $this->routeOwners[$name] = $class;
     }
 
     private function ensureUniqueName(RouteCollection $collection, string $name): string

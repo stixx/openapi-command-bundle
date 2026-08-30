@@ -145,6 +145,8 @@ stixx_openapi_command:
         enabled: true
         groups: ['Default']
     cache_control: 'no-store' # Any valid Cache-Control directives, or null to disable
+    command_paths:            # Directories scanned for command DTOs; [] disables discovery
+        - '%kernel.project_dir%/src'
     openapi:
         problem_details: true  # Enable RFC 7807 problem details for errors
 ```

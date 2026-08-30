@@ -119,16 +119,49 @@ sequenceDiagram
 Starting with this version, you do not need to add any custom route import for command DTOs.
 
 How it works
-- The bundle decorates Symfony’s `AttributeDirectoryLoader` (the same mechanism used to load controller routes from attributes).
-- During the normal route-building process, we automatically scan your project’s `%kernel.project_dir%/src` directory and add routes for command classes that meet the criteria: have class-level OpenAPI operation attributes (e.g., `#[OA\Post]`, `#[OA\Get]`, …) and are not controllers.
-- This happens once per router build and coexists with your existing controller routes and any manually configured routes.
-
+- The bundle decorates `routing.loader`, the loader the router asks for when it builds its route collection. It runs once per router build, for the root routing resource, so command routes are added no matter how your application declares its own routes — or whether it declares any at all.
+- During that build, the bundle scans the configured `command_paths` and adds routes for command classes that meet the criteria: class-level OpenAPI operation attributes (e.g., `#[OA\Post]`, `#[OA\Get]`, …) and not a controller.
+- Discovered routes coexist with your existing controller routes and any manually configured routes.
 
 Notes
-- No additional routing import is necessary. The bundle augments the standard attribute route loading automatically.
-- The scan is recursive and limited to `%kernel.project_dir%/src`.
+- No additional routing import is necessary.
+- The scan is recursive and covers the directories listed under `command_paths`, which defaults to `%kernel.project_dir%/src`:
+
+  ```yaml
+  stixx_openapi_command:
+      command_paths:
+          - '%kernel.project_dir%/src/Command'
+          - '%kernel.project_dir%/lib/Billing/Command'
+  ```
+
+  Configured paths that do not exist are skipped, so listing a directory that only some environments have is safe.
 - Only classes that are annotated with OpenAPI operation attributes (e.g., `#[OA\Post]`) at class level and are not recognized controllers (`AbstractController`, `#[AsController]`, or having method-level `#[Route]`) will produce routes.
   - Because of this, ensure your commands are plain DTOs and do not extend `AbstractController`, do not use `#[AsController]`, and do not declare method-level `#[Route]` attributes.
+- If a route name is already present in the collection — because you imported the command explicitly — the bundle leaves your route alone rather than replacing it.
+- Two different command classes resolving to the same route name is an error, and the container fails to compile naming both classes. Without `operationId` the name is derived from the class short name, so `Billing\CreateInvoiceCommand` and `Sales\CreateInvoiceCommand` both resolve to `command_createinvoicecommand`; give at least one of them an explicit `operationId`. Loading the same class twice — via discovery and an explicit import — is not a conflict.
+
+### Declaring command routes explicitly
+
+Discovery is optional. To control exactly what gets routed, set `command_paths: []` and import commands from your routing config, either one class at a time:
+
+```php
+// config/routes/commands.php
+use App\Command\CreateProjectCommand;
+use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
+
+return static function (RoutingConfigurator $routes): void {
+    $routes->import(CreateProjectCommand::class, 'attribute');
+};
+```
+
+or a directory at a time, using the bundle's routing type:
+
+```yaml
+# config/routes/commands.yaml
+commands:
+    resource: '../../src/Command'
+    type: stixx_openapi_command.command_attributes
+```
 
 
 ## Use OpenAPI attributes on command classes (no Symfony #[Route])

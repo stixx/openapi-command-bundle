@@ -57,6 +57,12 @@ final class RouteSpecificitySorter
             $sorted->add($name, $all[$name], $routes->getPriority($name) ?? 0);
         }
 
+        // Carry the loader's resources over: they are what invalidates the router cache when a command
+        // file changes, and building a fresh collection would otherwise drop them.
+        foreach ($routes->getResources() as $resource) {
+            $sorted->addResource($resource);
+        }
+
         return $sorted;
     }
 
