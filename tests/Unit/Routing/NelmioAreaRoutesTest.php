@@ -103,8 +103,10 @@ final class NelmioAreaRoutesTest extends TestCase
         self::assertTrue($checker->isApiRoute($request));
     }
 
-    public function testNonRouteCollectionServiceCausesFalse(): void
+    public function testNonRouteCollectionServiceOnlySkipsItsOwnArea(): void
     {
+        // Arrange — the unusable entry comes first, so bailing out on it would leave the area that
+        // actually holds the route unchecked.
         $notARouteCollection = static fn () => (object) ['not' => 'a route collection'];
 
         $collection = new RouteCollection();
@@ -121,6 +123,24 @@ final class NelmioAreaRoutesTest extends TestCase
         $request = new Request();
         $request->attributes->set('_route', 'would_match');
 
+        // Act & Assert
+        self::assertTrue($checker->isApiRoute($request));
+    }
+
+    public function testUnusableAreasAloneStillReturnFalse(): void
+    {
+        // Arrange
+        /** @var ServiceLocator<RouteCollection> $locator */
+        $locator = new ServiceLocator([
+            'not_a_route_collection' => static fn () => (object) ['not' => 'a route collection'],
+        ]);
+
+        $checker = new NelmioAreaRoutesChecker($locator);
+
+        $request = new Request();
+        $request->attributes->set('_route', 'anything');
+
+        // Act & Assert
         self::assertFalse($checker->isApiRoute($request));
     }
 
