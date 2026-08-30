@@ -16,6 +16,7 @@ namespace Stixx\OpenApiCommandBundle\DependencyInjection\Compiler;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Exception\LogicException;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
@@ -27,7 +28,7 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasParameter('nelmio_api_doc.areas')) {
-            return;
+            throw new LogicException($this->missingNelmioMessage($container));
         }
 
         /** @var list<string> $areas */
@@ -52,6 +53,33 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
             ->setArguments([$routesMap]);
 
         $container->setParameter('stixx_openapi_command.nelmio.path_patterns', $pathPatterns);
+    }
+
+    /**
+     * Without `nelmio_api_doc.areas` we cannot register the routes locator, and the services in
+     * config/routing.php that depend on it fail with an unhelpful "service does not exist" error
+     * during cache:clear. Tell the user which half of the setup is missing instead.
+     *
+     * The typical cause is a skipped Flex recipe: NelmioApiDocBundle ends up installed by Composer
+     * but never registered in config/bundles.php, or registered without a package config.
+     */
+    private function missingNelmioMessage(ContainerBuilder $container): string
+    {
+        $cause = $container->hasExtension('nelmio_api_doc')
+            ? 'NelmioApiDocBundle is registered but has no configuration, so it defined no areas.'
+            : 'NelmioApiDocBundle is not registered in config/bundles.php (its Flex recipe may have been skipped).';
+
+        return sprintf(
+            '%s %s requires it to be both registered and configured. Add '
+            .'"Nelmio\ApiDocBundle\NelmioApiDocBundle::class => [\'all\' => true]" to config/bundles.php and create '
+            ."config/packages/nelmio_api_doc.yaml with at least one area, for example:\n\n"
+            ."nelmio_api_doc:\n"
+            ."    areas:\n"
+            ."        default:\n"
+            ."            path_patterns: ['^/api']\n",
+            $cause,
+            'StixxOpenApiCommandBundle',
+        );
     }
 
     /**

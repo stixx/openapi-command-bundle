@@ -13,12 +13,14 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\DependencyInjection\Compiler;
 
+use Nelmio\ApiDocBundle\DependencyInjection\NelmioApiDocExtension;
 use Nelmio\ApiDocBundle\Routing\FilteredRouteCollectionBuilder;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Stixx\OpenApiCommandBundle\DependencyInjection\Compiler\CollectNelmioApiDocRoutesPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Exception\LogicException;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Routing\RouteCollection;
@@ -60,18 +62,34 @@ final class CollectNelmioApiDocRoutesPassTest extends TestCase
         );
     }
 
-    public function testProcessWithoutParameter(): void
+    public function testProcessFailsWhenNelmioBundleIsNotRegistered(): void
     {
         // Arrange
         $container = new ContainerBuilder();
         $pass = new CollectNelmioApiDocRoutesPass();
 
+        // Assert
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('NelmioApiDocBundle is not registered in config/bundles.php');
+
         // Act
         $pass->process($container);
+    }
+
+    public function testProcessFailsWhenNelmioBundleIsRegisteredButNotConfigured(): void
+    {
+        // Arrange — the extension exists (bundle in bundles.php) but no config was loaded,
+        // so Nelmio never set the `nelmio_api_doc.areas` parameter.
+        $container = new ContainerBuilder();
+        $container->registerExtension(new NelmioApiDocExtension());
+        $pass = new CollectNelmioApiDocRoutesPass();
 
         // Assert
-        self::assertFalse($container->hasDefinition('stixx_openapi_command.nelmio.routes_locator'));
-        self::assertFalse($container->hasParameter('stixx_openapi_command.nelmio.path_patterns'));
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('NelmioApiDocBundle is registered but has no configuration');
+
+        // Act
+        $pass->process($container);
     }
 
     public function testExtractsPathPatternsFromFilteredRouteCollectionBuilderFactory(): void

@@ -37,6 +37,31 @@ return [
 ];
 ```
 
+### 3. Configure NelmioApiDocBundle
+
+This bundle reads its routes from NelmioApiDocBundle's areas, so Nelmio must be **registered and
+configured** — installing it via Composer is not enough. Its Flex recipe normally does this, but if
+the recipe was skipped you have to do it by hand. Add it to `config/bundles.php`:
+
+```php
+return [
+    // ...
+    Nelmio\ApiDocBundle\NelmioApiDocBundle::class => ['all' => true],
+];
+```
+
+And define at least one area in `config/packages/nelmio_api_doc.yaml`:
+
+```yaml
+nelmio_api_doc:
+    areas:
+        default:
+            path_patterns: ['^/api']
+```
+
+Without this, the container fails to compile and `cache:clear` reports that
+`stixx_openapi_command.nelmio.routes_locator` does not exist.
+
 ## Usage
 
 ### 1. Create a Command DTO
@@ -161,6 +186,7 @@ See [Extension Points](docs/extension-points.md) for a worked example of each ex
 
 - PHP 8.4+
 - Symfony 7.3+ or 8.0+
+- NelmioApiDocBundle 5.8+, registered and configured with at least one area
 
 ## License
 
