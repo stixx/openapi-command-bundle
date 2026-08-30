@@ -29,16 +29,14 @@ return static function (ContainerConfigurator $configurator): void {
         ->set(CommandRouteClassLoader::class)
             ->arg('$env', param('kernel.environment'))
             ->arg('$controllerClasses', param('stixx_openapi_command.controller_classes'))
-            // Keeps `$routes->import(SomeCommand::class, 'attribute')` working for applications that prefer
-            // to declare command routes explicitly instead of relying on discovery.
+            // Supports $routes->import(SomeCommand::class, 'attribute').
             ->tag('routing.loader');
 
     $services
         ->set(CommandRouteDirectoryLoader::class)
             ->arg('$locator', service('file_locator'))
             ->arg('$loader', service(CommandRouteClassLoader::class))
-            // Allows `$routes->import('../src/Command', 'stixx_openapi_command.command_attributes')` for
-            // applications that want to control which directories are scanned from their routing config.
+            // Supports $routes->import('../src/Command', 'stixx_openapi_command.command_attributes').
             ->tag('routing.loader');
 
     $services
@@ -47,8 +45,6 @@ return static function (ContainerConfigurator $configurator): void {
             ->arg('$commandPaths', param('stixx_openapi_command.command_paths'))
             ->arg('$sorter', service(RouteSpecificitySorter::class));
 
-    // Decorates `routing.loader` (the DelegatingLoader the router asks for) rather than one of the loaders
-    // behind it, so command routes are added regardless of how the application declares its own routes.
     $services
         ->set(RouterLoaderDecorator::class)
             ->decorate('routing.loader')

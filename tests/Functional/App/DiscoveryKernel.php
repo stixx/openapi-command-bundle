@@ -20,11 +20,8 @@ use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
 /**
- * A kernel that declares no routes of its own.
- *
- * {@see Kernel} imports every command explicitly, which means it exercises the explicit-import path rather
- * than discovery. This kernel covers the case an application actually hits: command routes have to appear
- * without the application importing anything.
+ * A kernel that declares no routes of its own, unlike {@see Kernel}, which imports every command explicitly
+ * and so only covers the explicit-import path.
  */
 class DiscoveryKernel extends TestKernel
 {
@@ -50,6 +47,6 @@ class DiscoveryKernel extends TestKernel
     {
         parent::configureRoutes($routes);
 
-        // Deliberately empty: no command is imported here.
+        // Deliberately imports nothing.
     }
 }

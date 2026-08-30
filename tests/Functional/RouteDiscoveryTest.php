@@ -19,12 +19,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouterInterface;
 
 /**
- * Command routes must be registered without the application importing anything.
- *
- * Route discovery used to hang off a decorator on `routing.loader.attribute.directory`, so it only ran when
- * the application happened to load routes through that loader. An application using the current Symfony
- * skeleton's `config/routes.yaml` — which sets a `namespace` and therefore loads via `Psr4DirectoryLoader` —
- * got no command routes at all, with no error to explain why.
+ * Command routes must be registered without the application importing anything. Discovery used to hang off a
+ * decorator on `routing.loader.attribute.directory`, so it never ran for applications whose routes load
+ * through another loader — the skeleton's `namespace` key routes through Psr4DirectoryLoader.
  */
 final class RouteDiscoveryTest extends AbstractKernelTestCase
 {

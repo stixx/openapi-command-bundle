@@ -43,7 +43,6 @@ return static function (ContainerConfigurator $container): void {
         'validation' => [
             'enabled' => true,
         ],
-        // The test application keeps its commands in App/Command rather than the default src/.
         'command_paths' => ['%kernel.project_dir%/App/Command'],
     ]);
 

@@ -48,8 +48,7 @@ final class CommandRouteDiscovery
         $discovered = new RouteCollection();
 
         foreach ($this->commandPaths as $path) {
-            // A configured path is allowed not to exist: a project may keep commands in only some of them, and
-            // the default `%kernel.project_dir%/src` is absent in a few project layouts.
+            // Configured paths may legitimately be absent, including the default %kernel.project_dir%/src.
             if (!is_dir($path)) {
                 continue;
             }

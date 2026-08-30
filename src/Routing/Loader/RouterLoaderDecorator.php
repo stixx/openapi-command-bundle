@@ -22,30 +22,17 @@ use Symfony\Component\Routing\RouteCollection;
 /**
  * Adds the discovered command routes to the application's route collection.
  *
- * @see CommandRouteDiscovery
- *
- * This decorates `routing.loader` (FrameworkBundle's `DelegatingLoader`) rather than one of the individual
- * loaders behind it. The router resolves `routing.loader` to build its collection and calls it exactly once,
- * for the root routing resource, so command routes are registered no matter how the application declares its
- * own routes — or whether it declares any at all.
- *
- * Decorating a specific loader instead makes discovery conditional on the application happening to use it. The
- * previous implementation decorated `routing.loader.attribute.directory`, which the current Symfony skeleton
- * never invokes: its `config/routes.yaml` sets a `namespace`, so routes load through `Psr4DirectoryLoader`, and
- * command routes silently disappeared.
- *
- * `DelegatingLoader` is not itself tagged `routing.loader`, so it is absent from the resolver that nested
- * imports go through. Decorating it therefore cannot recurse.
+ * Decorates `routing.loader`, which the router calls exactly once for the root routing resource, so discovery
+ * runs whichever loader the application's own routes happen to use. That service is FrameworkBundle's
+ * DelegatingLoader, which is not itself tagged `routing.loader`, so the decoration cannot recurse through
+ * nested imports.
  *
  * @internal
  */
 final class RouterLoaderDecorator implements LoaderInterface
 {
-    /**
-     * `$inner` is typed as the abstract Loader rather than LoaderInterface because MicroKernelTrait hands the
-     * decorated service to `configureRoutes()`, and RoutingConfigurator::import() calls import() on it — a
-     * method Loader declares but LoaderInterface does not.
-     */
+    // $inner is the abstract Loader, not LoaderInterface: MicroKernelTrait passes this service to
+    // configureRoutes(), where RoutingConfigurator::import() calls import() — declared only on Loader.
     public function __construct(
         private readonly Loader $inner,
         private readonly CommandRouteDiscovery $discovery,
@@ -60,8 +47,8 @@ final class RouterLoaderDecorator implements LoaderInterface
         }
 
         foreach ($this->discovery->discover()->all() as $name => $route) {
-            // An application may already have imported a command explicitly. Keep its route: re-adding would
-            // move the route to the end of the collection and change which one matches first.
+            // Keep a route the application already declared: re-adding moves it to the end of the
+            // collection, changing which route matches first.
             if ($collection->get($name) !== null) {
                 continue;
             }
