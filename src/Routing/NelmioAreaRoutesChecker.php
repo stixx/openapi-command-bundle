@@ -50,7 +50,7 @@ final readonly class NelmioAreaRoutesChecker
         foreach (array_keys($this->routesLocator->getProvidedServices()) as $area) {
             $routeCollection = $this->routesLocator->get($area);
             if (!$routeCollection instanceof RouteCollection) {
-                return false;
+                continue;
             }
 
             if (null !== $routeCollection->get($routeName)) {
