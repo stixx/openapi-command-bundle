@@ -13,12 +13,15 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\DependencyInjection\Compiler;
 
+use Nelmio\ApiDocBundle\DependencyInjection\NelmioApiDocExtension;
 use Nelmio\ApiDocBundle\Routing\FilteredRouteCollectionBuilder;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Stixx\OpenApiCommandBundle\DependencyInjection\Compiler\CollectNelmioApiDocRoutesPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Exception\LogicException;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Routing\RouteCollection;
@@ -60,18 +63,65 @@ final class CollectNelmioApiDocRoutesPassTest extends TestCase
         );
     }
 
-    public function testProcessWithoutParameter(): void
+    /**
+     * @param list<string> $expected
+     * @param list<string> $notExpected
+     */
+    #[DataProvider('missingSetupProvider')]
+    public function testProcessFailsWhenNelmioIsNotConfigured(bool $registered, array $expected, array $notExpected): void
     {
-        // Arrange
+        // Arrange — a registered bundle has an extension; without config it still sets no areas parameter.
         $container = new ContainerBuilder();
-        $pass = new CollectNelmioApiDocRoutesPass();
+        if ($registered) {
+            $container->registerExtension(new NelmioApiDocExtension());
+        }
 
         // Act
-        $pass->process($container);
+        $message = null;
+
+        try {
+            (new CollectNelmioApiDocRoutesPass())->process($container);
+        } catch (LogicException $exception) {
+            $message = $exception->getMessage();
+        }
 
         // Assert
-        self::assertFalse($container->hasDefinition('stixx_openapi_command.nelmio.routes_locator'));
-        self::assertFalse($container->hasParameter('stixx_openapi_command.nelmio.path_patterns'));
+        self::assertNotNull($message, 'Expected a LogicException when nelmio_api_doc.areas is missing.');
+
+        foreach ($expected as $needle) {
+            self::assertStringContainsString($needle, $message);
+        }
+
+        foreach ($notExpected as $needle) {
+            self::assertStringNotContainsString($needle, $message);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{bool, list<string>, list<string>}>
+     */
+    public static function missingSetupProvider(): iterable
+    {
+        yield 'bundle not registered' => [
+            false,
+            [
+                'NelmioApiDocBundle is not registered in config/bundles.php',
+                'NelmioApiDocBundle::class',
+                'config/packages/nelmio_api_doc.yaml',
+                "path_patterns: ['^/api']",
+            ],
+            [],
+        ];
+
+        // Already registered, so the message must not ask for a config/bundles.php entry.
+        yield 'bundle registered without config' => [
+            true,
+            [
+                'NelmioApiDocBundle is registered but has no configuration',
+                'config/packages/nelmio_api_doc.yaml',
+            ],
+            ['config/bundles.php'],
+        ];
     }
 
     public function testExtractsPathPatternsFromFilteredRouteCollectionBuilderFactory(): void

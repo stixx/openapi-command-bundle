@@ -16,6 +16,7 @@ namespace Stixx\OpenApiCommandBundle\DependencyInjection\Compiler;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Exception\LogicException;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
@@ -27,7 +28,7 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasParameter('nelmio_api_doc.areas')) {
-            return;
+            throw new LogicException($this->missingNelmioMessage($container));
         }
 
         /** @var list<string> $areas */
@@ -52,6 +53,29 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
             ->setArguments([$routesMap]);
 
         $container->setParameter('stixx_openapi_command.nelmio.path_patterns', $pathPatterns);
+    }
+
+    /**
+     * Without the areas parameter the routes locator is never registered, and config/routing.php fails with
+     * an opaque "service does not exist" error. Name the missing half of the setup instead.
+     */
+    private function missingNelmioMessage(ContainerBuilder $container): string
+    {
+        $example = "\n\nnelmio_api_doc:\n"
+            ."    areas:\n"
+            ."        default:\n"
+            ."            path_patterns: ['^/api']\n";
+
+        if ($container->hasExtension('nelmio_api_doc')) {
+            return 'NelmioApiDocBundle is registered but has no configuration, so it defined no areas. '
+                .'StixxOpenApiCommandBundle needs at least one area. Create config/packages/nelmio_api_doc.yaml '
+                .'with, for example:'.$example;
+        }
+
+        return 'NelmioApiDocBundle is not registered in config/bundles.php (its Flex recipe may have been '
+            .'skipped). StixxOpenApiCommandBundle requires it to be both registered and configured. Add '
+            .'"Nelmio\ApiDocBundle\NelmioApiDocBundle::class => [\'all\' => true]" to config/bundles.php, then '
+            .'create config/packages/nelmio_api_doc.yaml with at least one area, for example:'.$example;
     }
 
     /**
