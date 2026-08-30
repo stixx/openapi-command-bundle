@@ -56,30 +56,26 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
     }
 
     /**
-     * Without `nelmio_api_doc.areas` we cannot register the routes locator, and the services in
-     * config/routing.php that depend on it fail with an unhelpful "service does not exist" error
-     * during cache:clear. Tell the user which half of the setup is missing instead.
-     *
-     * The typical cause is a skipped Flex recipe: NelmioApiDocBundle ends up installed by Composer
-     * but never registered in config/bundles.php, or registered without a package config.
+     * Without the areas parameter the routes locator is never registered, and config/routing.php fails with
+     * an opaque "service does not exist" error. Name the missing half of the setup instead.
      */
     private function missingNelmioMessage(ContainerBuilder $container): string
     {
-        $cause = $container->hasExtension('nelmio_api_doc')
-            ? 'NelmioApiDocBundle is registered but has no configuration, so it defined no areas.'
-            : 'NelmioApiDocBundle is not registered in config/bundles.php (its Flex recipe may have been skipped).';
-
-        return sprintf(
-            '%s %s requires it to be both registered and configured. Add '
-            .'"Nelmio\ApiDocBundle\NelmioApiDocBundle::class => [\'all\' => true]" to config/bundles.php and create '
-            ."config/packages/nelmio_api_doc.yaml with at least one area, for example:\n\n"
-            ."nelmio_api_doc:\n"
+        $example = "\n\nnelmio_api_doc:\n"
             ."    areas:\n"
             ."        default:\n"
-            ."            path_patterns: ['^/api']\n",
-            $cause,
-            'StixxOpenApiCommandBundle',
-        );
+            ."            path_patterns: ['^/api']\n";
+
+        if ($container->hasExtension('nelmio_api_doc')) {
+            return 'NelmioApiDocBundle is registered but has no configuration, so it defined no areas. '
+                .'StixxOpenApiCommandBundle needs at least one area. Create config/packages/nelmio_api_doc.yaml '
+                .'with, for example:'.$example;
+        }
+
+        return 'NelmioApiDocBundle is not registered in config/bundles.php (its Flex recipe may have been '
+            .'skipped). StixxOpenApiCommandBundle requires it to be both registered and configured. Add '
+            .'"Nelmio\ApiDocBundle\NelmioApiDocBundle::class => [\'all\' => true]" to config/bundles.php, then '
+            .'create config/packages/nelmio_api_doc.yaml with at least one area, for example:'.$example;
     }
 
     /**

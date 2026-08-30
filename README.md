@@ -59,8 +59,9 @@ nelmio_api_doc:
             path_patterns: ['^/api']
 ```
 
-Without this, the container fails to compile and `cache:clear` reports that
-`stixx_openapi_command.nelmio.routes_locator` does not exist.
+Without this, the container fails to compile and `cache:clear` reports which part
+is missing — the `config/bundles.php` entry or the package config — along with
+the configuration to add.
 
 ## Usage
 
