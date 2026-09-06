@@ -8,12 +8,16 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-09-06
+
 ### Fixed
 
 - Requests are validated against the OpenAPI document of **their own** Nelmio area. Previously every
   request was validated against the `default` area's document, while route detection accepted a route
   belonging to any area — so in a multi-area application a valid request to a non-default area was
   rejected with a `400` `openapi_request_validation`. Single-area applications are unaffected.
+- An area whose name is numeric (`2024`) no longer raises a `TypeError` during route lookup. PHP stores
+  such a key as an `int`, which `ServiceLocator::get(string $id)` rejects under `strict_types`.
 
 ## [0.12.4] - 2026-08-30
 
@@ -215,7 +219,8 @@ Installing it with Composer is not enough. See the README's installation section
   details outside debug mode, and a `CommandValueResolver` that supports list endpoints and the combination of
   parameters with a request body.
 
-[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.12.4...HEAD
+[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.13.1...HEAD
+[0.13.1]: https://github.com/stixx/openapi-command-bundle/compare/0.13.0...0.13.1
 [0.12.4]: https://github.com/stixx/openapi-command-bundle/compare/0.12.3...0.12.4
 [0.12.3]: https://github.com/stixx/openapi-command-bundle/compare/0.12.2...0.12.3
 [0.12.2]: https://github.com/stixx/openapi-command-bundle/compare/0.12.1...0.12.2
