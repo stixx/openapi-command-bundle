@@ -59,13 +59,13 @@ final readonly class NelmioAreaRoutesChecker
     private function matchesByRouteName(string $routeName): ?string
     {
         foreach (array_keys($this->routesLocator->getProvidedServices()) as $area) {
-            $routeCollection = $this->routesLocator->get($area);
+            $routeCollection = $this->routesLocator->get((string) $area);
             if (!$routeCollection instanceof RouteCollection) {
                 continue;
             }
 
             if (null !== $routeCollection->get($routeName)) {
-                return $area;
+                return (string) $area;
             }
         }
 
@@ -77,7 +77,7 @@ final readonly class NelmioAreaRoutesChecker
         foreach ($this->pathPatterns as $area => $patterns) {
             foreach ($patterns as $pattern) {
                 if (preg_match('{'.$pattern.'}', $path) === 1) {
-                    return $area;
+                    return (string) $area;
                 }
             }
         }
