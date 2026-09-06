@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Stixx\OpenApiCommandBundle\Validator\RequestValidator;
 use Stixx\OpenApiCommandBundle\Validator\RequestValidatorChain;
 use Stixx\OpenApiCommandBundle\Validator\ValidatorInterface as StixxValidatorInterface;
@@ -37,5 +38,7 @@ return static function (ContainerConfigurator $configurator): void {
         ->set(RequestValidator::class)
             ->arg('$apiDocGenerator', service('nelmio_api_doc.generator.default'))
             ->arg('$psrHttpFactory', service('stixx_openapi_command.psr_http_factory'))
+            ->arg('$generatorsLocator', service('stixx_openapi_command.nelmio.generators_locator'))
+            ->arg('$areaRoutesChecker', service(NelmioAreaRoutesChecker::class))
             ->tag(StixxValidatorInterface::TAG_NAME);
 };

@@ -39,6 +39,8 @@ final class CollectNelmioApiDocRoutesPassTest extends TestCase
         $container->setDefinition('nelmio_api_doc.routes.default', new Definition(stdClass::class));
         // 'nelmio_api_doc.routes.internal' is missing on purpose — it should be skipped silently.
 
+        $container->setDefinition('nelmio_api_doc.generator.default', new Definition(stdClass::class));
+
         $pass = new CollectNelmioApiDocRoutesPass();
 
         // Act
@@ -55,6 +57,17 @@ final class CollectNelmioApiDocRoutesPassTest extends TestCase
             'default' => new Reference('nelmio_api_doc.routes.default'),
         ];
         self::assertEquals([$expectedMap], $definition->getArguments());
+
+        self::assertTrue($container->hasDefinition('stixx_openapi_command.nelmio.generators_locator'));
+        $generatorsDefinition = $container->getDefinition('stixx_openapi_command.nelmio.generators_locator');
+
+        self::assertSame(ServiceLocator::class, $generatorsDefinition->getClass());
+        self::assertTrue($generatorsDefinition->hasTag('container.service_locator'));
+
+        $expectedGeneratorsMap = [
+            'default' => new Reference('nelmio_api_doc.generator.default'),
+        ];
+        self::assertEquals([$expectedGeneratorsMap], $generatorsDefinition->getArguments());
 
         self::assertTrue($container->hasParameter('stixx_openapi_command.nelmio.path_patterns'));
         self::assertSame(
