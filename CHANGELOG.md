@@ -8,6 +8,13 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [Unreleased]
 
+### Fixed
+
+- Requests are validated against the OpenAPI document of **their own** Nelmio area. Previously every
+  request was validated against the `default` area's document, while route detection accepted a route
+  belonging to any area — so in a multi-area application a valid request to a non-default area was
+  rejected with a `400` `openapi_request_validation`. Single-area applications are unaffected.
+
 ## [0.12.4] - 2026-08-30
 
 Documentation only — no code changes since `0.12.3`.

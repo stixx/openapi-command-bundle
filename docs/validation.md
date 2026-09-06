@@ -161,6 +161,8 @@ services:
 
 All tagged validators are executed in a chain during the `kernel.request` event, but only for routes that are managed by this bundle (detected via `NelmioAreaRoutesChecker`). If any validator throws an exception, the request cycle is interrupted.
 
+When several Nelmio areas are configured, each has its own OpenAPI document. `NelmioAreaRoutesChecker` resolves the area a request belongs to, and the request is validated against that area's document. Areas are checked in registration order and the first match wins.
+
 ---
 
 ## Customizing Error Responses

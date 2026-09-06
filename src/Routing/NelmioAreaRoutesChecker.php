@@ -34,9 +34,20 @@ final readonly class NelmioAreaRoutesChecker
 
     public function isApiRoute(Request $request): bool
     {
+        return null !== $this->areaFor($request);
+    }
+
+    /**
+     * The Nelmio area a request belongs to, or null if none. Areas are checked in registration order.
+     */
+    public function areaFor(Request $request): ?string
+    {
         $routeName = $request->attributes->get('_route', '');
-        if (is_string($routeName) && $routeName !== '' && $this->matchesByRouteName($routeName)) {
-            return true;
+        if (is_string($routeName) && $routeName !== '') {
+            $area = $this->matchesByRouteName($routeName);
+            if (null !== $area) {
+                return $area;
+            }
         }
 
         // Symfony does not set _route when the path doesn't match any route (404) or when no method
@@ -45,7 +56,7 @@ final readonly class NelmioAreaRoutesChecker
         return $this->matchesByPath($request->getPathInfo());
     }
 
-    private function matchesByRouteName(string $routeName): bool
+    private function matchesByRouteName(string $routeName): ?string
     {
         foreach (array_keys($this->routesLocator->getProvidedServices()) as $area) {
             $routeCollection = $this->routesLocator->get($area);
@@ -54,23 +65,23 @@ final readonly class NelmioAreaRoutesChecker
             }
 
             if (null !== $routeCollection->get($routeName)) {
-                return true;
+                return $area;
             }
         }
 
-        return false;
+        return null;
     }
 
-    private function matchesByPath(string $path): bool
+    private function matchesByPath(string $path): ?string
     {
-        foreach ($this->pathPatterns as $patterns) {
+        foreach ($this->pathPatterns as $area => $patterns) {
             foreach ($patterns as $pattern) {
                 if (preg_match('{'.$pattern.'}', $path) === 1) {
-                    return true;
+                    return $area;
                 }
             }
         }
 
-        return false;
+        return null;
     }
 }

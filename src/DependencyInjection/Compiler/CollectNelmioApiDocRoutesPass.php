@@ -36,6 +36,8 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
         $routesMap = [];
         $pathPatterns = [];
 
+        $generatorsMap = [];
+
         foreach ($areas as $area) {
             $serviceId = sprintf('nelmio_api_doc.routes.%s', $area);
 
@@ -45,12 +47,22 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
 
             $routesMap[$area] = new Reference($serviceId);
             $pathPatterns[$area] = $this->extractPathPatterns($container, $serviceId);
+
+            $generatorId = sprintf('nelmio_api_doc.generator.%s', $area);
+            if ($container->has($generatorId)) {
+                $generatorsMap[$area] = new Reference($generatorId);
+            }
         }
 
         $container->register('stixx_openapi_command.nelmio.routes_locator', ServiceLocator::class)
             ->addTag('container.service_locator')
             ->setPublic(false)
             ->setArguments([$routesMap]);
+
+        $container->register('stixx_openapi_command.nelmio.generators_locator', ServiceLocator::class)
+            ->addTag('container.service_locator')
+            ->setPublic(false)
+            ->setArguments([$generatorsMap]);
 
         $container->setParameter('stixx_openapi_command.nelmio.path_patterns', $pathPatterns);
     }
