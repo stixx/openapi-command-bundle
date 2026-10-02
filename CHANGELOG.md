@@ -16,6 +16,10 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
   and `**` any depth, so `'%kernel.project_dir%/src/**/Application/Command'` covers nested DDD contexts.
 - Routing imports of type `stixx_openapi_command.command_attributes` accept single files, so a glob import such as
   `../src/**/Application/Command/**/*.php` works.
+- CI checks `CHANGELOG.md` against the tags: every tag needs an entry and a compare link, an entry that shipped in its
+  own tag may not change afterwards, and a pushed tag must be the newest entry, dated like the tag in UTC (for a
+  lightweight tag, the commit it points at).
+- Static analysis also runs against Symfony 7.4, the lowest supported version.
 
 ### Changed
 
@@ -86,6 +90,21 @@ entry pointing at a directory that does not exist, or move it under `when@<env>`
   rejected with a `400` `openapi_request_validation`. Single-area applications are unaffected.
 - An area whose name is numeric (`2024`) no longer raises a `TypeError` during route lookup. PHP stores
   such a key as an `int`, which `ServiceLocator::get(string $id)` rejects under `strict_types`.
+
+## [0.13.0] - 2026-08-30
+
+Maintenance only; no change in behaviour. This entry was added later: the `0.13.0` tag ships without it.
+
+### Added
+
+- Dependabot updates the GitHub Actions weekly; for Composer dependencies it opens security updates only.
+
+### Changed
+
+- `composer.lock` is no longer committed, so CI resolves the newest dependency versions the constraints allow, as
+  applications installing the bundle do.
+- Removed an unreachable `Traversable` check from `JsonSerializedResponder::supports()`, and code comments that
+  restated the code.
 
 ## [0.12.4] - 2026-08-30
 
@@ -292,6 +311,7 @@ Installing it with Composer is not enough. See the README's installation section
 [0.13.3]: https://github.com/stixx/openapi-command-bundle/compare/0.13.2...0.13.3
 [0.13.2]: https://github.com/stixx/openapi-command-bundle/compare/0.13.1...0.13.2
 [0.13.1]: https://github.com/stixx/openapi-command-bundle/compare/0.13.0...0.13.1
+[0.13.0]: https://github.com/stixx/openapi-command-bundle/compare/0.12.4...0.13.0
 [0.12.4]: https://github.com/stixx/openapi-command-bundle/compare/0.12.3...0.12.4
 [0.12.3]: https://github.com/stixx/openapi-command-bundle/compare/0.12.2...0.12.3
 [0.12.2]: https://github.com/stixx/openapi-command-bundle/compare/0.12.1...0.12.2

@@ -1,0 +1,36 @@
+name: Changelog
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
+  pull_request: ~
+  workflow_dispatch: ~
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  changelog:
+    name: Changelog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code with tags
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+      - name: Check CHANGELOG.md against the tags
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: php .github/scripts/check-changelog.php ${RELEASE_TAG:+"$RELEASE_TAG"}
