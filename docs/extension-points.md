@@ -9,7 +9,7 @@ The bundle exposes four interfaces (`@api`) you can implement to plug into the r
 | `Stixx\OpenApiCommandBundle\Response\StatusResolverInterface` | The HTTP status code returned for a given command + request | `ResponseStatusResolver` (reads the OpenAPI operation's first 2xx, falls back to `201` for `POST`, `204` for `DELETE`, `200` otherwise) |
 | `Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface` | How thrown exceptions become problem responses | `DefaultExceptionToApiProblemTransformer` |
 
-All four are auto-discovered via `autoconfigure` — implement the interface, register the class as a service, and the bundle picks it up. Tag-based registration (when you cannot use autoconfigure) is documented per interface below.
+Request validators and responders are auto-discovered via `autoconfigure`: implement the interface, register the class as a service, and the bundle picks it up. Tag-based registration (when you cannot use autoconfigure) is documented below. The status resolver and the exception transformer have one implementation each, which you replace by aliasing or decorating the interface's service, as shown per interface below.
 
 ---
 

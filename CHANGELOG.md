@@ -51,8 +51,9 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 Upgrade to Symfony 7.4 or later before installing 0.14.0; Composer will not resolve it against 7.3.
 
 Custom request validators implement `Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface` instead of
-`Stixx\OpenApiCommandBundle\Validator\ValidatorInterface`; only the name changed. Autoconfiguration and the
-`stixx_openapi_command.request.validator` tag work as before.
+`Stixx\OpenApiCommandBundle\Validator\ValidatorInterface`; only the name changed, so update type hints and service
+ids that referred to the old one as well. Autoconfiguration and the `stixx_openapi_command.request.validator` tag work
+as before.
 
 `command_paths` must now be set; until it is, the container fails to compile with a message saying so. List the
 directories holding your command DTOs in `config/packages/stixx_openapi_command.yaml`:

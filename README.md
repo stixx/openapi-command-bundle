@@ -204,9 +204,16 @@ See [Extension Points](docs/extension-points.md) for a worked example of each ex
 
 ### Backward compatibility and deprecations
 
-From 1.0.0 on, the bundle follows [Semantic Versioning](https://semver.org) for its public API: the `@api` types
-above, the configuration keys under `stixx_openapi_command:`, and the service tags named by
-`ResponderInterface::TAG_NAME` and `RequestValidatorInterface::TAG_NAME`.
+From 1.0.0 on, the bundle follows [Semantic Versioning](https://semver.org) for its public API:
+
+- the `@api` types above, and the services registered under those interface names, which you can alias or decorate;
+- the configuration keys under `stixx_openapi_command:`;
+- the service tags named by `ResponderInterface::TAG_NAME` and `RequestValidatorInterface::TAG_NAME`;
+- the OpenAPI component names the bundle registers for your annotations: the schemas `ProblemDetails`, `Violation`
+  and `ProblemDetailsInvalidRequestBody`, and the `*ProblemDetailsResponse` responses.
+
+The policy:
+
 
 - Minor and patch releases don't break the public API.
 - Removing or renaming part of it starts with a deprecation in a minor release. PHP code triggers
@@ -214,7 +221,9 @@ above, the configuration keys under `stixx_openapi_command:`, and the service ta
   `setDeprecated()`, naming the replacement; the old name keeps working alongside the new one. The changelog lists
   the deprecation under **Deprecated**.
 - Deprecated code is removed in the next major release, listed under **Removed** with **Upgrading** notes. Run your
-  test suite with deprecations reported (Symfony's PHPUnit bridge does this by default) before upgrading a major.
+  test suite with deprecations reported before upgrading a major: Symfony's PHPUnit bridge reports them by default;
+  with plain PHPUnit, set `ignoreSuppressionOfDeprecations="true"`, because `trigger_deprecation()` raises silenced
+  deprecations.
 - `@internal` code can change in any release, without a deprecation.
 
 Before 1.0.0, minor releases may break the public API; every such change comes with an **Upgrading** note in the
