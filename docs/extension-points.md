@@ -4,7 +4,7 @@ The bundle exposes four interfaces (`@api`) you can implement to plug into the r
 
 | Interface | What it lets you customize | Default implementation (`@internal`) |
 |---|---|---|
-| `Stixx\OpenApiCommandBundle\Validator\ValidatorInterface` | Cross-field / header / security checks on the raw `Request` before deserialization | `RequestValidator` (validates against the generated OpenAPI document) |
+| `Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface` | Cross-field / header / security checks on the raw `Request` before deserialization | `RequestValidator` (validates against the generated OpenAPI document) |
 | `Stixx\OpenApiCommandBundle\Responder\ResponderInterface` | The shape and `Content-Type` of successful responses | `JsonResponder`, `JsonSerializedResponder`, `ScalarResponder`, `NullableResponder` (chained) |
 | `Stixx\OpenApiCommandBundle\Response\StatusResolverInterface` | The HTTP status code returned for a given command + request | `ResponseStatusResolver` (reads the OpenAPI operation's first 2xx, falls back to `201` for `POST`, `204` for `DELETE`, `200` otherwise) |
 | `Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface` | How thrown exceptions become problem responses | `DefaultExceptionToApiProblemTransformer` |
@@ -13,18 +13,18 @@ All four are auto-discovered via `autoconfigure` — implement the interface, re
 
 ---
 
-## Custom request validators (`ValidatorInterface`)
+## Custom request validators (`RequestValidatorInterface`)
 
 Run before the command is deserialized. Use this for header checks, cross-field validation that can't be expressed as DTO constraints, or security gating. All tagged validators run in a chain on `kernel.request`, only for routes inside a Nelmio API area.
 
 ```php
 namespace App\Validator;
 
-use Stixx\OpenApiCommandBundle\Validator\ValidatorInterface;
+use Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
-final class RequireApiKeyValidator implements ValidatorInterface
+final class RequireApiKeyValidator implements RequestValidatorInterface
 {
     public function validate(Request $request): void
     {

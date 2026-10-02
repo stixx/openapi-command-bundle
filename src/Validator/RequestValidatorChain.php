@@ -18,10 +18,10 @@ use Symfony\Component\HttpFoundation\Request;
 /**
  * @internal
  */
-final readonly class RequestValidatorChain implements ValidatorInterface
+final readonly class RequestValidatorChain implements RequestValidatorInterface
 {
     /**
-     * @param iterable<ValidatorInterface> $validators
+     * @param iterable<RequestValidatorInterface> $validators
      */
     public function __construct(
         private iterable $validators,

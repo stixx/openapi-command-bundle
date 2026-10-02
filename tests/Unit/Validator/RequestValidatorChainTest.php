@@ -15,7 +15,7 @@ namespace Stixx\OpenApiCommandBundle\Tests\Unit\Validator;
 
 use PHPUnit\Framework\TestCase;
 use Stixx\OpenApiCommandBundle\Validator\RequestValidatorChain;
-use Stixx\OpenApiCommandBundle\Validator\ValidatorInterface;
+use Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 final class RequestValidatorChainTest extends TestCase
@@ -24,8 +24,8 @@ final class RequestValidatorChainTest extends TestCase
     {
         // Arrange
         $request = new Request();
-        $v1 = $this->createMock(ValidatorInterface::class);
-        $v2 = $this->createMock(ValidatorInterface::class);
+        $v1 = $this->createMock(RequestValidatorInterface::class);
+        $v2 = $this->createMock(RequestValidatorInterface::class);
 
         $v1->expects(self::once())
             ->method('validate')

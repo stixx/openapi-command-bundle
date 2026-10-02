@@ -48,7 +48,7 @@ sequenceDiagram
         ReqSub->>Chain: validate
         Chain->>ApiV: validate
         Note over ApiV: Validates against the generated OpenAPI document<br/>via league/openapi-psr7-validator —<br/>headers, query, path, body shape.<br/>Throws ValidationFailed on mismatch.
-        Chain->>Chain: Run user-tagged ValidatorInterface services
+        Chain->>Chain: Run user-tagged RequestValidatorInterface services
     else non-API route
         ReqSub-->>Kernel: skip
     end

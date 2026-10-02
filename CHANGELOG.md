@@ -20,9 +20,13 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
   own tag may not change afterwards, and a pushed tag must be the newest entry, dated like the tag in UTC (for a
   lightweight tag, the commit it points at).
 - Static analysis also runs against Symfony 7.4, the lowest supported version.
+- The README documents the backward-compatibility and deprecation policy that applies from 1.0.0.
 
 ### Changed
 
+- **`Validator\ValidatorInterface` is renamed to `Validator\RequestValidatorInterface`**, matching its service tag
+  (`stixx_openapi_command.request.validator`) and `RequestValidatorChain`. The old name clashed with Symfony's
+  `Validator\Validator\ValidatorInterface`, which is often imported in the same file. See **Upgrading** below.
 - **`command_paths` is required** and no longer defaults to `%kernel.project_dir%/src`. See **Upgrading** below.
 - A configured path that does not exist is an error naming the entry, instead of being skipped. A glob that matches
   nothing still yields no routes. Entries must match directories: one ending in `.php` is rejected.
@@ -45,6 +49,10 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 ### Upgrading
 
 Upgrade to Symfony 7.4 or later before installing 0.14.0; Composer will not resolve it against 7.3.
+
+Custom request validators implement `Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface` instead of
+`Stixx\OpenApiCommandBundle\Validator\ValidatorInterface`; only the name changed. Autoconfiguration and the
+`stixx_openapi_command.request.validator` tag work as before.
 
 `command_paths` must now be set; until it is, the container fails to compile with a message saying so. List the
 directories holding your command DTOs in `config/packages/stixx_openapi_command.yaml`:

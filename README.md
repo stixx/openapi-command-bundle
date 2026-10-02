@@ -181,7 +181,7 @@ For more detailed information, please refer to the following documentation:
 
 The bundle distinguishes a small public API surface from its internal implementation. Public surface is the contract you can safely depend on; internals can change in any release.
 
-**Public (`@api`)** — guaranteed BC across minor releases:
+**Public (`@api`)** — covered by the [backward-compatibility policy](#backward-compatibility-and-deprecations):
 
 | Type | What it is |
 |---|---|
@@ -191,7 +191,7 @@ The bundle distinguishes a small public API surface from its internal implementa
 | `Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface` | Replace to customize how exceptions become problem responses |
 | `Stixx\OpenApiCommandBundle\Responder\ResponderInterface` | Implement to handle custom result shapes (CSV, XML, …) |
 | `Stixx\OpenApiCommandBundle\Response\StatusResolverInterface` | Replace to customize status code resolution |
-| `Stixx\OpenApiCommandBundle\Validator\ValidatorInterface` | Implement to add custom request-level validation |
+| `Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface` | Implement to add custom request-level validation |
 | `Stixx\OpenApiCommandBundle\Model\ProblemDetails` | OpenAPI schema model — reference from your annotations |
 | `Stixx\OpenApiCommandBundle\Model\ProblemDetailsInvalidRequestBody` | OpenAPI schema model — reference from your annotations |
 | `Stixx\OpenApiCommandBundle\Model\Violation` | OpenAPI schema model — reference from your annotations |
@@ -201,6 +201,24 @@ The bundle distinguishes a small public API surface from its internal implementa
 The bundle's configuration schema (the keys under `stixx_openapi_command:`) is also part of the supported API.
 
 See [Extension Points](docs/extension-points.md) for a worked example of each extension interface.
+
+### Backward compatibility and deprecations
+
+From 1.0.0 on, the bundle follows [Semantic Versioning](https://semver.org) for its public API: the `@api` types
+above, the configuration keys under `stixx_openapi_command:`, and the service tags named by
+`ResponderInterface::TAG_NAME` and `RequestValidatorInterface::TAG_NAME`.
+
+- Minor and patch releases don't break the public API.
+- Removing or renaming part of it starts with a deprecation in a minor release. PHP code triggers
+  `trigger_deprecation('stixx/openapi-command-bundle', '<version>', ...)` and a configuration key is marked with
+  `setDeprecated()`, naming the replacement; the old name keeps working alongside the new one. The changelog lists
+  the deprecation under **Deprecated**.
+- Deprecated code is removed in the next major release, listed under **Removed** with **Upgrading** notes. Run your
+  test suite with deprecations reported (Symfony's PHPUnit bridge does this by default) before upgrading a major.
+- `@internal` code can change in any release, without a deprecation.
+
+Before 1.0.0, minor releases may break the public API; every such change comes with an **Upgrading** note in the
+[changelog](CHANGELOG.md).
 
 ## Requirements
 

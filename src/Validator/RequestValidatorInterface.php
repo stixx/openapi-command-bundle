@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\Request;
 /**
  * @api
  */
-interface ValidatorInterface
+interface RequestValidatorInterface
 {
     public const string TAG_NAME = 'stixx_openapi_command.request.validator';
 

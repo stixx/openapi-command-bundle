@@ -26,7 +26,7 @@ use Stixx\OpenApiCommandBundle\Routing\Loader\{CommandRouteClassLoader, CommandR
 use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Stixx\OpenApiCommandBundle\Serializer\Normalizer\{ApiProblemNormalizer, ConstraintViolationListNormalizer, ConstraintViolationNormalizer};
 use Stixx\OpenApiCommandBundle\Tests\Functional\App\Kernel;
-use Stixx\OpenApiCommandBundle\Validator\{RequestValidator, RequestValidatorChain, ValidatorInterface as StixxValidatorInterface};
+use Stixx\OpenApiCommandBundle\Validator\{RequestValidator, RequestValidatorChain, RequestValidatorInterface};
 use Symfony\Component\Serializer\Serializer;
 
 final class BundleInitializationTest extends AbstractKernelTestCase
@@ -78,7 +78,7 @@ final class BundleInitializationTest extends AbstractKernelTestCase
 
         // Validators
         $this->assertTrue($container->has(RequestValidatorChain::class));
-        $this->assertTrue($container->has(StixxValidatorInterface::class));
+        $this->assertTrue($container->has(RequestValidatorInterface::class));
         $this->assertTrue($container->has(RequestValidator::class));
 
         // Serializer
