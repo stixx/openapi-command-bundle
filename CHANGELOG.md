@@ -8,7 +8,7 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [Unreleased]
 
-## [0.14.0] - 2026-10-02
+## [0.14.0] - 2026-10-03
 
 ### Added
 
