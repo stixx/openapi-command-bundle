@@ -20,6 +20,9 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
   holds path strings instead of `SplFileInfo` objects, about 1.3KB less per scanned file, and the cycle
   collector runs every 50 files to free the cyclic garbage swagger-php attributes leave behind. Which commands
   are discovered is unchanged.
+- The Symfony components the bundle uses directly (`config`, `event-dispatcher`, `http-foundation`,
+  `http-kernel`, `routing`, `yaml`) are now declared as dependencies instead of arriving through other
+  packages, with the same `^7.3 || ^8.0` constraint as the rest.
 
 ## [0.13.1] - 2026-09-06
 
