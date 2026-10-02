@@ -140,6 +140,11 @@ Globs support `*` (one directory level), `**` (any depth, including none), `?`, 
 Symfony's own resource imports. Entries match directories, never files, so don't end one in `*.php`. Directories and
 files starting with a dot are skipped. Use absolute paths; `%kernel.project_dir%` gives you one.
 
+In debug mode the router checks the matched files on every request, so it notices new commands. A `**` pattern has
+to walk the whole tree below its fixed prefix to do that, which on a large `src` costs tens of milliseconds per
+request; a fixed-depth pattern such as `src/*/*/Application/Command` only lists the directories it matches. Prefer
+`*` when your layout is regular. Production is unaffected: the router cache is not checked there.
+
 How it works
 - The bundle decorates `routing.loader`, the loader the router asks for when it builds its route collection. It runs once per router build, for the root routing resource, so command routes are added no matter how your application declares its own routes — or whether it declares any at all.
 - During that build, the bundle scans the configured `command_paths` and adds routes for command classes that meet the criteria: class-level OpenAPI operation attributes (e.g., `#[OA\Post]`, `#[OA\Get]`, …) and not a controller.

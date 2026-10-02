@@ -48,7 +48,7 @@ directories holding your command DTOs in `config/packages/stixx_openapi_command.
 ```yaml
 stixx_openapi_command:
     command_paths:
-        - '%kernel.project_dir%/src/**/Application/Command'
+        - '%kernel.project_dir%/src/*/Application/Command'
 ```
 
 `['%kernel.project_dir%/src']` keeps 0.13's behaviour exactly, but scans your whole codebase. `[]` turns discovery

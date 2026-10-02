@@ -66,13 +66,13 @@ the configuration to add.
 ### 4. Tell the bundle where your commands live
 
 Every project keeps its command DTOs somewhere else, so the bundle scans only the directories you list in
-`config/packages/stixx_openapi_command.yaml`. Glob patterns are allowed; `**` matches any depth:
+`config/packages/stixx_openapi_command.yaml`. Glob patterns are allowed (`*` for one directory level, `**` for any depth):
 
 ```yaml
 stixx_openapi_command:
     command_paths:
         - '%kernel.project_dir%/src/Command'                  # a single directory
-        # - '%kernel.project_dir%/src/**/Application/Command' # nested DDD contexts
+        # - '%kernel.project_dir%/src/*/Application/Command'  # DDD: one directory per context
 ```
 
 The key is required: without it the container fails to compile. Set it to `[]` to turn discovery off and
