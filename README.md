@@ -222,8 +222,8 @@ The policy:
   the deprecation under **Deprecated**.
 - Deprecated code is removed in the next major release, listed under **Removed** with **Upgrading** notes. Run your
   test suite with deprecations reported before upgrading a major: Symfony's PHPUnit bridge reports them by default;
-  with plain PHPUnit, set `ignoreSuppressionOfDeprecations="true"` on the `<source>` element of `phpunit.xml`, because `trigger_deprecation()` raises silenced
-  deprecations.
+  with plain PHPUnit, set `ignoreSuppressionOfDeprecations="true"` on the `<source>` element of `phpunit.xml`,
+  because `trigger_deprecation()` raises silenced deprecations.
 - `@internal` code can change in any release, without a deprecation.
 
 Before 1.0.0, minor releases may break the public API; every such change comes with an **Upgrading** note in the
