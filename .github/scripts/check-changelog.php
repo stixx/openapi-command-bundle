@@ -35,7 +35,7 @@ function parse(string $changelog): array
     $links = [];
     $current = null;
 
-    foreach (preg_split('/\R/', $changelog) ?: [] as $index => $line) {
+    foreach (preg_split('/\r\n|\n|\r/', $changelog) ?: [] as $index => $line) {
         $line = rtrim($line);
         if (preg_match('/^## \[([^\]]+)\](?: - (\d{4}-\d{2}-\d{2}))?\s*$/', $line, $match)) {
             $current = $match[1];
@@ -152,7 +152,7 @@ if ($releasing !== null) {
         $source = sprintf('tag %s', $releasing);
         if ($timestamp === null) {
             $timestamp = git('log', '-1', '--format=%ct', 'HEAD')[0] ?? null;
-            $source = 'HEAD, which the tag would point at';
+            $source = 'HEAD (which the tag would point at)';
         }
 
         $date = $timestamp === null ? null : gmdate('Y-m-d', (int) $timestamp);

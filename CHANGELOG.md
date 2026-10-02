@@ -17,8 +17,8 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 - Routing imports of type `stixx_openapi_command.command_attributes` accept single files, so a glob import such as
   `../src/**/Application/Command/**/*.php` works.
 - CI checks `CHANGELOG.md` against the tags: every tag needs an entry and a compare link, an entry that shipped in its
-  own tag may not change afterwards, and a pushed tag must be the newest entry, dated in UTC like the commit it points
-  at.
+  own tag may not change afterwards, and a pushed tag must be the newest entry, dated like the tag in UTC (for a
+  lightweight tag, the commit it points at).
 - Static analysis also runs against Symfony 7.4, the lowest supported version.
 
 ### Changed
