@@ -8,6 +8,13 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [Unreleased]
 
+### Changed
+
+- Route discovery uses less memory while scanning `command_paths` (all of `src` by default). The file list
+  holds path strings instead of `SplFileInfo` objects, about 1.3KB less per scanned file, and the cycle
+  collector runs every 50 files to free the cyclic garbage swagger-php attributes leave behind. Which commands
+  are discovered is unchanged.
+
 ## [0.13.1] - 2026-09-06
 
 ### Fixed
