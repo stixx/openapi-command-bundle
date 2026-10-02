@@ -11,7 +11,7 @@ This coexists with classic Symfony route configuration (YAML/PHP/XML). Choose wh
 
 ## Prerequisites
 
-- Symfony 7.3+
+- Symfony 7.4+
 - This bundle installed and enabled
 - Your command classes are registered as services (typical with autowire/autoconfigure)
 

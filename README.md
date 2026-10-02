@@ -189,7 +189,7 @@ See [Extension Points](docs/extension-points.md) for a worked example of each ex
 ## Requirements
 
 - PHP 8.4+
-- Symfony 7.3+ or 8.0+
+- Symfony 7.4+ or 8.0+
 - NelmioApiDocBundle 5.8+, registered and configured with at least one area
 
 ## License

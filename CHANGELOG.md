@@ -8,6 +8,17 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-02
+
+### Removed
+
+- Support for Symfony 7.3, which reached end of life in January 2026. The bundle now requires Symfony 7.4 (LTS) or
+  8.x, and CI tests 7.4, 8.0 and 8.1.
+
+### Upgrading
+
+Upgrade to Symfony 7.4 or later before installing 0.14.0; Composer will not resolve it against 7.3.
+
 ## [0.13.3] - 2026-10-02
 
 ### Added
@@ -240,7 +251,8 @@ Installing it with Composer is not enough. See the README's installation section
   details outside debug mode, and a `CommandValueResolver` that supports list endpoints and the combination of
   parameters with a request body.
 
-[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.13.3...HEAD
+[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.14.0...HEAD
+[0.14.0]: https://github.com/stixx/openapi-command-bundle/compare/0.13.3...0.14.0
 [0.13.3]: https://github.com/stixx/openapi-command-bundle/compare/0.13.2...0.13.3
 [0.13.2]: https://github.com/stixx/openapi-command-bundle/compare/0.13.1...0.13.2
 [0.13.1]: https://github.com/stixx/openapi-command-bundle/compare/0.13.0...0.13.1
