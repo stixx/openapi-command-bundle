@@ -71,9 +71,13 @@ final class CommandRouteDiscovery
     /**
      * @return array{string, string} the directory before the first glob character, and the pattern after it
      */
-    private function split(string $path): array
+    private function split(string $entry): array
     {
-        $path = rtrim($path, '/');
+        $path = rtrim($entry, '/');
+        if ($path === '') {
+            throw new LogicException(sprintf('The stixx_openapi_command.command_paths entry "%s" is not a directory. Point it at the directory holding your commands, such as "%%kernel.project_dir%%/src/Command".', $entry));
+        }
+
         $globAt = strcspn($path, '*?{[');
         if ($globAt === strlen($path)) {
             return [$path, ''];
@@ -81,7 +85,7 @@ final class CommandRouteDiscovery
 
         $slashAt = strrpos(substr($path, 0, $globAt), '/');
         if ($slashAt === false || $slashAt === 0) {
-            throw new LogicException(sprintf('The stixx_openapi_command.command_paths entry "%s" has a glob in its first directory. Start it with a fixed directory, such as "%%kernel.project_dir%%/src/*/Command".', $path));
+            throw new LogicException(sprintf('The stixx_openapi_command.command_paths entry "%s" has a glob in its first directory. Start it with a fixed directory, such as "%%kernel.project_dir%%/src/*/Command".', $entry));
         }
 
         return [substr($path, 0, $slashAt), substr($path, $slashAt)];

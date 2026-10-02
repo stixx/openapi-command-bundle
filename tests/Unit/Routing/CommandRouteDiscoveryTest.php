@@ -198,6 +198,7 @@ final class CommandRouteDiscoveryTest extends TestCase
     {
         yield 'absolute' => ['/{app,srv}/src/Command'];
         yield 'absolute double star' => ['/**/Command'];
+        yield 'trailing slash, reported as written' => ['/**/Command/'];
         yield 'relative' => ['*'];
     }
 
@@ -210,6 +211,25 @@ final class CommandRouteDiscoveryTest extends TestCase
 
         // Act
         $this->createDiscovery([$path])->discover();
+    }
+
+    public function testADirectoryEntryCoversItsSubdirectories(): void
+    {
+        // Act
+        $names = array_keys($this->createDiscovery([$this->routingDir.'/tree'])->discover()->all());
+
+        // Assert
+        self::assertSame(['tree_nested'], $names);
+    }
+
+    public function testTheFilesystemRootIsAnError(): void
+    {
+        // Assert
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('command_paths entry "/" is not a directory');
+
+        // Act
+        $this->createDiscovery(['/'])->discover();
     }
 
     /**

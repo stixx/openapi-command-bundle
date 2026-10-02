@@ -137,9 +137,9 @@ Each entry is a directory or a glob pattern, scanned recursively for `.php` file
 | Another bundle | `'@AcmeBillingBundle/src/Command'`, relative to the bundle's `getPath()`: the package root for an `AbstractBundle`, the bundle class's directory for a classic `Bundle` (then `'@AcmeBillingBundle/Command'`) |
 
 Globs support `*` (one directory level), `**` (any depth, including none), `?`, `[...]` and `{a,b}`, as in
-Symfony's own resource imports. Entries match directories, never files, so don't end one in `*.php`, and an entry's first directory can't be a
-glob. Directories and
-files starting with a dot are skipped. Use absolute paths; `%kernel.project_dir%` gives you one.
+Symfony's own resource imports. Entries match directories, never files, so don't end one in `*.php`, and an entry's
+first directory can't be a glob. Directories and files starting with a dot are skipped. Use absolute paths;
+`%kernel.project_dir%` gives you one.
 
 In debug mode the router checks the matched files on every request, so it notices new commands. A `**` pattern, or
 a broad directory such as `src`, has to walk the whole tree below it to do that, which on a large codebase costs tens
