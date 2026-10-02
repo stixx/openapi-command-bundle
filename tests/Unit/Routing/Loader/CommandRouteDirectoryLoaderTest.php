@@ -18,6 +18,8 @@ use ReflectionException;
 use Stixx\OpenApiCommandBundle\Routing\Loader\CommandRouteClassLoader;
 use Stixx\OpenApiCommandBundle\Routing\Loader\CommandRouteDirectoryLoader;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Config\Resource\FileResource;
+use Symfony\Component\Config\Resource\GlobResource;
 use Symfony\Component\Routing\RouteCollection;
 
 final class CommandRouteDirectoryLoaderTest extends TestCase
@@ -73,6 +75,45 @@ final class CommandRouteDirectoryLoaderTest extends TestCase
 
         // Act
         $this->load('unloadable');
+    }
+
+    public function testOrdersRoutesMostSpecificFirst(): void
+    {
+        // Arrange — CollectionItemCommand (/api/items/{id}) is scanned before CollectionLiteralCommand (/api/items/featured).
+
+        // Act
+        $names = array_keys($this->load('src')->all());
+
+        // Assert
+        self::assertSame(['items_featured', 'items_item'], array_values(array_filter($names, static fn (string $name): bool => str_starts_with($name, 'items_'))));
+    }
+
+    public function testLoadsASingleFileAsGlobImportsPassThem(): void
+    {
+        // Arrange
+        $dir = dirname(__DIR__, 3).'/Mock/Routing/tree/Nested';
+        $loader = new CommandRouteDirectoryLoader(new FileLocator($dir), new CommandRouteClassLoader());
+
+        // Act
+        $collection = $loader->load($dir.'/NestedCommand.php', CommandRouteDirectoryLoader::TYPE);
+
+        // Assert
+        self::assertInstanceOf(RouteCollection::class, $collection);
+        self::assertSame(['tree_nested'], array_keys($collection->all()));
+        self::assertNotEmpty(array_filter($collection->getResources(), static fn (object $resource): bool => $resource instanceof FileResource));
+    }
+
+    public function testDirectoryImportsTrackNestedFiles(): void
+    {
+        // Arrange — a recursive pattern, so a command added in a new subdirectory refreshes the routes in debug mode.
+
+        // Act
+        $resources = $this->load('tree')->getResources();
+
+        // Assert
+        $globs = array_map(strval(...), array_filter($resources, static fn (object $resource): bool => $resource instanceof GlobResource));
+        self::assertCount(1, $globs);
+        self::assertStringContainsString('/**/*.php', array_values($globs)[0]);
     }
 
     private function load(string $fixture): RouteCollection

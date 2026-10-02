@@ -72,8 +72,9 @@ final class BundleInitializationTest extends AbstractKernelTestCase
         $this->assertTrue($container->has(NelmioAreaRoutesChecker::class));
         $this->assertTrue($container->has(CommandRouteClassLoader::class));
         $this->assertTrue($container->has(CommandRouteDirectoryLoader::class));
-        $this->assertTrue($container->has(CommandRouteDiscovery::class));
-        $this->assertTrue($container->has(RouterLoaderDecorator::class));
+        // The test kernel sets `command_paths: []`, which leaves discovery unregistered.
+        $this->assertFalse($container->has(CommandRouteDiscovery::class));
+        $this->assertFalse($container->has(RouterLoaderDecorator::class));
 
         // Validators
         $this->assertTrue($container->has(RequestValidatorChain::class));

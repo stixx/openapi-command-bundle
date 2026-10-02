@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\DependencyInjection;
 
+use InvalidArgumentException;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -46,9 +47,15 @@ final class Configuration implements ConfigurationInterface
                     ->defaultValue('no-store')
                 ->end()
                 ->arrayNode('command_paths')
-                    ->info('Directories scanned for command DTOs carrying OpenAPI operation attributes.')
-                    ->scalarPrototype()->end()
-                    ->defaultValue(['%kernel.project_dir%/src'])
+                    ->info('Directories or glob patterns holding command DTOs, e.g. ["%kernel.project_dir%/src/Command"] or ["%kernel.project_dir%/src/*/Application/Command"]; [] disables discovery')
+                    ->isRequired()
+                    ->scalarPrototype()
+                        ->cannotBeEmpty()
+                        ->validate()
+                            ->ifTrue(static fn (mixed $path): bool => is_string($path) && str_ends_with(strtolower($path), '.php'))
+                            ->then(static fn (string $path): never => throw new InvalidArgumentException(sprintf('Entries must match directories, not files: remove the file pattern from "%s".', $path)))
+                        ->end()
+                    ->end()
                 ->end()
                 ->arrayNode('openapi')
                     ->addDefaultsIfNotSet()

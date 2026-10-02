@@ -31,20 +31,4 @@ return static function (ContainerConfigurator $container): void {
         ],
     ]);
 
-    $container->extension('nelmio_api_doc', [
-        'areas' => [
-            'default' => [
-                'path_patterns' => ['^/api'],
-            ],
-        ],
-    ]);
-
-    $container->extension('stixx_openapi_command', [
-        'validation' => [
-            'enabled' => true,
-        ],
-        'command_paths' => ['%kernel.project_dir%/*/Command'],
-    ]);
-
-    $container->parameters()->set('validator.translation_domain', 'validators');
 };

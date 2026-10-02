@@ -13,8 +13,16 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Tests\Functional;
 
+use Nyholm\BundleTest\TestKernel;
 use PHPUnit\Framework\Attributes\WithoutErrorHandler;
+use Stixx\OpenApiCommandBundle\StixxOpenApiCommandBundle;
+use Stixx\OpenApiCommandBundle\Tests\Functional\App\Command\CreateBookCommand;
 use Stixx\OpenApiCommandBundle\Tests\Functional\App\DiscoveryKernel;
+use Stixx\OpenApiCommandBundle\Tests\Functional\App\GlobImportKernel;
+use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
+use Symfony\Component\Config\Resource\GlobResource;
+use Symfony\Component\Config\Resource\ReflectionClassResource;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -52,13 +60,10 @@ final class RouteDiscoveryTest extends AbstractKernelTestCase
         self::assertNotNull($routes->get('command_updatebookcommand'));
         self::assertNotNull($routes->get('command_deletebookcommand'));
 
-        // The command directory must be among the router's cache resources, or editing a command
-        // will not invalidate the route cache.
-        $resources = array_map(strval(...), $routes->getResources());
-        self::assertNotEmpty(
-            array_filter($resources, static fn (string $r): bool => str_contains($r, 'App/Command')),
-            'Expected a cache resource covering the scanned command directory'
-        );
+        // Without these the router cache would miss added or edited commands.
+        $resources = $routes->getResources();
+        self::assertNotEmpty(array_filter($resources, static fn (object $r): bool => $r instanceof GlobResource && str_contains((string) $r, '/*/Command')));
+        self::assertNotEmpty(array_filter($resources, static fn (object $r): bool => $r instanceof ReflectionClassResource && str_contains((string) $r, CreateBookCommand::class)));
     }
 
     #[WithoutErrorHandler]
@@ -82,6 +87,42 @@ final class RouteDiscoveryTest extends AbstractKernelTestCase
         $data = json_decode($response->getContent() ?: 'null', true, 512, JSON_THROW_ON_ERROR);
         self::assertIsArray($data);
         self::assertSame('Refactoring', $data['title'] ?? null);
+    }
+
+    #[WithoutErrorHandler]
+    public function testCommandsCanBeImportedThroughAGlobWithDiscoveryOff(): void
+    {
+        // Arrange
+        $kernel = new GlobImportKernel('test', true);
+        $kernel->addTestConfig(__DIR__.'/Resources/config/scenario.php');
+        $kernel->boot();
+
+        // Act
+        $router = $kernel->getContainer()->get('router');
+        self::assertInstanceOf(RouterInterface::class, $router);
+        $routes = $router->getRouteCollection();
+
+        // Assert
+        self::assertNotNull($routes->get('command_createbookcommand'));
+        self::assertNotNull($routes->get('command_updatebookcommand'));
+        self::assertNotNull($routes->get('command_deletebookcommand'));
+    }
+
+    #[WithoutErrorHandler]
+    public function testBootingWithoutCommandPathsExplainsHowToConfigureThem(): void
+    {
+        // Arrange
+        $kernel = new TestKernel('test', true);
+        $kernel->addTestBundle(FrameworkBundle::class);
+        $kernel->addTestBundle(StixxOpenApiCommandBundle::class);
+        $kernel->addTestConfig(__DIR__.'/Resources/config/framework_only.php');
+
+        // Assert
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('The child config "command_paths" under "stixx_openapi_command" must be configured');
+
+        // Act
+        $kernel->boot();
     }
 
     private function bootDiscoveryKernel(): DiscoveryKernel

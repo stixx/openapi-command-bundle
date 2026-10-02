@@ -22,6 +22,7 @@ use ReflectionClass;
 use ReflectionMethod;
 use Stixx\OpenApiCommandBundle\Attribute\CommandObject;
 use Stixx\OpenApiCommandBundle\Controller\CommandController;
+use Symfony\Component\Config\Resource\ReflectionClassResource;
 use Symfony\Component\Routing\Loader\AttributeClassLoader;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
@@ -67,6 +68,8 @@ final class CommandRouteClassLoader extends AttributeClassLoader
         if (isset($this->controllerClasses[$class])) {
             return $collection;
         }
+
+        $collection->addResource(new ReflectionClassResource($reflectionClass));
 
         $operations = array_merge(
             $reflectionClass->getAttributes(OA\Get::class, ReflectionAttribute::IS_INSTANCEOF),

@@ -100,7 +100,7 @@ These models will be used to describe error responses (400, 404, etc.) in your g
 
 ## Route Discovery
 
-The bundle automatically scans your `%kernel.project_dir%/src` directory for classes with OpenAPI attributes. 
+The bundle scans the directories and glob patterns listed under `command_paths` for classes with OpenAPI attributes; see [Where the bundle looks for commands](command-routing.md#where-the-bundle-looks-for-commands).
 
 - Only classes with **class-level** OpenAPI operation attributes are scanned.
 - Classes that are already recognized as Symfony controllers (e.g., they extend `AbstractController` or use `#[AsController]`) are ignored to avoid conflicts.

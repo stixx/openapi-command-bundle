@@ -17,6 +17,8 @@ use Stixx\OpenApiCommandBundle\Model\ProblemDetails;
 use Stixx\OpenApiCommandBundle\Model\ProblemDetailsInvalidRequestBody;
 use Stixx\OpenApiCommandBundle\Model\Violation;
 use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
+use Stixx\OpenApiCommandBundle\Routing\CommandRouteDiscovery;
+use Stixx\OpenApiCommandBundle\Routing\Loader\RouterLoaderDecorator;
 use Stixx\OpenApiCommandBundle\Validator\ValidatorInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -32,11 +34,7 @@ final class StixxOpenApiCommandExtension extends Extension implements PrependExt
 {
     public function prepend(ContainerBuilder $container): void
     {
-        $configs = $container->getExtensionConfig($this->getAlias());
-        /** @var array{openapi: array{problem_details: bool}} $config */
-        $config = $this->processConfiguration(new Configuration(), $configs);
-
-        if (!$config['openapi']['problem_details']) {
+        if (!$this->isProblemDetailsEnabled($container->getExtensionConfig($this->getAlias()))) {
             return;
         }
 
@@ -101,11 +99,35 @@ final class StixxOpenApiCommandExtension extends Extension implements PrependExt
 
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__.'/../../config'));
         $this->registerCommonConfiguration($loader, $container);
+
+        if ($commandPaths === []) {
+            $container->removeDefinition(RouterLoaderDecorator::class);
+            $container->removeDefinition(CommandRouteDiscovery::class);
+        }
     }
 
     public function getAlias(): string
     {
         return Configuration::BUNDLE_ALIAS;
+    }
+
+    /**
+     * Reads the raw configs: prepend() runs before the tree can be processed, and processing it here would fail on
+     * required keys that are still missing.
+     *
+     * @param array<array<string, mixed>> $configs
+     */
+    private function isProblemDetailsEnabled(array $configs): bool
+    {
+        $enabled = true;
+        foreach ($configs as $config) {
+            $openapi = $config['openapi'] ?? null;
+            if (is_array($openapi) && array_key_exists('problem_details', $openapi)) {
+                $enabled = $openapi['problem_details'] === null || (bool) $openapi['problem_details'];
+            }
+        }
+
+        return $enabled;
     }
 
     private function registerCommonConfiguration(PhpFileLoader $loader, ContainerBuilder $container): void

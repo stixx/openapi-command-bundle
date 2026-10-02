@@ -10,6 +10,29 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [0.14.0] - 2026-10-02
 
+### Added
+
+- `command_paths` entries can be glob patterns, as in Symfony's resource imports: `*` matches one directory level
+  and `**` any depth, so `'%kernel.project_dir%/src/**/Application/Command'` covers nested DDD contexts.
+- Routing imports of type `stixx_openapi_command.command_attributes` accept single files, so a glob import such as
+  `../src/**/Application/Command/**/*.php` works.
+
+### Changed
+
+- **`command_paths` is required** and no longer defaults to `%kernel.project_dir%/src`. See **Upgrading** below.
+- A configured path that does not exist is an error naming the entry, instead of being skipped. A glob that matches
+  nothing still yields no routes. Entries must match directories: one ending in `.php` is rejected.
+- With `command_paths: []`, the discovery services are not registered at all.
+- Routes from a `stixx_openapi_command.command_attributes` directory import are sorted most-specific-first, as
+  discovered routes already were.
+
+### Fixed
+
+- In debug mode, routes refresh when a command is edited or added anywhere under a configured path. 0.12.1 claimed
+  this, but the router cache only tracked command files directly inside each path: edits went unnoticed, and so did
+  commands added in subdirectories, unless the command also happened to be a registered service. Directory imports
+  of type `stixx_openapi_command.command_attributes` now track nested files too.
+
 ### Removed
 
 - Support for Symfony 7.3, which reached end of life in January 2026. The bundle now requires Symfony 7.4 (LTS) or
@@ -18,6 +41,19 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 ### Upgrading
 
 Upgrade to Symfony 7.4 or later before installing 0.14.0; Composer will not resolve it against 7.3.
+
+`command_paths` must now be set; until it is, the container fails to compile with a message saying so. List the
+directories holding your command DTOs in `config/packages/stixx_openapi_command.yaml`:
+
+```yaml
+stixx_openapi_command:
+    command_paths:
+        - '%kernel.project_dir%/src/*/Application/Command'
+```
+
+`['%kernel.project_dir%/src']` finds the same routes as 0.13, but scans your whole codebase, and in debug mode now
+walks it on every request to notice new commands. `[]` turns discovery off in favour of routing imports. Remove any
+entry pointing at a directory that does not exist, or move it under `when@<env>`.
 
 ## [0.13.3] - 2026-10-02
 

@@ -13,21 +13,29 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\Routing;
 
+use InvalidArgumentException;
+use LogicException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stixx\OpenApiCommandBundle\Routing\CommandRouteDiscovery;
 use Stixx\OpenApiCommandBundle\Routing\Loader\CommandRouteClassLoader;
 use Stixx\OpenApiCommandBundle\Routing\Loader\CommandRouteDirectoryLoader;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Config\Resource\GlobResource;
+use Symfony\Component\Config\Resource\ReflectionClassResource;
 
 final class CommandRouteDiscoveryTest extends TestCase
 {
     private string $commandDir;
 
+    private string $routingDir;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->commandDir = dirname(__DIR__, 2).'/Mock/Routing/src';
+        $this->routingDir = dirname(__DIR__, 2).'/Mock/Routing';
+        $this->commandDir = $this->routingDir.'/src';
     }
 
     public function testDiscoversCommandsInConfiguredPaths(): void
@@ -64,13 +72,91 @@ final class CommandRouteDiscoveryTest extends TestCase
         self::assertNotEmpty($resources, 'Sorting must not drop the loader resources');
     }
 
-    public function testNonExistentPathsAreSkipped(): void
+    public function testGlobPatternsMatchAtAnyDepth(): void
     {
         // Act
-        $collection = $this->createDiscovery([$this->commandDir.'/does-not-exist'])->discover();
+        $names = array_keys($this->createDiscovery([$this->routingDir.'/contexts/**/Application/Command'])->discover()->all());
+
+        // Assert
+        self::assertEqualsCanonicalizing(['ctx_show_template', 'ctx_resolve_template', 'ctx_archive'], $names);
+    }
+
+    public function testASingleStarMatchesOneDirectoryLevel(): void
+    {
+        // Act
+        $names = array_keys($this->createDiscovery([$this->routingDir.'/contexts/*/Application/Command'])->discover()->all());
+
+        // Assert
+        self::assertEqualsCanonicalizing(['ctx_show_template', 'ctx_resolve_template'], $names);
+    }
+
+    public function testRoutesAreOrderedMostSpecificFirstAcrossPaths(): void
+    {
+        // Arrange — the placeholder route's path is listed first, so only a sort across both paths puts the literal first.
+        $paths = [
+            $this->routingDir.'/contexts/Alpha/Application/Command',
+            $this->routingDir.'/contexts/Beta/Application/Command',
+        ];
+
+        // Act
+        $names = array_keys($this->createDiscovery($paths)->discover()->all());
+
+        // Assert
+        self::assertSame(['ctx_resolve_template', 'ctx_show_template'], $names);
+    }
+
+    public function testRelativePathsResolveThroughTheLocator(): void
+    {
+        // Act
+        $names = array_keys($this->createDiscovery(['contexts/Gamma'])->discover()->all());
+
+        // Assert
+        self::assertSame(['ctx_archive'], $names);
+    }
+
+    public function testAGlobWithoutMatchesYieldsNoRoutes(): void
+    {
+        // Act
+        $collection = $this->createDiscovery([$this->routingDir.'/contexts/*/Nothing'])->discover();
 
         // Assert
         self::assertCount(0, $collection->all());
+    }
+
+    public function testAMissingDirectoryIsAnError(): void
+    {
+        // Act
+        try {
+            $this->createDiscovery([$this->commandDir.'/does-not-exist'])->discover();
+            self::fail('Expected a missing directory to be an error');
+        } catch (LogicException $exception) {
+            // Assert
+            self::assertStringContainsString('command_paths directory "'.$this->commandDir.'/does-not-exist" does not exist', $exception->getMessage());
+            self::assertInstanceOf(InvalidArgumentException::class, $exception->getPrevious(), 'The locator\'s reason must be kept');
+        }
+    }
+
+    public function testAMissingGlobPrefixIsAnError(): void
+    {
+        // Assert
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('directory "'.$this->routingDir.'/missing" (from "'.$this->routingDir.'/missing/**/Command") does not exist');
+
+        // Act
+        $this->createDiscovery([$this->routingDir.'/missing/**/Command'])->discover();
+    }
+
+    public function testGlobAndClassResourcesAreRegistered(): void
+    {
+        // Arrange — the glob catches added or removed command files, the class resources catch edits.
+
+        // Act
+        $resources = $this->createDiscovery([$this->routingDir.'/contexts/**/Application/Command'])->discover()->getResources();
+
+        // Assert
+        self::assertNotEmpty(array_filter($resources, static fn (object $resource): bool => $resource instanceof GlobResource));
+        $classes = array_map(strval(...), array_filter($resources, static fn (object $resource): bool => $resource instanceof ReflectionClassResource));
+        self::assertCount(3, $classes);
     }
 
     public function testScanHappensOnlyOnce(): void
@@ -86,16 +172,74 @@ final class CommandRouteDiscoveryTest extends TestCase
         self::assertSame($first, $second);
     }
 
+    public function testAFileEntryIsAnError(): void
+    {
+        // Assert
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('is not a directory');
+
+        // Act
+        $this->createDiscovery([$this->commandDir.'/AnnotatedCommand.php'])->discover();
+    }
+
+    public function testATrailingSlashIsIgnored(): void
+    {
+        // Act
+        $names = array_keys($this->createDiscovery([$this->routingDir.'/contexts/Gamma/'])->discover()->all());
+
+        // Assert
+        self::assertSame(['ctx_archive'], $names);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideEntriesGlobbingTheirFirstDirectory(): iterable
+    {
+        yield 'absolute' => ['/{app,srv}/src/Command'];
+        yield 'absolute double star' => ['/**/Command'];
+        yield 'trailing slash, reported as written' => ['/**/Command/'];
+        yield 'relative' => ['*'];
+    }
+
+    #[DataProvider('provideEntriesGlobbingTheirFirstDirectory')]
+    public function testAGlobInTheFirstDirectoryIsAnError(string $path): void
+    {
+        // Assert
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('command_paths entry "'.$path.'" has a glob in its first directory');
+
+        // Act
+        $this->createDiscovery([$path])->discover();
+    }
+
+    public function testADirectoryEntryCoversItsSubdirectories(): void
+    {
+        // Act
+        $names = array_keys($this->createDiscovery([$this->routingDir.'/tree'])->discover()->all());
+
+        // Assert
+        self::assertSame(['tree_nested'], $names);
+    }
+
+    public function testTheFilesystemRootIsAnError(): void
+    {
+        // Assert
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('command_paths entry "/" is not a directory');
+
+        // Act
+        $this->createDiscovery(['/'])->discover();
+    }
+
     /**
      * @param list<string> $paths
      */
     private function createDiscovery(array $paths): CommandRouteDiscovery
     {
-        $directoryLoader = new CommandRouteDirectoryLoader(
-            new FileLocator([$this->commandDir]),
-            new CommandRouteClassLoader(),
-        );
+        $locator = new FileLocator([$this->routingDir]);
+        $directoryLoader = new CommandRouteDirectoryLoader($locator, new CommandRouteClassLoader());
 
-        return new CommandRouteDiscovery($directoryLoader, $paths);
+        return new CommandRouteDiscovery($directoryLoader, $locator, $paths);
     }
 }

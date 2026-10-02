@@ -30,4 +30,8 @@ return static function (ContainerConfigurator $container): void {
             'log' => false,
         ],
     ]);
+
+    $container->extension('stixx_openapi_command', [
+        'command_paths' => [],
+    ]);
 };
