@@ -68,8 +68,9 @@ final class CommandRouteDirectoryLoader extends AttributeDirectoryLoader
                 gc_collect_cycles();
             }
 
+            /** @var class-string|false $class */
             $class = $this->findClass($file);
-            if ($class === false || !class_exists($class)) {
+            if ($class === false) {
                 continue;
             }
 

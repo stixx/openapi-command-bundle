@@ -1,0 +1,6 @@
+<?php
+
+#[OpenApi\Attributes\Get(path: '/api/tree/text', operationId: 'tree_text')]
+final class TextCommand
+{
+}
