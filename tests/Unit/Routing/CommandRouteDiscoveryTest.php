@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\Routing;
 
+use InvalidArgumentException;
 use LogicException;
 use PHPUnit\Framework\TestCase;
 use Stixx\OpenApiCommandBundle\Routing\CommandRouteDiscovery;
@@ -123,12 +124,15 @@ final class CommandRouteDiscoveryTest extends TestCase
 
     public function testAMissingDirectoryIsAnError(): void
     {
-        // Assert
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('command_paths directory "'.$this->commandDir.'/does-not-exist" does not exist');
-
         // Act
-        $this->createDiscovery([$this->commandDir.'/does-not-exist'])->discover();
+        try {
+            $this->createDiscovery([$this->commandDir.'/does-not-exist'])->discover();
+            self::fail('Expected a missing directory to be an error');
+        } catch (LogicException $exception) {
+            // Assert
+            self::assertStringContainsString('command_paths directory "'.$this->commandDir.'/does-not-exist" does not exist', $exception->getMessage());
+            self::assertInstanceOf(InvalidArgumentException::class, $exception->getPrevious(), 'The locator\'s reason must be kept');
+        }
     }
 
     public function testAMissingGlobPrefixIsAnError(): void

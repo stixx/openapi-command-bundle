@@ -136,9 +136,9 @@ final class ConfigurationTest extends TestCase
 
         // Assert
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('Entries must match directories, not files');
+        $this->expectExceptionMessage('Entries must match directories, not files: remove the file pattern from "/app/src/Command/*.PHP".');
 
         // Act
-        $processor->processConfiguration($configuration, [['command_paths' => ['%kernel.project_dir%/src/**/Command/**/*.php']]]);
+        $processor->processConfiguration($configuration, [['command_paths' => ['/app/src/Command/*.PHP']]]);
     }
 }

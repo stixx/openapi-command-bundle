@@ -134,16 +134,17 @@ Each entry is a directory or a glob pattern, scanned recursively for `.php` file
 | Several roots | `'%kernel.project_dir%/src/Command'`, `'%kernel.project_dir%/lib/Billing/Command'` |
 | DDD, one context level (`src/Billing/Application/Command`) | `'%kernel.project_dir%/src/*/Application/Command'` |
 | DDD, nested to any depth (`src/Billing/Invoice/Application/Command`) | `'%kernel.project_dir%/src/**/Application/Command'` |
-| Another bundle | `'@AcmeBillingBundle/Command'`, relative to the bundle's path |
+| Another bundle | `'@AcmeBillingBundle/src/Command'`, relative to the bundle's `getPath()` (the package root for an `AbstractBundle`) |
 
 Globs support `*` (one directory level), `**` (any depth, including none), `?`, `[...]` and `{a,b}`, as in
 Symfony's own resource imports. Entries match directories, never files, so don't end one in `*.php`. Directories and
 files starting with a dot are skipped. Use absolute paths; `%kernel.project_dir%` gives you one.
 
-In debug mode the router checks the matched files on every request, so it notices new commands. A `**` pattern has
-to walk the whole tree below its fixed prefix to do that, which on a large `src` costs tens of milliseconds per
-request; a fixed-depth pattern such as `src/*/*/Application/Command` only lists the directories it matches. Prefer
-`*` when your layout is regular. Production is unaffected: the router cache is not checked there.
+In debug mode the router checks the matched files on every request, so it notices new commands. A `**` pattern, or
+a broad directory such as `src`, has to walk the whole tree below it to do that, which on a large codebase costs tens
+of milliseconds per request; a fixed-depth pattern such as `src/*/*/Application/Command` only walks the directories it
+matches. Point entries at the directories that hold commands, and prefer `*` when your layout is regular. Production
+is unaffected: the router cache is not checked there.
 
 How it works
 - The bundle decorates `routing.loader`, the loader the router asks for when it builds its route collection. It runs once per router build, for the root routing resource, so command routes are added no matter how your application declares its own routes — or whether it declares any at all.
