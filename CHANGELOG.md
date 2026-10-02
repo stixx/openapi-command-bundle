@@ -52,9 +52,8 @@ stixx_openapi_command:
 ```
 
 `['%kernel.project_dir%/src']` finds the same routes as 0.13, but scans your whole codebase, and in debug mode now
-walks it on every request to notice new commands. `[]` turns discovery
-off in favour of routing imports. Remove any entry pointing at a directory that does not exist, or move it under
-`when@<env>`.
+walks it on every request to notice new commands. `[]` turns discovery off in favour of routing imports. Remove any
+entry pointing at a directory that does not exist, or move it under `when@<env>`.
 
 ## [0.13.3] - 2026-10-02
 
