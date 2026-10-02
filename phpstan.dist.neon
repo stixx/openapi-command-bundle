@@ -3,4 +3,5 @@ parameters:
     paths:
         - src/
         - tests/
+        - .github/scripts/
     treatPhpDocTypesAsCertain: false

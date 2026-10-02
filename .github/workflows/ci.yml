@@ -46,6 +46,37 @@ jobs:
       - name: Run static analysis
         run: composer phpstan
 
+  static-analysis-lowest:
+    name: Static analysis (Symfony 7.4.*)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: json
+          coverage: none
+          tools: flex
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+      - name: Cache dependencies
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: static-analysis-symfony-7.4-composer-${{ hashFiles('**/composer.json') }}
+          restore-keys: static-analysis-symfony-7.4-composer-
+      - name: Install dependencies
+        env:
+          SYMFONY_REQUIRE: '7.4.*'
+        run: composer update --prefer-dist --no-progress
+      - name: Run static analysis
+        run: composer phpstan
+
   tests:
     name: Tests (PHP ${{ matrix.php }}, Symfony ${{ matrix.symfony }})
     needs: lint
