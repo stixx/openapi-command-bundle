@@ -8,7 +8,7 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [Unreleased]
 
-## [0.13.2] - 2026-10-02
+## [0.13.3] - 2026-10-02
 
 ### Added
 
@@ -16,13 +16,18 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ### Changed
 
+- The Symfony components the bundle uses directly (`config`, `event-dispatcher`, `http-foundation`,
+  `http-kernel`, `routing`, `yaml`) are now declared as dependencies instead of arriving through other
+  packages, with the same `^7.3 || ^8.0` constraint as the rest.
+
+## [0.13.2] - 2026-10-02
+
+### Changed
+
 - Route discovery uses less memory while scanning `command_paths` (all of `src` by default). The file list
   holds path strings instead of `SplFileInfo` objects, about 1.3KB less per scanned file, and the cycle
   collector runs every 50 files to free the cyclic garbage swagger-php attributes leave behind. Which commands
   are discovered is unchanged.
-- The Symfony components the bundle uses directly (`config`, `event-dispatcher`, `http-foundation`,
-  `http-kernel`, `routing`, `yaml`) are now declared as dependencies instead of arriving through other
-  packages, with the same `^7.3 || ^8.0` constraint as the rest.
 
 ## [0.13.1] - 2026-09-06
 
@@ -235,7 +240,8 @@ Installing it with Composer is not enough. See the README's installation section
   details outside debug mode, and a `CommandValueResolver` that supports list endpoints and the combination of
   parameters with a request body.
 
-[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.13.2...HEAD
+[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.13.3...HEAD
+[0.13.3]: https://github.com/stixx/openapi-command-bundle/compare/0.13.2...0.13.3
 [0.13.2]: https://github.com/stixx/openapi-command-bundle/compare/0.13.1...0.13.2
 [0.13.1]: https://github.com/stixx/openapi-command-bundle/compare/0.13.0...0.13.1
 [0.12.4]: https://github.com/stixx/openapi-command-bundle/compare/0.12.3...0.12.4
