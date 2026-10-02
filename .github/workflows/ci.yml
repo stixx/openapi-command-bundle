@@ -74,6 +74,8 @@ jobs:
         env:
           SYMFONY_REQUIRE: '7.4.*'
         run: composer update --prefer-dist --no-progress
+      - name: Install PHPUnit for static analysis
+        run: ./vendor/bin/simple-phpunit --version
       - name: Run static analysis
         run: composer phpstan
 

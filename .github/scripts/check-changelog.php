@@ -35,7 +35,8 @@ function parse(string $changelog): array
     $links = [];
     $current = null;
 
-    foreach (explode("\n", $changelog) as $index => $line) {
+    foreach (preg_split('/\R/', $changelog) ?: [] as $index => $line) {
+        $line = rtrim($line);
         if (preg_match('/^## \[([^\]]+)\](?: - (\d{4}-\d{2}-\d{2}))?\s*$/', $line, $match)) {
             $current = $match[1];
             $headings[$current] = ['line' => $index + 1, 'date' => $match[2] ?? null];
@@ -45,7 +46,6 @@ function parse(string $changelog): array
 
         if (preg_match('/^\[([^\]]+)\]: (\S+)\s*$/', $line, $match)) {
             $links[$match[1]] = ['line' => $index + 1, 'url' => $match[2]];
-            $current = null;
             continue;
         }
 
@@ -148,9 +148,18 @@ if ($releasing !== null) {
     if ($releasing !== $newest) {
         $error(1, sprintf('Tag %s is not the newest entry (%s).', $releasing, $newest ?? 'none'));
     } else {
-        $tagged = git('for-each-ref', 'refs/tags/'.$releasing, '--format=%(creatordate:short)')[0] ?? null;
-        if ($tagged !== null && $headings[$releasing]['date'] !== $tagged) {
-            $error($headings[$releasing]['line'], sprintf('Entry %s is dated %s but was tagged on %s.', $releasing, $headings[$releasing]['date'] ?? 'never', $tagged));
+        $timestamp = git('for-each-ref', 'refs/tags/'.$releasing, '--format=%(creatordate:unix)')[0] ?? null;
+        $source = sprintf('tag %s', $releasing);
+        if ($timestamp === null) {
+            $timestamp = git('log', '-1', '--format=%ct', 'HEAD')[0] ?? null;
+            $source = 'HEAD, which the tag would point at';
+        }
+
+        $date = $timestamp === null ? null : gmdate('Y-m-d', (int) $timestamp);
+        if ($date === null) {
+            $error($headings[$releasing]['line'], sprintf('Could not read the date of tag %s.', $releasing));
+        } elseif ($headings[$releasing]['date'] !== $date) {
+            $error($headings[$releasing]['line'], sprintf('Entry %s is dated %s, but %s dates from %s (UTC; the commit date for a lightweight tag). Date the entry %s.', $releasing, $headings[$releasing]['date'] ?? 'never', $source, $date, $date));
         }
     }
 }

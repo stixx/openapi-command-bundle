@@ -12,13 +12,14 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ### Added
 
-- CI checks `CHANGELOG.md` against the tags: every tag needs an entry and a compare link, a released entry may not
-  change afterwards, and a tag must be the newest entry, dated the day it was tagged.
-- Static analysis also runs against Symfony 7.4, the lowest supported version.
 - `command_paths` entries can be glob patterns, as in Symfony's resource imports: `*` matches one directory level
   and `**` any depth, so `'%kernel.project_dir%/src/**/Application/Command'` covers nested DDD contexts.
 - Routing imports of type `stixx_openapi_command.command_attributes` accept single files, so a glob import such as
   `../src/**/Application/Command/**/*.php` works.
+- CI checks `CHANGELOG.md` against the tags: every tag needs an entry and a compare link, an entry that shipped in its
+  own tag may not change afterwards, and a pushed tag must be the newest entry, dated in UTC like the commit it points
+  at.
+- Static analysis also runs against Symfony 7.4, the lowest supported version.
 
 ### Changed
 
@@ -96,7 +97,7 @@ Maintenance only; no change in behaviour. This entry was added later: the `0.13.
 
 ### Added
 
-- Dependabot keeps the Composer dependencies and GitHub Actions up to date, checking weekly.
+- Dependabot updates the GitHub Actions weekly; for Composer dependencies it opens security updates only.
 
 ### Changed
 
