@@ -10,6 +10,10 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [0.13.2] - 2026-10-02
 
+### Added
+
+- CI coverage for Symfony 8.1.
+
 ### Changed
 
 - Route discovery uses less memory while scanning `command_paths` (all of `src` by default). The file list

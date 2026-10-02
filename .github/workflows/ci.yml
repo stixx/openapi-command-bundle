@@ -59,6 +59,7 @@ jobs:
         symfony:
           - '7.3.*'
           - '8.0.*'
+          - '8.1.*'
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
