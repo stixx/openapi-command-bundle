@@ -18,7 +18,9 @@ use RecursiveCallbackFilterIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
+use Stixx\OpenApiCommandBundle\Routing\RouteSpecificitySorter;
 use Symfony\Component\Config\FileLocatorInterface;
+use Symfony\Component\Config\Resource\FileResource;
 use Symfony\Component\Config\Resource\GlobResource;
 use Symfony\Component\Routing\Loader\AttributeDirectoryLoader;
 use Symfony\Component\Routing\RouteCollection;
@@ -32,19 +34,30 @@ final class CommandRouteDirectoryLoader extends AttributeDirectoryLoader
 
     private const int GC_INTERVAL = 50;
 
-    public function __construct(FileLocatorInterface $locator, CommandRouteClassLoader $loader)
-    {
+    public function __construct(
+        FileLocatorInterface $locator,
+        CommandRouteClassLoader $loader,
+        private readonly RouteSpecificitySorter $sorter = new RouteSpecificitySorter(),
+    ) {
         parent::__construct($locator, $loader);
     }
 
     public function load(mixed $path, ?string $type = null): ?RouteCollection
     {
-        if (!is_string($path) || !is_dir($dir = $this->locator->locate($path))) {
+        $located = is_string($path) ? $this->locator->locate($path) : null;
+
+        if (is_string($located) && is_file($located) && str_ends_with($located, '.php')) {
+            $collection = $this->loadFiles([$located], $type);
+            $collection->addResource(new FileResource($located));
+
+            return $collection;
+        }
+
+        if (!is_string($located) || !is_dir($located)) {
             return parent::load($path, $type);
         }
 
-        $collection = new RouteCollection();
-        $collection->addResource(new GlobResource($dir, '/*.php', true));
+        $dir = $located;
 
         $files = [];
         $iterator = new RecursiveIteratorIterator(
@@ -60,8 +73,21 @@ final class CommandRouteDirectoryLoader extends AttributeDirectoryLoader
                 $files[] = $file;
             }
         }
+
+        $collection = $this->loadFiles($files, $type);
+        $collection->addResource(new GlobResource($dir, '/*.php', true));
+
+        return $collection;
+    }
+
+    /**
+     * @param list<string> $files
+     */
+    public function loadFiles(array $files, ?string $type = null): RouteCollection
+    {
         sort($files, SORT_STRING);
 
+        $collection = new RouteCollection();
         $scanned = 0;
         foreach ($files as $file) {
             if (++$scanned % self::GC_INTERVAL === 0) {
@@ -81,7 +107,7 @@ final class CommandRouteDirectoryLoader extends AttributeDirectoryLoader
             $collection->addCollection($this->loader->load($class, $type));
         }
 
-        return $collection;
+        return $this->sorter->sort($collection);
     }
 
     public function supports(mixed $resource, ?string $type = null): bool

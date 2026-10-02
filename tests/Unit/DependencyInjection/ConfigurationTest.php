@@ -15,6 +15,7 @@ namespace Stixx\OpenApiCommandBundle\Tests\Unit\DependencyInjection;
 
 use PHPUnit\Framework\TestCase;
 use Stixx\OpenApiCommandBundle\DependencyInjection\Configuration;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\Processor;
 
 final class ConfigurationTest extends TestCase
@@ -26,21 +27,61 @@ final class ConfigurationTest extends TestCase
         $processor = new Processor();
 
         // Act
-        $config = $processor->processConfiguration($configuration, []);
+        $config = $processor->processConfiguration($configuration, [['command_paths' => ['%kernel.project_dir%/src/Command']]]);
 
         // Assert
         $expected = [
+            'command_paths' => ['%kernel.project_dir%/src/Command'],
             'validation' => [
                 'enabled' => true,
                 'groups' => ['Default'],
             ],
             'cache_control' => 'no-store',
-            'command_paths' => ['%kernel.project_dir%/src'],
             'openapi' => [
                 'problem_details' => true,
             ],
         ];
         self::assertSame($expected, $config);
+    }
+
+    public function testCommandPathsMustBeConfigured(): void
+    {
+        // Arrange
+        $configuration = new Configuration();
+        $processor = new Processor();
+
+        // Assert
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('The child config "command_paths" under "stixx_openapi_command" must be configured: Directories or glob patterns holding command DTOs');
+
+        // Act
+        $processor->processConfiguration($configuration, []);
+    }
+
+    public function testCommandPathsRejectAnEmptyEntry(): void
+    {
+        // Arrange
+        $configuration = new Configuration();
+        $processor = new Processor();
+
+        // Assert
+        $this->expectException(InvalidConfigurationException::class);
+
+        // Act
+        $processor->processConfiguration($configuration, [['command_paths' => ['']]]);
+    }
+
+    public function testCommandPathsAcceptGlobPatterns(): void
+    {
+        // Arrange
+        $configuration = new Configuration();
+        $processor = new Processor();
+
+        // Act
+        $config = $processor->processConfiguration($configuration, [['command_paths' => ['%kernel.project_dir%/src/**/Application/Command']]]);
+
+        // Assert
+        self::assertSame(['%kernel.project_dir%/src/**/Application/Command'], $config['command_paths']);
     }
 
     public function testCommandPathsCanBeEmptiedToDisableDiscovery(): void
@@ -66,6 +107,7 @@ final class ConfigurationTest extends TestCase
                 'enabled' => false,
                 'groups' => ['Custom', 'Special'],
             ],
+            'command_paths' => [],
         ];
 
         // Act
@@ -77,8 +119,8 @@ final class ConfigurationTest extends TestCase
                 'enabled' => false,
                 'groups' => ['Custom', 'Special'],
             ],
+            'command_paths' => [],
             'cache_control' => 'no-store',
-            'command_paths' => ['%kernel.project_dir%/src'],
             'openapi' => [
                 'problem_details' => true,
             ],

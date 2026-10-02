@@ -13,7 +13,7 @@ This coexists with classic Symfony route configuration (YAML/PHP/XML). Choose wh
 
 - Symfony 7.4+
 - This bundle installed and enabled
-- Your command classes are registered as services (typical with autowire/autoconfigure)
+- `command_paths` configured to where your command classes live (see [Where the bundle looks for commands](#where-the-bundle-looks-for-commands))
 
 Important: Commands must NOT be controllers
 - Do not extend Symfony\Bundle\FrameworkBundle\Controller\AbstractController in your command classes.
@@ -114,27 +114,41 @@ sequenceDiagram
     ExSub-->>Client: HTTP Response
 ```
 
-## No extra routes configuration required
+## Where the bundle looks for commands
 
-Starting with this version, you do not need to add any custom route import for command DTOs.
+Every project decides where its command DTOs live, so you tell the bundle with `command_paths`. The key is
+required; the container fails to compile until it is set.
+
+```yaml
+# config/packages/stixx_openapi_command.yaml
+stixx_openapi_command:
+    command_paths:
+        - '%kernel.project_dir%/src/Command'
+```
+
+Each entry is a directory or a glob pattern, scanned recursively for `.php` files:
+
+| Layout | `command_paths` |
+|---|---|
+| One directory | `'%kernel.project_dir%/src/Command'` |
+| Several roots | `'%kernel.project_dir%/src/Command'`, `'%kernel.project_dir%/lib/Billing/Command'` |
+| DDD, one context level (`src/Billing/Application/Command`) | `'%kernel.project_dir%/src/*/Application/Command'` |
+| DDD, nested to any depth (`src/Billing/Invoice/Application/Command`) | `'%kernel.project_dir%/src/**/Application/Command'` |
+| Another bundle | `'@AcmeBillingBundle/src/Command'` |
+
+Globs support `*` (one directory level), `**` (any depth, including none), `?`, `[...]` and `{a,b}`, as in
+Symfony's own resource imports. Directories and files starting with a dot are skipped.
 
 How it works
 - The bundle decorates `routing.loader`, the loader the router asks for when it builds its route collection. It runs once per router build, for the root routing resource, so command routes are added no matter how your application declares its own routes — or whether it declares any at all.
 - During that build, the bundle scans the configured `command_paths` and adds routes for command classes that meet the criteria: class-level OpenAPI operation attributes (e.g., `#[OA\Post]`, `#[OA\Get]`, …) and not a controller.
+- Routes from all paths are sorted together, most specific first, so `/api/templates/resolve` wins over `/api/templates/{uuid}` even when the two commands live in different directories.
+- In debug mode, adding, removing or editing a command refreshes the routes without a manual `cache:clear`.
 - Discovered routes coexist with your existing controller routes and any manually configured routes.
 
 Notes
-- No additional routing import is necessary.
-- The scan is recursive and covers the directories listed under `command_paths`, which defaults to `%kernel.project_dir%/src`:
-
-  ```yaml
-  stixx_openapi_command:
-      command_paths:
-          - '%kernel.project_dir%/src/Command'
-          - '%kernel.project_dir%/lib/Billing/Command'
-  ```
-
-  Configured paths that do not exist are skipped, so listing a directory that only some environments have is safe.
+- A directory that does not exist, or the fixed part of a glob that does not exist, is an error naming the entry. A glob that matches nothing is not: it yields no routes. For a directory only some environments have, configure it under `when@<env>`.
+- Command classes do not need to be registered as services; the bundle reads them from the filesystem.
 - Only classes that are annotated with OpenAPI operation attributes (e.g., `#[OA\Post]`) at class level and are not recognized controllers (`AbstractController`, `#[AsController]`, or having method-level `#[Route]`) will produce routes.
   - Because of this, ensure your commands are plain DTOs and do not extend `AbstractController`, do not use `#[AsController]`, and do not declare method-level `#[Route]` attributes.
 - If a route name is already present in the collection — because you imported the command explicitly — the bundle leaves your route alone rather than replacing it.
@@ -162,6 +176,17 @@ commands:
     resource: '../../src/Command'
     type: stixx_openapi_command.command_attributes
 ```
+
+A glob in a routing import matches files, so end it with `*.php`:
+
+```yaml
+commands:
+    resource: '../../src/**/Application/Command/**/*.php'
+    type: stixx_openapi_command.command_attributes
+```
+
+Symfony imports each match separately, so routes are sorted within a file or directory, not across a whole
+glob. If commands in different directories have overlapping paths, use `command_paths` instead.
 
 
 ## Use OpenAPI attributes on command classes (no Symfony #[Route])
@@ -349,7 +374,7 @@ The bundle provides a `CommandRouteDescriber` so your routes appear in Nelmio Ap
 ## Troubleshooting
 
 - My routes don’t show up
-  - Verify your command classes are registered as services (autowire/autoconfigure setups usually cover this).
+  - Check that `command_paths` covers the directory the command lives in; `bin/console debug:router` lists what was found.
   - Ensure the command class declares a class-level OpenAPI operation attribute (e.g., #[OA\Post(path: ...)]).
   - Ensure the class is NOT detected as a real controller by the bundle’s rules: it must not extend `AbstractController`, must not use `#[AsController]`, and must not declare method-level `#[Route]` attributes.
 

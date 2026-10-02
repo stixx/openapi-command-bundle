@@ -75,6 +75,31 @@ final class CommandRouteDirectoryLoaderTest extends TestCase
         $this->load('unloadable');
     }
 
+    public function testOrdersRoutesMostSpecificFirst(): void
+    {
+        // Arrange — CollectionItemCommand (/api/items/{id}) is scanned before CollectionLiteralCommand (/api/items/featured).
+
+        // Act
+        $names = array_keys($this->load('src')->all());
+
+        // Assert
+        self::assertSame(['items_featured', 'items_item'], array_values(array_filter($names, static fn (string $name): bool => str_starts_with($name, 'items_'))));
+    }
+
+    public function testLoadsASingleFileAsGlobImportsPassThem(): void
+    {
+        // Arrange
+        $dir = dirname(__DIR__, 3).'/Mock/Routing/tree/Nested';
+        $loader = new CommandRouteDirectoryLoader(new FileLocator($dir), new CommandRouteClassLoader());
+
+        // Act
+        $collection = $loader->load($dir.'/NestedCommand.php', CommandRouteDirectoryLoader::TYPE);
+
+        // Assert
+        self::assertInstanceOf(RouteCollection::class, $collection);
+        self::assertSame(['tree_nested'], array_keys($collection->all()));
+    }
+
     private function load(string $fixture): RouteCollection
     {
         $dir = dirname(__DIR__, 3).'/Mock/Routing/'.$fixture;

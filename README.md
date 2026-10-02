@@ -63,6 +63,22 @@ Without this, the container fails to compile and `cache:clear` reports which par
 is missing — the `config/bundles.php` entry or the package config — along with
 the configuration to add.
 
+### 4. Tell the bundle where your commands live
+
+Every project keeps its command DTOs somewhere else, so the bundle scans only the directories you list in
+`config/packages/stixx_openapi_command.yaml`. Glob patterns are allowed; `**` matches any depth:
+
+```yaml
+stixx_openapi_command:
+    command_paths:
+        - '%kernel.project_dir%/src/Command'                  # a single directory
+        # - '%kernel.project_dir%/src/**/Application/Command' # nested DDD contexts
+```
+
+The key is required: without it the container fails to compile. Set it to `[]` to turn discovery off and
+import command routes from your routing config instead. See
+[Command Routing](docs/command-routing.md#where-the-bundle-looks-for-commands).
+
 ## Usage
 
 ### 1. Create a Command DTO
@@ -145,8 +161,8 @@ stixx_openapi_command:
         enabled: true
         groups: ['Default']
     cache_control: 'no-store' # Any valid Cache-Control directives, or null to disable
-    command_paths:            # Directories scanned for command DTOs; [] disables discovery
-        - '%kernel.project_dir%/src'
+    command_paths:            # Required. Directories or glob patterns holding command DTOs; [] disables discovery
+        - '%kernel.project_dir%/src/Command'
     openapi:
         problem_details: true  # Enable RFC 7807 problem details for errors
 ```

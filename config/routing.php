@@ -36,12 +36,14 @@ return static function (ContainerConfigurator $configurator): void {
         ->set(CommandRouteDirectoryLoader::class)
             ->arg('$locator', service('file_locator'))
             ->arg('$loader', service(CommandRouteClassLoader::class))
+            ->arg('$sorter', service(RouteSpecificitySorter::class))
             // Supports $routes->import('../src/Command', 'stixx_openapi_command.command_attributes').
             ->tag('routing.loader');
 
     $services
         ->set(CommandRouteDiscovery::class)
             ->arg('$directoryLoader', service(CommandRouteDirectoryLoader::class))
+            ->arg('$locator', service('file_locator'))
             ->arg('$commandPaths', param('stixx_openapi_command.command_paths'))
             ->arg('$sorter', service(RouteSpecificitySorter::class));
 

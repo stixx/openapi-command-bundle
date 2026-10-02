@@ -43,6 +43,7 @@ return static function (ContainerConfigurator $container): void {
         'validation' => [
             'enabled' => true,
         ],
+        'command_paths' => [],
     ]);
 
     $container->parameters()->set('validator.translation_domain', 'validators');

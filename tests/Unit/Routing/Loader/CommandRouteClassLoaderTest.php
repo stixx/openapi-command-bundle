@@ -19,6 +19,8 @@ use Stixx\OpenApiCommandBundle\Attribute\CommandObject;
 use Stixx\OpenApiCommandBundle\Controller\CommandController;
 use Stixx\OpenApiCommandBundle\Routing\Loader\CommandRouteClassLoader;
 use Stixx\OpenApiCommandBundle\Tests\Mock\Routing\duplicates\{DuplicateAlphaCommand, DuplicateBetaCommand};
+use Stixx\OpenApiCommandBundle\Tests\Mock\Routing\src\AnnotatedCommand;
+use Symfony\Component\Config\Resource\ReflectionClassResource;
 
 /**
  * Tests for CommandRouteClassLoader.
@@ -271,6 +273,20 @@ final class CommandRouteClassLoaderTest extends TestCase
 
         // Assert
         self::assertSame(['duplicate_operation'], array_keys($collection->all()));
+    }
+
+    public function testTracksTheCommandClassSoEditsRefreshTheRouterCache(): void
+    {
+        // Arrange
+        $loader = new CommandRouteClassLoader();
+
+        // Act
+        $resources = $loader->load(AnnotatedCommand::class)->getResources();
+
+        // Assert
+        self::assertCount(1, $resources);
+        self::assertInstanceOf(ReflectionClassResource::class, $resources[0]);
+        self::assertStringContainsString(AnnotatedCommand::class, (string) $resources[0]);
     }
 
     private static function classNamespace(string $short): string

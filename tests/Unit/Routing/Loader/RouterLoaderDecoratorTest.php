@@ -113,7 +113,7 @@ final class RouterLoaderDecoratorTest extends TestCase
 
         return new RouterLoaderDecorator(
             $this->inner,
-            new CommandRouteDiscovery($directoryLoader, [$this->commandDir]),
+            new CommandRouteDiscovery($directoryLoader, new FileLocator(), [$this->commandDir]),
         );
     }
 }
