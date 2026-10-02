@@ -37,10 +37,6 @@ final class CommandRouteDirectoryLoader extends AttributeDirectoryLoader
         parent::__construct($locator, $loader);
     }
 
-    /**
-     * Mirrors the parent with a smaller memory footprint: discovery scans the whole of `src` by default, so the
-     * file list and the attribute garbage scale with the application rather than with its commands.
-     */
     public function load(mixed $path, ?string $type = null): ?RouteCollection
     {
         if (!is_string($path) || !is_dir($dir = $this->locator->locate($path))) {
@@ -50,8 +46,6 @@ final class CommandRouteDirectoryLoader extends AttributeDirectoryLoader
         $collection = new RouteCollection();
         $collection->addResource(new GlobResource($dir, '/*.php', true));
 
-        // Path strings rather than SplFileInfo objects: the list spans every file in the tree, and at ~1.5KB per
-        // object it dominated peak memory for a large `src`.
         $files = [];
         $iterator = new RecursiveIteratorIterator(
             new RecursiveCallbackFilterIterator(
@@ -70,8 +64,6 @@ final class CommandRouteDirectoryLoader extends AttributeDirectoryLoader
 
         $scanned = 0;
         foreach ($files as $file) {
-            // swagger-php annotations reference their Context and back, so every instantiated operation attribute
-            // leaves cyclic garbage that only the cycle collector frees. Collecting now and then caps the peak.
             if (++$scanned % self::GC_INTERVAL === 0) {
                 gc_collect_cycles();
             }
