@@ -209,11 +209,11 @@ From 1.0.0 on, the bundle follows [Semantic Versioning](https://semver.org) for 
 - the `@api` types above, and the services registered under those interface names, which you can alias or decorate;
 - the configuration keys under `stixx_openapi_command:`;
 - the service tags named by `ResponderInterface::TAG_NAME` and `RequestValidatorInterface::TAG_NAME`;
-- the OpenAPI component names the bundle registers for your annotations: the schemas `ProblemDetails`, `Violation`
-  and `ProblemDetailsInvalidRequestBody`, and the `*ProblemDetailsResponse` responses.
+- the OpenAPI component names the bundle registers for your annotations when `openapi.problem_details` is enabled
+  (the default): the schemas `ProblemDetails`, `Violation` and `ProblemDetailsInvalidRequestBody`, and the
+  `*ProblemDetailsResponse` responses.
 
 The policy:
-
 
 - Minor and patch releases don't break the public API.
 - Removing or renaming part of it starts with a deprecation in a minor release. PHP code triggers
@@ -222,7 +222,7 @@ The policy:
   the deprecation under **Deprecated**.
 - Deprecated code is removed in the next major release, listed under **Removed** with **Upgrading** notes. Run your
   test suite with deprecations reported before upgrading a major: Symfony's PHPUnit bridge reports them by default;
-  with plain PHPUnit, set `ignoreSuppressionOfDeprecations="true"`, because `trigger_deprecation()` raises silenced
+  with plain PHPUnit, set `ignoreSuppressionOfDeprecations="true"` on the `<source>` element of `phpunit.xml`, because `trigger_deprecation()` raises silenced
   deprecations.
 - `@internal` code can change in any release, without a deprecation.
 
