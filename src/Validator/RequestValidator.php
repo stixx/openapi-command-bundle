@@ -24,7 +24,7 @@ use Symfony\Component\HttpFoundation\Request;
 /**
  * @internal
  */
-final class RequestValidator implements ValidatorInterface
+final class RequestValidator implements RequestValidatorInterface
 {
     /** @var array<string, OpenApiRequestValidator> */
     private array $cachedValidators = [];

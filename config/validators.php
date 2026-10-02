@@ -6,7 +6,7 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Stixx\OpenApiCommandBundle\Validator\RequestValidator;
 use Stixx\OpenApiCommandBundle\Validator\RequestValidatorChain;
-use Stixx\OpenApiCommandBundle\Validator\ValidatorInterface as StixxValidatorInterface;
+use Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface;
 use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -19,8 +19,8 @@ return static function (ContainerConfigurator $configurator): void {
 
     $services
         ->set(RequestValidatorChain::class)
-        ->arg('$validators', tagged_iterator(StixxValidatorInterface::TAG_NAME));
-    $services->alias(StixxValidatorInterface::class, RequestValidatorChain::class);
+        ->arg('$validators', tagged_iterator(RequestValidatorInterface::TAG_NAME));
+    $services->alias(RequestValidatorInterface::class, RequestValidatorChain::class);
 
     $services
         ->set('stixx_openapi_command.psr17_factory', Psr17Factory::class);
@@ -40,5 +40,5 @@ return static function (ContainerConfigurator $configurator): void {
             ->arg('$psrHttpFactory', service('stixx_openapi_command.psr_http_factory'))
             ->arg('$generatorsLocator', service('stixx_openapi_command.nelmio.generators_locator'))
             ->arg('$areaRoutesChecker', service(NelmioAreaRoutesChecker::class))
-            ->tag(StixxValidatorInterface::TAG_NAME);
+            ->tag(RequestValidatorInterface::TAG_NAME);
 };

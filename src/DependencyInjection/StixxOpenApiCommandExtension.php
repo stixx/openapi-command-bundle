@@ -19,7 +19,7 @@ use Stixx\OpenApiCommandBundle\Model\Violation;
 use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
 use Stixx\OpenApiCommandBundle\Routing\CommandRouteDiscovery;
 use Stixx\OpenApiCommandBundle\Routing\Loader\RouterLoaderDecorator;
-use Stixx\OpenApiCommandBundle\Validator\ValidatorInterface;
+use Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
@@ -94,8 +94,8 @@ final class StixxOpenApiCommandExtension extends Extension implements PrependExt
             ->addTag(ResponderInterface::TAG_NAME);
 
         $container
-            ->registerForAutoconfiguration(ValidatorInterface::class)
-            ->addTag(ValidatorInterface::TAG_NAME);
+            ->registerForAutoconfiguration(RequestValidatorInterface::class)
+            ->addTag(RequestValidatorInterface::TAG_NAME);
 
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__.'/../../config'));
         $this->registerCommonConfiguration($loader, $container);

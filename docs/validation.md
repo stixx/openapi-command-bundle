@@ -123,18 +123,18 @@ stixx_openapi_command:
 
 In addition to standard DTO validation, you can extend the validation of the incoming HTTP request by implementing custom request validators. This is useful for cross-field validation, checking headers, or performing security checks before the command is even deserialized.
 
-### 1. Implement `ValidatorInterface`
+### 1. Implement `RequestValidatorInterface`
 
-Create a class that implements `Stixx\OpenApiCommandBundle\Validator\ValidatorInterface`:
+Create a class that implements `Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface`:
 
 ```php
 namespace App\Validator;
 
-use Stixx\OpenApiCommandBundle\Validator\ValidatorInterface;
+use Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
-final class CustomHeaderValidator implements ValidatorInterface
+final class CustomHeaderValidator implements RequestValidatorInterface
 {
     public function validate(Request $request): void
     {

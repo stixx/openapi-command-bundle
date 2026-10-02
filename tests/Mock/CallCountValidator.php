@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Tests\Mock;
 
-use Stixx\OpenApiCommandBundle\Validator\ValidatorInterface;
+use Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface;
 use Symfony\Component\HttpFoundation\Request;
 
-final class CallCountValidator implements ValidatorInterface
+final class CallCountValidator implements RequestValidatorInterface
 {
     /**
      * @var list<Request>

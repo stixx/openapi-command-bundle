@@ -18,7 +18,7 @@ use Stixx\OpenApiCommandBundle\DependencyInjection\StixxOpenApiCommandExtension;
 use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
 use Stixx\OpenApiCommandBundle\Routing\CommandRouteDiscovery;
 use Stixx\OpenApiCommandBundle\Routing\Loader\RouterLoaderDecorator;
-use Stixx\OpenApiCommandBundle\Validator\ValidatorInterface;
+use Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 final class StixxOpenApiCommandExtensionTest extends TestCase
@@ -41,8 +41,8 @@ final class StixxOpenApiCommandExtensionTest extends TestCase
         self::assertArrayHasKey(ResponderInterface::class, $autoconfigured);
         self::assertTrue($autoconfigured[ResponderInterface::class]->hasTag(ResponderInterface::TAG_NAME));
 
-        self::assertArrayHasKey(ValidatorInterface::class, $autoconfigured);
-        self::assertTrue($autoconfigured[ValidatorInterface::class]->hasTag(ValidatorInterface::TAG_NAME));
+        self::assertArrayHasKey(RequestValidatorInterface::class, $autoconfigured);
+        self::assertTrue($autoconfigured[RequestValidatorInterface::class]->hasTag(RequestValidatorInterface::TAG_NAME));
 
         self::assertSame(['%kernel.project_dir%/src/Command'], $container->getParameter('stixx_openapi_command.command_paths'));
         self::assertTrue($container->hasDefinition(CommandRouteDiscovery::class));
