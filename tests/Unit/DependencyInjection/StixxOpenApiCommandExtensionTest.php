@@ -98,4 +98,18 @@ final class StixxOpenApiCommandExtensionTest extends TestCase
         // Act & Assert
         self::assertSame('stixx_openapi_command', $extension->getAlias());
     }
+
+    public function testPrependTreatsANullProblemDetailsAsEnabled(): void
+    {
+        // Arrange — `problem_details: ~` is true for the boolean config node, so prepend() must agree.
+        $container = new ContainerBuilder();
+        $container->prependExtensionConfig('stixx_openapi_command', ['openapi' => ['problem_details' => null]]);
+        $extension = new StixxOpenApiCommandExtension();
+
+        // Act
+        $extension->prepend($container);
+
+        // Assert
+        self::assertNotSame([], $container->getExtensionConfig('nelmio_api_doc'));
+    }
 }

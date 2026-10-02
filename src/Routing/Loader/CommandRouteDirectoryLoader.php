@@ -75,7 +75,7 @@ final class CommandRouteDirectoryLoader extends AttributeDirectoryLoader
         }
 
         $collection = $this->loadFiles($files, $type);
-        $collection->addResource(new GlobResource($dir, '/*.php', true));
+        $collection->addResource(new GlobResource($dir, '/**/*.php', false));
 
         return $collection;
     }

@@ -125,7 +125,7 @@ final class CommandRouteDiscoveryTest extends TestCase
     {
         // Assert
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('command_paths entry "'.$this->commandDir.'/does-not-exist" does not exist');
+        $this->expectExceptionMessage('command_paths directory "'.$this->commandDir.'/does-not-exist" does not exist');
 
         // Act
         $this->createDiscovery([$this->commandDir.'/does-not-exist'])->discover();
@@ -135,7 +135,7 @@ final class CommandRouteDiscoveryTest extends TestCase
     {
         // Assert
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('The directory "'.$this->routingDir.'/missing"');
+        $this->expectExceptionMessage('directory "'.$this->routingDir.'/missing" (from "'.$this->routingDir.'/missing/**/Command") does not exist');
 
         // Act
         $this->createDiscovery([$this->routingDir.'/missing/**/Command'])->discover();
@@ -165,6 +165,25 @@ final class CommandRouteDiscoveryTest extends TestCase
 
         // Assert
         self::assertSame($first, $second);
+    }
+
+    public function testAFileEntryIsAnError(): void
+    {
+        // Assert
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('is not a directory');
+
+        // Act
+        $this->createDiscovery([$this->commandDir.'/AnnotatedCommand.php'])->discover();
+    }
+
+    public function testATrailingSlashIsIgnored(): void
+    {
+        // Act
+        $names = array_keys($this->createDiscovery([$this->routingDir.'/contexts/Gamma/'])->discover()->all());
+
+        // Assert
+        self::assertSame(['ctx_archive'], $names);
     }
 
     /**

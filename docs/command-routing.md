@@ -134,10 +134,11 @@ Each entry is a directory or a glob pattern, scanned recursively for `.php` file
 | Several roots | `'%kernel.project_dir%/src/Command'`, `'%kernel.project_dir%/lib/Billing/Command'` |
 | DDD, one context level (`src/Billing/Application/Command`) | `'%kernel.project_dir%/src/*/Application/Command'` |
 | DDD, nested to any depth (`src/Billing/Invoice/Application/Command`) | `'%kernel.project_dir%/src/**/Application/Command'` |
-| Another bundle | `'@AcmeBillingBundle/src/Command'` |
+| Another bundle | `'@AcmeBillingBundle/Command'`, relative to the bundle's path |
 
 Globs support `*` (one directory level), `**` (any depth, including none), `?`, `[...]` and `{a,b}`, as in
-Symfony's own resource imports. Directories and files starting with a dot are skipped.
+Symfony's own resource imports. Entries match directories, never files, so don't end one in `*.php`. Directories and
+files starting with a dot are skipped. Use absolute paths; `%kernel.project_dir%` gives you one.
 
 How it works
 - The bundle decorates `routing.loader`, the loader the router asks for when it builds its route collection. It runs once per router build, for the root routing resource, so command routes are added no matter how your application declares its own routes — or whether it declares any at all.
@@ -186,7 +187,8 @@ commands:
 ```
 
 Symfony imports each match separately, so routes are sorted within a file or directory, not across a whole
-glob. If commands in different directories have overlapping paths, use `command_paths` instead.
+glob, and in debug mode a command added to a glob import needs a `cache:clear` before its route appears. If you
+rely on either, use `command_paths` instead.
 
 
 ## Use OpenAPI attributes on command classes (no Symfony #[Route])

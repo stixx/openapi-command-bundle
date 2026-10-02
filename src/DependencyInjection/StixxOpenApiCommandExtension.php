@@ -123,7 +123,7 @@ final class StixxOpenApiCommandExtension extends Extension implements PrependExt
         foreach ($configs as $config) {
             $openapi = $config['openapi'] ?? null;
             if (is_array($openapi) && array_key_exists('problem_details', $openapi)) {
-                $enabled = (bool) $openapi['problem_details'];
+                $enabled = $openapi['problem_details'] === null || (bool) $openapi['problem_details'];
             }
         }
 

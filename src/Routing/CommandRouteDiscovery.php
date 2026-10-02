@@ -56,8 +56,10 @@ final class CommandRouteDiscovery
             [$prefix, $pattern] = $this->split($path);
             $resource = new GlobResource($this->locate($prefix, $path), $pattern.'/**/*.php', false);
 
-            /** @var list<string> $files */
-            $files = array_keys(iterator_to_array($resource));
+            $files = [];
+            foreach ($resource as $file => $info) {
+                $files[] = $file;
+            }
 
             $discovered->addCollection($this->directoryLoader->loadFiles($files, CommandRouteDirectoryLoader::TYPE));
             $discovered->addResource($resource);
@@ -87,14 +89,16 @@ final class CommandRouteDiscovery
 
     private function locate(string $prefix, string $path): string
     {
+        $entry = $prefix === $path ? sprintf('"%s"', $path) : sprintf('"%s" (from "%s")', $prefix, $path);
+
         try {
             $located = $this->locator->locate($prefix);
-        } catch (InvalidArgumentException) {
-            $located = null;
+        } catch (InvalidArgumentException $exception) {
+            throw new LogicException(sprintf('The stixx_openapi_command.command_paths directory %s does not exist. Use an absolute path such as "%%kernel.project_dir%%/src/Command".', $entry), previous: $exception);
         }
 
         if (!is_string($located) || !is_dir($located)) {
-            throw new LogicException(sprintf('The directory "%s" of the stixx_openapi_command.command_paths entry "%s" does not exist.', $prefix, $path));
+            throw new LogicException(sprintf('The stixx_openapi_command.command_paths entry %s is not a directory.', $entry));
         }
 
         return $located;

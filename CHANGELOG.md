@@ -21,15 +21,17 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 - **`command_paths` is required** and no longer defaults to `%kernel.project_dir%/src`. See **Upgrading** below.
 - A configured path that does not exist is an error naming the entry, instead of being skipped. A glob that matches
-  nothing still yields no routes.
+  nothing still yields no routes. Entries must match directories: one ending in `.php` is rejected.
 - With `command_paths: []`, the discovery services are not registered at all.
 - Routes from a `stixx_openapi_command.command_attributes` directory import are sorted most-specific-first, as
   discovered routes already were.
 
 ### Fixed
 
-- Editing a command's OpenAPI attributes refreshes its route in debug mode. 0.12.1 claimed this, but only adding or
-  removing command files invalidated the router cache, unless the command also happened to be a registered service.
+- In debug mode, routes refresh when a command is edited or added anywhere under a configured path. 0.12.1 claimed
+  this, but the router cache only tracked command files directly inside each path: edits went unnoticed, and so did
+  commands added in subdirectories, unless the command also happened to be a registered service. Directory imports
+  of type `stixx_openapi_command.command_attributes` now track nested files too.
 
 ### Removed
 

@@ -127,4 +127,18 @@ final class ConfigurationTest extends TestCase
         ];
         self::assertSame($expected, $config);
     }
+
+    public function testCommandPathsRejectFileGlobs(): void
+    {
+        // Arrange — the routing-import form ends in *.php; copied into command_paths it would silently match nothing.
+        $configuration = new Configuration();
+        $processor = new Processor();
+
+        // Assert
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('Entries must match directories, not files');
+
+        // Act
+        $processor->processConfiguration($configuration, [['command_paths' => ['%kernel.project_dir%/src/**/Command/**/*.php']]]);
+    }
 }
