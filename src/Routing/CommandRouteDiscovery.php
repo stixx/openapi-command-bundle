@@ -80,8 +80,8 @@ final class CommandRouteDiscovery
         }
 
         $slashAt = strrpos(substr($path, 0, $globAt), '/');
-        if ($slashAt === false) {
-            return ['', '/'.$path];
+        if ($slashAt === false || $slashAt === 0) {
+            throw new LogicException(sprintf('The stixx_openapi_command.command_paths entry "%s" has a glob in its first directory. Start it with a fixed directory, such as "%%kernel.project_dir%%/src/*/Command".', $path));
         }
 
         return [substr($path, 0, $slashAt), substr($path, $slashAt)];

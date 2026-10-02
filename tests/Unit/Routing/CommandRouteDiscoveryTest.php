@@ -15,6 +15,7 @@ namespace Stixx\OpenApiCommandBundle\Tests\Unit\Routing;
 
 use InvalidArgumentException;
 use LogicException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stixx\OpenApiCommandBundle\Routing\CommandRouteDiscovery;
 use Stixx\OpenApiCommandBundle\Routing\Loader\CommandRouteClassLoader;
@@ -188,6 +189,27 @@ final class CommandRouteDiscoveryTest extends TestCase
 
         // Assert
         self::assertSame(['ctx_archive'], $names);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideEntriesGlobbingTheirFirstDirectory(): iterable
+    {
+        yield 'absolute' => ['/{app,srv}/src/Command'];
+        yield 'absolute double star' => ['/**/Command'];
+        yield 'relative' => ['*'];
+    }
+
+    #[DataProvider('provideEntriesGlobbingTheirFirstDirectory')]
+    public function testAGlobInTheFirstDirectoryIsAnError(string $path): void
+    {
+        // Assert
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('command_paths entry "'.$path.'" has a glob in its first directory');
+
+        // Act
+        $this->createDiscovery([$path])->discover();
     }
 
     /**
