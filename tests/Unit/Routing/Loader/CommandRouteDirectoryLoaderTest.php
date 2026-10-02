@@ -56,7 +56,7 @@ final class CommandRouteDirectoryLoaderTest extends TestCase
 
     public function testOnlyLoadsPhpFiles(): void
     {
-        // Arrange — the tree holds a TextCommand.txt and a directory named x.php.
+        // Arrange — the tree holds a TextCommand.txt beside its commands.
 
         // Act
         $collection = $this->load('tree');
@@ -69,6 +69,7 @@ final class CommandRouteDirectoryLoaderTest extends TestCase
     {
         // Assert
         $this->expectException(ReflectionException::class);
+        $this->expectExceptionMessage('MisplacedCommand');
 
         // Act
         $this->load('unloadable');
