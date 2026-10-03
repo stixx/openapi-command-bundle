@@ -18,6 +18,8 @@ use Stixx\OpenApiCommandBundle\DependencyInjection\StixxOpenApiCommandExtension;
 use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
 use Stixx\OpenApiCommandBundle\Routing\CommandRouteDiscovery;
 use Stixx\OpenApiCommandBundle\Routing\Loader\RouterLoaderDecorator;
+use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRouteMap;
+use Stixx\OpenApiCommandBundle\Validator\OpenApiSpecCache;
 use Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -61,6 +63,34 @@ final class StixxOpenApiCommandExtensionTest extends TestCase
         // Assert
         self::assertFalse($container->hasDefinition(CommandRouteDiscovery::class));
         self::assertFalse($container->hasDefinition(RouterLoaderDecorator::class));
+    }
+
+    public function testRegistersNoCacheWarmersByDefault(): void
+    {
+        // Arrange
+        $container = new ContainerBuilder();
+        $extension = new StixxOpenApiCommandExtension();
+
+        // Act
+        $extension->load([['command_paths' => []]], $container);
+
+        // Assert
+        self::assertFalse($container->getDefinition(OpenApiSpecCache::class)->hasTag('kernel.cache_warmer'));
+        self::assertFalse($container->getDefinition(NelmioAreaRouteMap::class)->hasTag('kernel.cache_warmer'));
+    }
+
+    public function testWarmUpRegistersTheDocumentAndTheAreaMapAsCacheWarmers(): void
+    {
+        // Arrange
+        $container = new ContainerBuilder();
+        $extension = new StixxOpenApiCommandExtension();
+
+        // Act
+        $extension->load([['command_paths' => [], 'openapi' => ['warm_up' => true]]], $container);
+
+        // Assert
+        self::assertTrue($container->getDefinition(OpenApiSpecCache::class)->hasTag('kernel.cache_warmer'));
+        self::assertTrue($container->getDefinition(NelmioAreaRouteMap::class)->hasTag('kernel.cache_warmer'));
     }
 
     public function testPrependToleratesConfigWithoutCommandPaths(): void

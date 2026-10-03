@@ -165,6 +165,7 @@ stixx_openapi_command:
         - '%kernel.project_dir%/src/Command'
     openapi:
         problem_details: true  # Enable RFC 7807 problem details for errors
+        warm_up: false         # Generate the OpenAPI documents during cache:warmup instead of on the first API request
 ```
 
 ## Documentation

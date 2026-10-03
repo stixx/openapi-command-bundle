@@ -66,16 +66,17 @@ final class OpenApiSpecCache implements CacheWarmerInterface
         private readonly array $areaEnv = [],
         private readonly ?LoggerInterface $logger = null,
         private readonly ?string $cacheDir = null,
+        private readonly ?string $buildId = null,
     ) {
     }
 
     public function jsonFor(string $area): string
     {
         if ($this->debug) {
-            return $this->load($area, [$this->buildDir, $this->cacheDir], true);
+            return $this->load($area, $this->runtimeDirs(), true);
         }
 
-        return $this->specs[$area] ??= $this->load($area, [$this->buildDir, $this->cacheDir], true);
+        return $this->specs[$area] ??= $this->load($area, $this->runtimeDirs(), true);
     }
 
     public function isOptional(): bool
@@ -91,7 +92,7 @@ final class OpenApiSpecCache implements CacheWarmerInterface
 
         foreach ($this->areas() as $area) {
             try {
-                $this->specs[$area] = $this->load($area, [$buildDir], false);
+                $this->specs[$area] = $this->load($area, [$buildDir.'/stixx_openapi_command'], false);
             } catch (Throwable $exception) {
                 $this->logger?->warning('Could not cache the OpenAPI document of Nelmio area "{area}"; it is generated on first use instead: {message}', [
                     'area' => $area,
@@ -133,7 +134,7 @@ final class OpenApiSpecCache implements CacheWarmerInterface
             return $this->generate($area)[0];
         }
 
-        $file = '/stixx_openapi_command/openapi.v2.'.hash('xxh128', $area).$this->envFingerprint($area).'.json';
+        $file = '/openapi.v2.'.hash('xxh128', $area).$this->envFingerprint($area).'.json';
         foreach ($dirs as $dir) {
             $stale = false;
             $cache = $this->configCacheFactory->cache($dir.$file, static function () use (&$stale): void {
@@ -176,6 +177,19 @@ final class OpenApiSpecCache implements CacheWarmerInterface
         }
 
         return $json;
+    }
+
+    /**
+     * The cache dir outlives a deploy, so its copy is scoped to the container build, as Symfony's system cache is.
+     *
+     * @return list<string|null>
+     */
+    private function runtimeDirs(): array
+    {
+        return [
+            $this->buildDir === null ? null : $this->buildDir.'/stixx_openapi_command',
+            $this->cacheDir === null ? null : $this->cacheDir.'/stixx_openapi_command/'.($this->buildId ?? 'build'),
+        ];
     }
 
     private function warmedDocument(string $area, string $buildDir): ?string

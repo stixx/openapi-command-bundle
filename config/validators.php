@@ -10,6 +10,7 @@ use Stixx\OpenApiCommandBundle\Validator\RequestValidatorChain;
 use Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface;
 use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\DependencyInjection\Parameter;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
@@ -48,7 +49,7 @@ return static function (ContainerConfigurator $configurator): void {
             ->arg('$areaEnv', param('stixx_openapi_command.nelmio.area_env'))
             ->arg('$logger', service('logger')->nullOnInvalid())
             ->arg('$cacheDir', param('kernel.cache_dir'))
-            ->tag('kernel.cache_warmer')
+            ->arg('$buildId', new Parameter('container.build_id'))
             ->tag('monolog.logger', ['channel' => 'stixx_openapi_command']);
 
     $services

@@ -123,6 +123,58 @@ final class NelmioAreaRouteMapTest extends TestCase
         self::assertSame('default', $area);
     }
 
+    public function testCachesInTheCacheDirectoryWhenTheBuildDirectoryIsReadOnly(): void
+    {
+        // Arrange — a file where the build directory should be.
+        $this->readOnlyMap($this->locator(['default' => ['api_books']]))->areaOf('api_books');
+        $map = $this->readOnlyMap($this->failingLocator());
+
+        // Act
+        $area = $map->areaOf('api_books');
+
+        // Assert
+        self::assertSame('default', $area);
+    }
+
+    public function testDoesNotReuseTheCacheDirectoryCopyOfAnotherBuild(): void
+    {
+        // Arrange
+        $this->readOnlyMap($this->locator(['default' => ['api_books']]), 'one')->areaOf('api_books');
+        $map = $this->readOnlyMap($this->locator(['default' => ['api_books', 'api_authors']]), 'two');
+
+        // Act
+        $area = $map->areaOf('api_authors');
+
+        // Assert
+        self::assertSame('default', $area);
+    }
+
+    public function testCachesOnlyInTheBuildDirectoryWhenItIsWritable(): void
+    {
+        // Arrange
+        $map = new NelmioAreaRouteMap($this->locator(['default' => ['api_books']]), $this->router(), new ConfigCacheFactory(false), $this->buildDir, 'areas', $this->buildDir.'/var-cache');
+
+        // Act
+        $map->areaOf('api_books');
+
+        // Assert
+        self::assertFileExists($this->buildDir.'/stixx_openapi_command/nelmio_area_routes.areas.php');
+        self::assertDirectoryDoesNotExist($this->buildDir.'/var-cache');
+    }
+
+    public function testWarmsUpOnlyIntoTheBuildDirectoryItIsGiven(): void
+    {
+        // Arrange
+        $map = new NelmioAreaRouteMap($this->locator(['default' => ['api_books']]), $this->router(), new ConfigCacheFactory(false), $this->routesFile, 'areas', $this->buildDir.'/var-cache');
+
+        // Act
+        $map->warmUp($this->buildDir.'/var-cache', $this->buildDir.'/warmup');
+
+        // Assert
+        self::assertFileExists($this->buildDir.'/warmup/stixx_openapi_command/nelmio_area_routes.areas.php');
+        self::assertDirectoryDoesNotExist($this->buildDir.'/var-cache');
+    }
+
     public function testWarmsUpAsAnOptionalCacheWarmer(): void
     {
         // Arrange
@@ -143,6 +195,14 @@ final class NelmioAreaRouteMapTest extends TestCase
     private function map(ServiceLocator $locator, string $areasHash = 'areas'): NelmioAreaRouteMap
     {
         return new NelmioAreaRouteMap($locator, $this->router(), new ConfigCacheFactory(true), $this->buildDir, $areasHash);
+    }
+
+    /**
+     * @param ServiceLocator<RouteCollection> $locator
+     */
+    private function readOnlyMap(ServiceLocator $locator, string $buildId = 'build'): NelmioAreaRouteMap
+    {
+        return new NelmioAreaRouteMap($locator, $this->router(), new ConfigCacheFactory(false), $this->routesFile, 'areas', $this->buildDir.'/var-cache', $buildId);
     }
 
     private function router(): RouterInterface

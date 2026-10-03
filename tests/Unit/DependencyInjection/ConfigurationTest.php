@@ -39,6 +39,7 @@ final class ConfigurationTest extends TestCase
             'cache_control' => 'no-store',
             'openapi' => [
                 'problem_details' => true,
+                'warm_up' => false,
             ],
         ];
         self::assertSame($expected, $config);
@@ -108,6 +109,9 @@ final class ConfigurationTest extends TestCase
                 'groups' => ['Custom', 'Special'],
             ],
             'command_paths' => [],
+            'openapi' => [
+                'warm_up' => true,
+            ],
         ];
 
         // Act
@@ -120,10 +124,11 @@ final class ConfigurationTest extends TestCase
                 'groups' => ['Custom', 'Special'],
             ],
             'command_paths' => [],
-            'cache_control' => 'no-store',
             'openapi' => [
+                'warm_up' => true,
                 'problem_details' => true,
             ],
+            'cache_control' => 'no-store',
         ];
         self::assertSame($expected, $config);
     }

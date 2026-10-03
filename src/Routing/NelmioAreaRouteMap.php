@@ -43,12 +43,14 @@ final class NelmioAreaRouteMap implements CacheWarmerInterface
         private readonly ?ConfigCacheFactoryInterface $configCacheFactory = null,
         private readonly ?string $buildDir = null,
         private readonly string $areasHash = '',
+        private readonly ?string $cacheDir = null,
+        private readonly ?string $buildId = null,
     ) {
     }
 
     public function areaOf(string $routeName): ?string
     {
-        $this->areas ??= $this->load($this->buildDir);
+        $this->areas ??= $this->load($this->runtimeDirs());
 
         return $this->areas[$routeName] ?? null;
     }
@@ -64,34 +66,66 @@ final class NelmioAreaRouteMap implements CacheWarmerInterface
             return [];
         }
 
-        $this->areas = $this->load($buildDir);
+        $this->areas = $this->load([$buildDir.'/stixx_openapi_command']);
 
         return [];
     }
 
     /**
+     * @param list<string|null> $dirs where to cache the map, in order
+     *
      * @return array<string, string>
      */
-    private function load(?string $dir): array
+    private function load(array $dirs): array
     {
-        if ($dir === null || $this->router === null || $this->configCacheFactory === null) {
+        if ($this->router === null || $this->configCacheFactory === null) {
             return $this->build();
         }
 
-        $router = $this->router;
-
-        try {
-            $cache = $this->configCacheFactory->cache($dir.'/stixx_openapi_command/nelmio_area_routes.'.$this->areasHash.'.php', function (ConfigCacheInterface $cache) use ($router): void {
-                $cache->write('<?php return '.var_export($this->build(), true).";\n", $router->getRouteCollection()->getResources());
+        $dirs = array_unique(array_filter($dirs, static fn (?string $dir): bool => $dir !== null && $dir !== ''));
+        $file = '/nelmio_area_routes.'.$this->areasHash.'.php';
+        foreach ($dirs as $dir) {
+            $stale = false;
+            $cache = $this->configCacheFactory->cache($dir.$file, static function () use (&$stale): void {
+                $stale = true;
             });
-        } catch (IOException) {
-            return $this->build();
+
+            if (!$stale && is_file($cache->getPath())) {
+                /** @var array<string, string> $areas */
+                $areas = require $cache->getPath();
+
+                return $areas;
+            }
         }
 
-        /** @var array<string, string> $areas */
-        $areas = require $cache->getPath();
+        $areas = $this->build();
+        $resources = $this->router->getRouteCollection()->getResources();
+        foreach ($dirs as $dir) {
+            try {
+                $this->configCacheFactory->cache($dir.$file, static function (ConfigCacheInterface $cache) use ($areas, $resources): void {
+                    $cache->write('<?php return '.var_export($areas, true).";\n", $resources);
+                });
+
+                break;
+            } catch (IOException) {
+                continue;
+            }
+        }
 
         return $areas;
+    }
+
+    /**
+     * The cache dir outlives a deploy, so its copy is scoped to the container build, as Symfony's system cache is.
+     *
+     * @return list<string|null>
+     */
+    private function runtimeDirs(): array
+    {
+        return [
+            $this->buildDir === null ? null : $this->buildDir.'/stixx_openapi_command',
+            $this->cacheDir === null ? null : $this->cacheDir.'/stixx_openapi_command/'.($this->buildId ?? 'build'),
+        ];
     }
 
     /**

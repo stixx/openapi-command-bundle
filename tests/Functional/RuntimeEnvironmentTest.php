@@ -143,6 +143,7 @@ final class RuntimeEnvironmentTest extends TestCase
         $kernel = new RouteLoadCountingKernel('test', false, $this->cacheDir);
         $kernel->addTestConfig(__DIR__.'/Resources/config/scenario.php');
         $kernel->addTestConfig(__DIR__.'/Resources/config/env_documentation.php');
+        $kernel->addTestConfig(__DIR__.'/Resources/config/warm_up.php');
         $kernel->boot();
 
         return $kernel;
