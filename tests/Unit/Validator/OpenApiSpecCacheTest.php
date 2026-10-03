@@ -102,7 +102,7 @@ final class OpenApiSpecCacheTest extends TestCase
 
     public function testTracksAModelForEveryAreaThatDescribesIt(): void
     {
-        // Arrange — only the first area's generation autoloads the model.
+        // Arrange
         $default = new ApiDocGenerator([$this->describer('/default', DescribedModel::class)], []);
         $books = new ApiDocGenerator([$this->describer('/books')], []);
         /** @var ServiceLocator<ApiDocGenerator> $generators */
@@ -190,10 +190,7 @@ final class OpenApiSpecCacheTest extends TestCase
     }
 
     /**
-     * @return DescriberInterface&object{calls: int}
-     */
-    /**
-     * @param class-string|null $loads a class the describer autoloads, as describing a model does
+     * @param class-string|null $loads
      *
      * @return DescriberInterface&object{calls: int}
      */

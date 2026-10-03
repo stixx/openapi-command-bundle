@@ -113,7 +113,7 @@ final class OpenApiSpecCache implements CacheWarmerInterface
             return $this->generated;
         }
 
-        $json = file_get_contents($cache->getPath());
+        $json = is_file($cache->getPath()) ? file_get_contents($cache->getPath()) : false;
 
         return $json === false ? $this->generate($area)[0] : $json;
     }
@@ -125,7 +125,13 @@ final class OpenApiSpecCache implements CacheWarmerInterface
     {
         $declaredBefore = $this->debug ? $this->declared() : [];
 
-        $json = $this->generatorFor($area)->generate()->toJson();
+        try {
+            $json = $this->generatorFor($area)->generate()->toJson();
+        } finally {
+            if ($this->debug) {
+                $this->trackDescribedFiles($declaredBefore);
+            }
+        }
 
         if (!$this->debug || $this->router === null) {
             return [$json, []];
@@ -137,22 +143,27 @@ final class OpenApiSpecCache implements CacheWarmerInterface
             $resources[] = is_file($this->containerFile) ? new FileResource($this->containerFile) : new FileExistenceResource($this->containerFile);
         }
 
-        $composer = new ComposerResource();
+        foreach (array_keys($this->describedFiles) as $file) {
+            $resources[] = new FileResource($file);
+        }
+        $resources[] = new ComposerResource();
+
+        return [$json, $resources];
+    }
+
+    /**
+     * @param list<class-string> $declaredBefore
+     */
+    private function trackDescribedFiles(array $declaredBefore): void
+    {
         /** @var list<string> $vendors */
-        $vendors = $composer->getVendors();
+        $vendors = (new ComposerResource())->getVendors();
         foreach (array_diff($this->declared(), $declaredBefore) as $class) {
             $file = (new ReflectionClass($class))->getFileName();
             if ($file !== false && !$this->isVendor($file, $vendors)) {
                 $this->describedFiles[$file] = true;
             }
         }
-
-        foreach (array_keys($this->describedFiles) as $file) {
-            $resources[] = new FileResource($file);
-        }
-        $resources[] = $composer;
-
-        return [$json, $resources];
     }
 
     private function generatorFor(string $area): ApiDocGenerator
