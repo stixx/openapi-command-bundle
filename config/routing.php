@@ -55,7 +55,10 @@ return static function (ContainerConfigurator $configurator): void {
             ->arg('$directoryLoader', service(CommandRouteDirectoryLoader::class))
             ->arg('$locator', service('file_locator'))
             ->arg('$commandPaths', param('stixx_openapi_command.command_paths'))
-            ->arg('$sorter', service(RouteSpecificitySorter::class));
+            ->arg('$sorter', service(RouteSpecificitySorter::class))
+            ->arg('$logger', service('logger')->nullOnInvalid())
+            ->arg('$debug', param('kernel.debug'))
+            ->tag('monolog.logger', ['channel' => 'stixx_openapi_command']);
 
     $services
         ->set(RouterLoaderDecorator::class)

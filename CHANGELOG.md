@@ -10,6 +10,12 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [0.14.1] - 2026-10-03
 
+### Added
+
+- In debug mode, a `command_paths` entry that matches no PHP files is logged as a warning on the
+  `stixx_openapi_command` channel, so a typo or a changed directory layout shows up instead of silently adding no
+  routes. A glob that matches nothing still isn't an error.
+
 ### Fixed
 
 - Finding which Nelmio area a request belongs to no longer loads the application's routes. It rebuilt the whole

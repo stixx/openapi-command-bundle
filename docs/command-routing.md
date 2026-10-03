@@ -155,7 +155,7 @@ How it works
 - Discovered routes coexist with your existing controller routes and any manually configured routes.
 
 Notes
-- A directory that does not exist, or the fixed part of a glob that does not exist, is an error naming the entry. A glob that matches nothing is not: it yields no routes. For a directory only some environments have, configure it under `when@<env>`.
+- A directory that does not exist, or the fixed part of a glob that does not exist, is an error naming the entry. A glob that matches nothing is not: it yields no routes, and in debug mode it is logged as a warning on the `stixx_openapi_command` channel. For a directory only some environments have, configure it under `when@<env>`.
 - Command classes do not need to be registered as services; the bundle reads them from the filesystem.
 - Only classes that are annotated with OpenAPI operation attributes (e.g., `#[OA\Post]`) at class level and are not recognized controllers (`AbstractController`, `#[AsController]`, or having method-level `#[Route]`) will produce routes.
   - Because of this, ensure your commands are plain DTOs and do not extend `AbstractController`, do not use `#[AsController]`, and do not declare method-level `#[Route]` attributes.
