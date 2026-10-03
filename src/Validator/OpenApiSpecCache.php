@@ -92,19 +92,35 @@ final class OpenApiSpecCache implements CacheWarmerInterface
         foreach ($this->areas() as $area) {
             try {
                 $this->specs[$area] = $this->load($area, [$buildDir], false);
-                if ($this->envFingerprint($area) !== '') {
-                    (new Filesystem())->dumpFile($this->warmedFile($buildDir, $area), $this->specs[$area]);
-                }
             } catch (Throwable $exception) {
                 $this->logger?->warning('Could not cache the OpenAPI document of Nelmio area "{area}"; it is generated on first use instead: {message}', [
                     'area' => $area,
                     'message' => $exception->getMessage(),
                     'exception' => $exception,
                 ]);
+
+                continue;
+            }
+
+            if ($this->envFingerprint($area) !== '') {
+                $this->keepWarmed($area, $buildDir, $this->specs[$area]);
             }
         }
 
         return [];
+    }
+
+    private function keepWarmed(string $area, string $buildDir, string $json): void
+    {
+        try {
+            (new Filesystem())->dumpFile($this->warmedFile($buildDir, $area), $json);
+        } catch (IOException $exception) {
+            $this->logger?->warning('Could not keep the OpenAPI document of Nelmio area "{area}" as the fallback for a runtime environment it cannot be generated for: {message}', [
+                'area' => $area,
+                'message' => $exception->getMessage(),
+                'exception' => $exception,
+            ]);
+        }
     }
 
     /**

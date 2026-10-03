@@ -248,6 +248,23 @@ final class OpenApiSpecCacheTest extends TestCase
         // Assert - handled by mock expectations
     }
 
+    public function testLogsAWarmedDocumentItCouldNotKeepAsTheFallback(): void
+    {
+        // Arrange — a directory where the fallback copy should be written.
+        (new Filesystem())->mkdir($this->buildDir.'/stixx_openapi_command/warmed.openapi.v2.'.hash('xxh128', 'default').'.json');
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->with(self::stringContains('Could not keep the OpenAPI document of Nelmio area "{area}" as the fallback'));
+        $cache = $this->cacheWithEnv(new ApiDocGenerator([$this->describer('/books')], []), ['API_VERSION' => 'build'], $logger);
+
+        // Act
+        $cache->warmUp($this->buildDir.'/cache', $this->buildDir);
+
+        // Assert
+        self::assertFileExists($this->buildDir.'/stixx_openapi_command/openapi.v2.'.hash('xxh128', 'default').'.'.hash('xxh128', serialize(['API_VERSION' => 'build'])).'.json');
+    }
+
     public function testCachesInTheCacheDirectoryWhenTheBuildDirectoryIsReadOnly(): void
     {
         // Arrange — a file where the build directory's cache folder should be.
