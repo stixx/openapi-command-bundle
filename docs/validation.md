@@ -163,7 +163,9 @@ All tagged validators are executed in a chain during the `kernel.request` event,
 
 When several Nelmio areas are configured, each has its own OpenAPI document. `NelmioAreaRoutesChecker` resolves the area a request belongs to, and the request is validated against that area's document. Areas are checked in registration order and the first match wins.
 
-Each area's document is generated once and cached as JSON in the build directory: by `cache:warmup` / `cache:clear`, or by the first API request. In debug mode it is regenerated when your routes, your container configuration, the classes it describes or your Composer dependencies change. Anything Nelmio resolves at runtime, such as an `%env()%` value in `documentation.servers`, is captured when the document is generated, not on each request; clear the cache after changing it.
+A request is validated by its path within your application, its Symfony path info, against the document's `paths`. `servers` entries play no part, at any level and including `%env()%` values, so a server URL with a base path (`https://api.example.com/v1`) or a different URL per environment needs no rebuild.
+
+Each area's document is generated once and cached as JSON in the build directory: by `cache:warmup` / `cache:clear`, or by the first API request. In debug mode it is regenerated when your routes, your container configuration, the classes it describes or your Composer dependencies change. Other `%env()%` values in Nelmio's `documentation` or security configuration are part of the cache key, so a runtime value that differs from the one at warm-up generates its own document once. Define the env vars Nelmio's configuration uses during `cache:warmup`, for example with an `env(NAME)` parameter default: an area that cannot be generated then is logged as a warning on the `stixx_openapi_command` channel and generated on its first request instead, which repeats per request when the build directory is read-only.
 
 ---
 

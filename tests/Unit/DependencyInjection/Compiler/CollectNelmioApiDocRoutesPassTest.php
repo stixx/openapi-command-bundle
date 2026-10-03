@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\DependencyInjection\Compiler;
 
 use Nelmio\ApiDocBundle\DependencyInjection\NelmioApiDocExtension;
+use Nelmio\ApiDocBundle\Describer\ExternalDocDescriber;
 use Nelmio\ApiDocBundle\Routing\FilteredRouteCollectionBuilder;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -191,6 +192,35 @@ final class CollectNelmioApiDocRoutesPassTest extends TestCase
         // Assert
         self::assertSame($hash, $this->areasHash(['name_patterns' => ['^api_']]));
         self::assertNotSame($hash, $this->areasHash(['name_patterns' => ['^admin_']]));
+    }
+
+    public function testCollectsTheEnvVarsOfAnAreasDocumentationExceptItsServers(): void
+    {
+        // Arrange
+        $container = new ContainerBuilder();
+        $container->setParameter('nelmio_api_doc.areas', ['default', 'admin']);
+        $env = static fn (string $name): mixed => $container->getParameterBag()->resolveValue('%env('.$name.')%');
+        $container->setDefinition('nelmio_api_doc.routes.default', new Definition(RouteCollection::class));
+        $container->setDefinition('nelmio_api_doc.routes.admin', new Definition(RouteCollection::class));
+        $container->setDefinition('nelmio_api_doc.describers.config', new Definition(ExternalDocDescriber::class, [
+            ['info' => ['version' => $env('API_VERSION')], 'servers' => [['url' => $env('API_URL')]]],
+        ]));
+        $container->setDefinition('nelmio_api_doc.describers.config.admin', new Definition(ExternalDocDescriber::class, [
+            ['servers' => $env('json:ADMIN_SERVERS'), 'info' => ['description' => $env('ADMIN_NOTE')]],
+            true,
+        ]));
+
+        // Act
+        (new CollectNelmioApiDocRoutesPass())->process($container);
+
+        // Assert
+        self::assertSame(
+            [
+                'default' => ['API_VERSION' => '%env(default::API_VERSION)%'],
+                'admin' => ['ADMIN_NOTE' => '%env(default::ADMIN_NOTE)%', 'API_VERSION' => '%env(default::API_VERSION)%'],
+            ],
+            $container->getParameter('stixx_openapi_command.nelmio.area_env'),
+        );
     }
 
     /**
