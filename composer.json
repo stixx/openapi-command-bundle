@@ -38,6 +38,7 @@
         "symfony/psr-http-message-bridge": "^7.4 || ^8.0",
         "symfony/routing": "^7.4 || ^8.0",
         "symfony/serializer": "^7.4 || ^8.0",
+        "symfony/service-contracts": "^3.5",
         "symfony/validator": "^7.4 || ^8.0",
         "symfony/yaml": "^7.4 || ^8.0"
     },
