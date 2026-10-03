@@ -43,6 +43,11 @@ final class OpenApiSpecCache implements CacheWarmerInterface
     private ?string $generated = null;
 
     /**
+     * @var array<string, true>
+     */
+    private array $describedFiles = [];
+
+    /**
      * @param ServiceLocator<ApiDocGenerator>|null $generatorsLocator
      */
     public function __construct(
@@ -104,7 +109,13 @@ final class OpenApiSpecCache implements CacheWarmerInterface
             return $this->generated ?? $this->generate($area)[0];
         }
 
-        return $this->generated ?? (string) file_get_contents($cache->getPath());
+        if ($this->generated !== null) {
+            return $this->generated;
+        }
+
+        $json = file_get_contents($cache->getPath());
+
+        return $json === false ? $this->generate($area)[0] : $json;
     }
 
     /**
@@ -131,10 +142,12 @@ final class OpenApiSpecCache implements CacheWarmerInterface
         $vendors = $composer->getVendors();
         foreach (array_diff($this->declared(), $declaredBefore) as $class) {
             $file = (new ReflectionClass($class))->getFileName();
-            if ($file === false || $this->isVendor($file, $vendors)) {
-                continue;
+            if ($file !== false && !$this->isVendor($file, $vendors)) {
+                $this->describedFiles[$file] = true;
             }
+        }
 
+        foreach (array_keys($this->describedFiles) as $file) {
             $resources[] = new FileResource($file);
         }
         $resources[] = $composer;

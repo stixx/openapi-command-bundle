@@ -23,6 +23,10 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
   and regenerated in debug mode when routes, container configuration, described classes or Composer dependencies
   change. Values Nelmio resolves at runtime, such as `%env()%` in `documentation.servers`, are now captured when the
   document is generated.
+- With more than one Nelmio area, the second area's OpenAPI document generated in the same process was incomplete, or
+  failed with "Unexpected @OA\JsonContent()" when warnings are converted to exceptions: the command route describer
+  reused the OpenAPI attributes of the first area's document, which swagger-php had already altered. This affected
+  long-running workers before, and now also warming the cache.
 
 ## [0.14.0] - 2026-10-03
 

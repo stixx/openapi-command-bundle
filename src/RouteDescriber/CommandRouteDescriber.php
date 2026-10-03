@@ -29,6 +29,7 @@ use ReflectionMethod;
 use stdClass;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadataFactoryInterface;
 use Symfony\Component\Routing\Route;
+use WeakReference;
 
 /**
  * @internal
@@ -45,6 +46,11 @@ final class CommandRouteDescriber implements RouteDescriberInterface, ModelRegis
     private array $attributesCache = [];
 
     /**
+     * @var WeakReference<OA\OpenApi>|null
+     */
+    private ?WeakReference $attributesCacheDocument = null;
+
+    /**
      * @param iterable<RouteArgumentDescriberInterface> $inlineParameterDescribers
      */
     public function __construct(
@@ -55,6 +61,11 @@ final class CommandRouteDescriber implements RouteDescriberInterface, ModelRegis
 
     public function describe(OA\OpenApi $api, Route $route, ReflectionMethod $reflectionMethod): void
     {
+        if ($this->attributesCacheDocument?->get() !== $api) {
+            $this->attributesCache = [];
+            $this->attributesCacheDocument = WeakReference::create($api);
+        }
+
         $commandClass = $this->resolveCommandClass($route);
         if ($commandClass === null) {
             return;

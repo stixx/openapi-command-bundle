@@ -22,7 +22,9 @@ use OpenApi\Annotations\Post;
 use OpenApi\Annotations\Response;
 use OpenApi\Context;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use RuntimeException;
+use Stixx\OpenApiCommandBundle\Tests\Mock\Validator\DescribedModel;
 use Stixx\OpenApiCommandBundle\Validator\OpenApiSpecCache;
 use Symfony\Component\Config\ConfigCacheFactory;
 use Symfony\Component\Config\Resource\FileResource;
@@ -98,6 +100,27 @@ final class OpenApiSpecCacheTest extends TestCase
         self::assertStringContainsString('/books', $json);
     }
 
+    public function testTracksAModelForEveryAreaThatDescribesIt(): void
+    {
+        // Arrange — only the first area's generation autoloads the model.
+        $default = new ApiDocGenerator([$this->describer('/default', DescribedModel::class)], []);
+        $books = new ApiDocGenerator([$this->describer('/books')], []);
+        /** @var ServiceLocator<ApiDocGenerator> $generators */
+        $generators = new ServiceLocator([
+            'default' => static fn (): ApiDocGenerator => $default,
+            'books' => static fn (): ApiDocGenerator => $books,
+        ]);
+        $cache = new OpenApiSpecCache($default, $generators, $this->router(), new ConfigCacheFactory(true), $this->buildDir, null, true);
+
+        // Act
+        $cache->warmUp($this->buildDir.'/cache', $this->buildDir);
+
+        // Assert
+        $model = (string) (new ReflectionClass(DescribedModel::class))->getFileName();
+        self::assertStringContainsString($model, (string) file_get_contents($this->buildDir.'/stixx_openapi_command/openapi.default.json.meta'));
+        self::assertStringContainsString($model, (string) file_get_contents($this->buildDir.'/stixx_openapi_command/openapi.books.json.meta'));
+    }
+
     public function testUsesTheAreasOwnGeneratorAndTheDefaultOneOtherwise(): void
     {
         // Arrange
@@ -169,18 +192,27 @@ final class OpenApiSpecCacheTest extends TestCase
     /**
      * @return DescriberInterface&object{calls: int}
      */
-    private function describer(string $path): DescriberInterface
+    /**
+     * @param class-string|null $loads a class the describer autoloads, as describing a model does
+     *
+     * @return DescriberInterface&object{calls: int}
+     */
+    private function describer(string $path, ?string $loads = null): DescriberInterface
     {
-        return new class ($path) implements DescriberInterface {
+        return new class ($path, $loads) implements DescriberInterface {
             public int $calls = 0;
 
-            public function __construct(private readonly string $path)
+            public function __construct(private readonly string $path, private readonly ?string $loads)
             {
             }
 
             public function describe(OpenApi $api): void
             {
                 ++$this->calls;
+
+                if ($this->loads !== null) {
+                    class_exists($this->loads);
+                }
 
                 $api->info = new Info(['title' => 'Test', 'version' => '1.0.0', '_context' => new Context(['version' => '3.0.0'], null)]);
                 $api->paths = [

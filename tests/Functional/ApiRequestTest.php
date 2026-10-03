@@ -79,6 +79,27 @@ final class ApiRequestTest extends TestCase
     }
 
     #[WithoutErrorHandler]
+    public function testWarmingCachesTheDocumentOfEveryArea(): void
+    {
+        // Arrange
+        $kernel = $this->bootKernel(false, __DIR__.'/Resources/config/two_areas.php');
+        $warmer = $kernel->getContainer()->get('cache_warmer');
+        self::assertInstanceOf(CacheWarmerAggregate::class, $warmer);
+        $warmer->enableOptionalWarmers();
+
+        // Act
+        $warmer->warmUp($kernel->getCacheDir(), $kernel->getBuildDir());
+
+        // Assert
+        $books = $kernel->getBuildDir().'/stixx_openapi_command/openapi.books.json';
+        self::assertFileExists($kernel->getBuildDir().'/stixx_openapi_command/openapi.default.json');
+        self::assertFileExists($books);
+        $document = (string) file_get_contents($books);
+        self::assertStringContainsString('/api/books/{id}', $document);
+        self::assertStringContainsString('"BookRequest"', $document, 'The second area must be described as fully as the first');
+    }
+
+    #[WithoutErrorHandler]
     public function testAnInvalidRequestIsStillRejectedFromTheCachedDocument(): void
     {
         // Arrange
@@ -93,10 +114,13 @@ final class ApiRequestTest extends TestCase
         self::assertSame(400, $response->getStatusCode());
     }
 
-    private function bootKernel(bool $debug): RouteLoadCountingKernel
+    private function bootKernel(bool $debug, ?string $extraConfig = null): RouteLoadCountingKernel
     {
         $kernel = new RouteLoadCountingKernel('test', $debug, $this->cacheDir);
         $kernel->addTestConfig(__DIR__.'/Resources/config/scenario.php');
+        if ($extraConfig !== null) {
+            $kernel->addTestConfig($extraConfig);
+        }
         $kernel->boot();
 
         return $kernel;
