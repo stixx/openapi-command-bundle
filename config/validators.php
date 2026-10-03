@@ -45,7 +45,11 @@ return static function (ContainerConfigurator $configurator): void {
             ->arg('$buildDir', param('kernel.build_dir'))
             ->arg('$containerFile', '%kernel.build_dir%/%kernel.container_class%.php')
             ->arg('$debug', param('kernel.debug'))
-            ->tag('kernel.cache_warmer');
+            ->arg('$areaEnv', param('stixx_openapi_command.nelmio.area_env'))
+            ->arg('$logger', service('logger')->nullOnInvalid())
+            ->arg('$cacheDir', param('kernel.cache_dir'))
+            ->tag('kernel.cache_warmer')
+            ->tag('monolog.logger', ['channel' => 'stixx_openapi_command']);
 
     $services
         ->set(RequestValidator::class)

@@ -37,6 +37,7 @@ final class RequestValidator implements RequestValidatorInterface
     public function validate(Request $request): void
     {
         $psrRequest = $this->psrHttpFactory->createRequest($request);
+        $psrRequest = $psrRequest->withUri($psrRequest->getUri()->withPath($request->getPathInfo()));
         $this->validatorFor($this->areaFor($request))->validate($psrRequest);
     }
 

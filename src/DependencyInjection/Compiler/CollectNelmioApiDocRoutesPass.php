@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\DependencyInjection\Compiler;
 
+use Stixx\OpenApiCommandBundle\Validator\OpenApiSpecCache;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -36,6 +37,7 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
         $routesMap = [];
         $pathPatterns = [];
         $areaConfigs = [];
+        $areaEnv = [];
 
         $generatorsMap = [];
 
@@ -49,6 +51,7 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
             $routesMap[$area] = new Reference($serviceId);
             $pathPatterns[$area] = $this->extractPathPatterns($container, $serviceId);
             $areaConfigs[$area] = $this->areaConfig($container, $serviceId);
+            $areaEnv[$area] = $this->documentationEnv($container, $area);
 
             $generatorId = sprintf('nelmio_api_doc.generator.%s', $area);
             if ($container->has($generatorId)) {
@@ -68,6 +71,7 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
 
         $container->setParameter('stixx_openapi_command.nelmio.path_patterns', $pathPatterns);
         $container->setParameter('stixx_openapi_command.nelmio.areas_hash', hash('xxh128', serialize($areaConfigs)));
+        $container->setParameter('stixx_openapi_command.nelmio.area_env', array_filter($areaEnv));
     }
 
     /**
@@ -111,6 +115,63 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
             $areaConfig['path_patterns'],
             static fn ($pattern): bool => is_string($pattern) && $pattern !== '',
         ));
+    }
+
+    /**
+     * @return array<string, string> env name => runtime placeholder
+     */
+    private function documentationEnv(ContainerBuilder $container, string $area): array
+    {
+        $documentation = [];
+        foreach (['nelmio_api_doc.describers.config', 'nelmio_api_doc.describers.config.'.$area, 'nelmio_api_doc.describers.security.'.$area] as $serviceId) {
+            if (!$container->hasDefinition($serviceId)) {
+                continue;
+            }
+
+            $documentation[] = $this->withoutServers($container->getDefinition($serviceId)->getArguments()[0] ?? null);
+        }
+
+        $used = [];
+        $container->resolveEnvPlaceholders($documentation, null, $used);
+        $names = array_map(strval(...), array_keys((array) $used));
+        sort($names);
+
+        $env = [];
+        foreach ($names as $name) {
+            $env[$name] = '%env(default::'.$name.')%';
+        }
+
+        return $env;
+    }
+
+    private function withoutServers(mixed $documentation): mixed
+    {
+        if (!is_array($documentation)) {
+            return $documentation;
+        }
+
+        unset($documentation['servers']);
+        if (!is_array($documentation['paths'] ?? null)) {
+            return $documentation;
+        }
+
+        $paths = $documentation['paths'];
+        foreach ($paths as $path => $pathItem) {
+            if (!is_array($pathItem)) {
+                continue;
+            }
+
+            unset($pathItem['servers']);
+            foreach (OpenApiSpecCache::OPERATIONS as $method) {
+                if (is_array($pathItem[$method] ?? null)) {
+                    unset($pathItem[$method]['servers']);
+                }
+            }
+            $paths[$path] = $pathItem;
+        }
+        $documentation['paths'] = $paths;
+
+        return $documentation;
     }
 
     private function areaConfig(ContainerBuilder $container, string $serviceId): mixed

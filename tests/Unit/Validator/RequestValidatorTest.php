@@ -163,6 +163,22 @@ final class RequestValidatorTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
+    public function testValidatesThePathWithinTheApplication(): void
+    {
+        // Arrange
+        $validator = new RequestValidator(
+            new OpenApiSpecCache(new ApiDocGenerator([$this->createDescriberForPath('/test')], [])),
+            $this->createPsrHttpFactory(),
+        );
+        $request = Request::create('/v1/test', 'POST', server: ['SCRIPT_NAME' => '/v1/index.php', 'SCRIPT_FILENAME' => '/app/public/index.php']);
+
+        // Act
+        $validator->validate($request);
+
+        // Assert
+        self::assertSame('/test', $request->getPathInfo());
+    }
+
     private function createPsrHttpFactory(): PsrHttpFactory
     {
         $psr17 = new Psr17Factory();

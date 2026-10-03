@@ -8,6 +8,26 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [Unreleased]
 
+## [0.14.2] - 2026-10-03
+
+### Added
+
+- `cache:warmup` logs a warning on the `stixx_openapi_command` channel when it cannot cache an area's OpenAPI document,
+  for example because an env var Nelmio's configuration uses is not set. It used to skip the area silently.
+
+### Fixed
+
+- Request validation no longer depends on `servers`: the request's path within the application is matched against
+  the documented paths. 0.14.1 cached `%env()%` server URLs at warm-up time, so a server URL set at runtime with a path,
+  such as `https://api.example.com/v1`, made valid requests fail with "no such operation". A server URL whose path
+  differed from the application's base URL made every request fail, also before 0.14.1. Server path prefixes no longer
+  restrict which requests are validated; the router has already matched the route by then.
+- Other `%env()%` values in Nelmio's `documentation` or security configuration are part of the cached document's key,
+  so a runtime value that differs from the one at warm-up no longer leaves the build-time document in use. Its document
+  is generated once, and cached in the cache directory when the build directory is read-only; if it cannot be
+  generated outside debug mode, the document cached at warm-up is used and a warning is logged. The cache file name
+  changed, so documents cached by 0.14.1 are not reused.
+
 ## [0.14.1] - 2026-10-03
 
 ### Added
@@ -341,7 +361,8 @@ Installing it with Composer is not enough. See the README's installation section
   details outside debug mode, and a `CommandValueResolver` that supports list endpoints and the combination of
   parameters with a request body.
 
-[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.14.1...HEAD
+[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.14.2...HEAD
+[0.14.2]: https://github.com/stixx/openapi-command-bundle/compare/0.14.1...0.14.2
 [0.14.1]: https://github.com/stixx/openapi-command-bundle/compare/0.14.0...0.14.1
 [0.14.0]: https://github.com/stixx/openapi-command-bundle/compare/0.13.3...0.14.0
 [0.13.3]: https://github.com/stixx/openapi-command-bundle/compare/0.13.2...0.13.3

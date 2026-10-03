@@ -20,6 +20,7 @@ use OpenApi\Annotations\OpenApi;
 use OpenApi\Annotations\PathItem;
 use OpenApi\Annotations\Post;
 use OpenApi\Annotations\Response;
+use OpenApi\Annotations\Server;
 use OpenApi\Context;
 
 final class PathDescriber implements DescriberInterface
@@ -33,6 +34,7 @@ final class PathDescriber implements DescriberInterface
         public string $path,
         private readonly ?string $loads = null,
         private readonly ?string $schema = null,
+        private readonly bool $servers = false,
     ) {
     }
 
@@ -46,16 +48,20 @@ final class PathDescriber implements DescriberInterface
 
         $context = new Context(['version' => '3.0.0'], null);
         $api->info = new Info(['title' => 'Test', 'version' => '1.0.0', '_context' => $context]);
+        $servers = fn (string $url): array => $this->servers ? ['servers' => [new Server(['url' => $url, '_context' => $context])]] : [];
         $api->paths = [
             new PathItem([
                 'path' => $this->path,
                 'post' => new Post([
                     'responses' => [new Response(['response' => 200, 'description' => 'ok', '_context' => $context])],
                     '_context' => $context,
-                ]),
+                ] + $servers('https://operation.example.com/v3')),
                 '_context' => $context,
-            ]),
+            ] + $servers('https://path.example.com/v2')),
         ];
+        if ($this->servers) {
+            $api->servers = [new Server(['url' => 'https://api.example.com/v1', '_context' => $context])];
+        }
 
         if ($this->schema !== null) {
             Util::getSchema($api, $this->schema)->type = 'object';

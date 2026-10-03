@@ -14,7 +14,9 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Validator;
 
 use Nelmio\ApiDocBundle\ApiDocGenerator;
+use Psr\Log\LoggerInterface;
 use ReflectionClass;
+use stdClass;
 use Symfony\Component\Config\ConfigCacheFactoryInterface;
 use Symfony\Component\Config\ConfigCacheInterface;
 use Symfony\Component\Config\Resource\ComposerResource;
@@ -23,6 +25,7 @@ use Symfony\Component\Config\Resource\FileResource;
 use Symfony\Component\Config\Resource\ResourceInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Contracts\Service\ResetInterface;
@@ -36,12 +39,12 @@ use Throwable;
  */
 final class OpenApiSpecCache implements CacheWarmerInterface
 {
+    public const array OPERATIONS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'];
+
     /**
      * @var array<string, string>
      */
     private array $specs = [];
-
-    private ?string $generated = null;
 
     /**
      * @var array<string, true>
@@ -50,6 +53,7 @@ final class OpenApiSpecCache implements CacheWarmerInterface
 
     /**
      * @param ServiceLocator<ApiDocGenerator>|null $generatorsLocator
+     * @param array<string, array<string, mixed>> $areaEnv per area, the runtime values of the env vars its documentation uses
      */
     public function __construct(
         private readonly ApiDocGenerator $defaultGenerator,
@@ -59,16 +63,19 @@ final class OpenApiSpecCache implements CacheWarmerInterface
         private readonly ?string $buildDir = null,
         private readonly ?string $containerFile = null,
         private readonly bool $debug = false,
+        private readonly array $areaEnv = [],
+        private readonly ?LoggerInterface $logger = null,
+        private readonly ?string $cacheDir = null,
     ) {
     }
 
     public function jsonFor(string $area): string
     {
         if ($this->debug) {
-            return $this->load($area, $this->buildDir);
+            return $this->load($area, [$this->buildDir, $this->cacheDir], true);
         }
 
-        return $this->specs[$area] ??= $this->load($area, $this->buildDir);
+        return $this->specs[$area] ??= $this->load($area, [$this->buildDir, $this->cacheDir], true);
     }
 
     public function isOptional(): bool
@@ -84,39 +91,104 @@ final class OpenApiSpecCache implements CacheWarmerInterface
 
         foreach ($this->areas() as $area) {
             try {
-                $this->specs[$area] = $this->load($area, $buildDir);
-            } catch (Throwable) {
+                $this->specs[$area] = $this->load($area, [$buildDir], false);
+            } catch (Throwable $exception) {
+                $this->logger?->warning('Could not cache the OpenAPI document of Nelmio area "{area}"; it is generated on first use instead: {message}', [
+                    'area' => $area,
+                    'message' => $exception->getMessage(),
+                    'exception' => $exception,
+                ]);
+
                 continue;
+            }
+
+            if ($this->envFingerprint($area) !== '') {
+                $this->keepWarmed($area, $buildDir, $this->specs[$area]);
             }
         }
 
         return [];
     }
 
-    private function load(string $area, ?string $dir): string
+    private function keepWarmed(string $area, string $buildDir, string $json): void
     {
-        if ($dir === null || $this->configCacheFactory === null) {
+        try {
+            (new Filesystem())->dumpFile($this->warmedFile($buildDir, $area), $json);
+        } catch (IOException $exception) {
+            $this->logger?->warning('Could not keep the OpenAPI document of Nelmio area "{area}" as the fallback for a runtime environment it cannot be generated for: {message}', [
+                'area' => $area,
+                'message' => $exception->getMessage(),
+                'exception' => $exception,
+            ]);
+        }
+    }
+
+    /**
+     * @param list<string|null> $dirs where to look for the document, then where to write it, in order
+     */
+    private function load(string $area, array $dirs, bool $atRuntime): string
+    {
+        $dirs = array_values(array_unique(array_filter($dirs, static fn (?string $dir): bool => $dir !== null && $dir !== '')));
+        if ($dirs === [] || $this->configCacheFactory === null) {
             return $this->generate($area)[0];
         }
 
-        $this->generated = null;
+        $file = '/stixx_openapi_command/openapi.v2.'.hash('xxh128', $area).$this->envFingerprint($area).'.json';
+        foreach ($dirs as $dir) {
+            $stale = false;
+            $cache = $this->configCacheFactory->cache($dir.$file, static function () use (&$stale): void {
+                $stale = true;
+            });
+
+            $json = !$stale && is_file($cache->getPath()) ? file_get_contents($cache->getPath()) : false;
+            if (is_string($json)) {
+                return $json;
+            }
+        }
 
         try {
-            $cache = $this->configCacheFactory->cache($dir.'/stixx_openapi_command/openapi.'.hash('xxh128', $area).'.json', function (ConfigCacheInterface $cache) use ($area): void {
-                [$this->generated, $resources] = $this->generate($area);
-                $cache->write($this->generated, $resources);
-            });
-        } catch (IOException) {
-            return $this->generated ?? $this->generate($area)[0];
+            [$json, $resources] = $this->generate($area);
+        } catch (Throwable $exception) {
+            $warmed = $atRuntime && !$this->debug && $this->buildDir !== null ? $this->warmedDocument($area, $this->buildDir) : null;
+            if ($warmed === null) {
+                throw $exception;
+            }
+
+            $this->logger?->warning('Could not generate the OpenAPI document of Nelmio area "{area}" for the runtime environment; validating against the one cached at warm-up: {message}', [
+                'area' => $area,
+                'message' => $exception->getMessage(),
+                'exception' => $exception,
+            ]);
+
+            [$json, $resources] = [$warmed, []];
         }
 
-        if ($this->generated !== null) {
-            return $this->generated;
+        foreach ($dirs as $dir) {
+            try {
+                $this->configCacheFactory->cache($dir.$file, static function (ConfigCacheInterface $cache) use ($json, $resources): void {
+                    $cache->write($json, $resources);
+                });
+
+                break;
+            } catch (IOException) {
+                continue;
+            }
         }
 
-        $json = is_file($cache->getPath()) ? file_get_contents($cache->getPath()) : false;
+        return $json;
+    }
 
-        return $json === false ? $this->generate($area)[0] : $json;
+    private function warmedDocument(string $area, string $buildDir): ?string
+    {
+        $file = $this->warmedFile($buildDir, $area);
+        $json = is_file($file) ? file_get_contents($file) : false;
+
+        return is_string($json) ? $json : null;
+    }
+
+    private function warmedFile(string $buildDir, string $area): string
+    {
+        return $buildDir.'/stixx_openapi_command/warmed.openapi.v2.'.hash('xxh128', $area).'.json';
     }
 
     /**
@@ -132,7 +204,7 @@ final class OpenApiSpecCache implements CacheWarmerInterface
         }
 
         try {
-            $json = $generator->generate()->toJson();
+            $json = $this->withoutServers($generator->generate()->toJson());
         } finally {
             if ($this->debug) {
                 $this->trackDescribedFiles($declaredBefore);
@@ -195,6 +267,37 @@ final class OpenApiSpecCache implements CacheWarmerInterface
                 $this->describedFiles[$file] = true;
             }
         }
+    }
+
+    private function envFingerprint(string $area): string
+    {
+        $values = $this->areaEnv[$area] ?? [];
+
+        return $values === [] ? '' : '.'.hash('xxh128', serialize($values));
+    }
+
+    private function withoutServers(string $json): string
+    {
+        $document = json_decode($json, flags: JSON_THROW_ON_ERROR);
+        if (!$document instanceof stdClass) {
+            return $json;
+        }
+
+        unset($document->servers);
+        foreach ((array) ($document->paths ?? []) as $pathItem) {
+            if (!$pathItem instanceof stdClass) {
+                continue;
+            }
+
+            unset($pathItem->servers);
+            foreach (self::OPERATIONS as $method) {
+                if (($pathItem->{$method} ?? null) instanceof stdClass) {
+                    unset($pathItem->{$method}->servers);
+                }
+            }
+        }
+
+        return json_encode($document, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
     }
 
     private function generatorFor(string $area): ApiDocGenerator

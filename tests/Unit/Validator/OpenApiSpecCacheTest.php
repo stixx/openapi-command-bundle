@@ -14,7 +14,10 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\Validator;
 
 use Nelmio\ApiDocBundle\ApiDocGenerator;
+use Nelmio\ApiDocBundle\Describer\DescriberInterface;
+use OpenApi\Annotations\OpenApi;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use RuntimeException;
 use Stixx\OpenApiCommandBundle\Tests\Mock\Validator\DescribedModel;
@@ -112,8 +115,8 @@ final class OpenApiSpecCacheTest extends TestCase
 
         // Assert
         $model = (string) (new ReflectionClass(DescribedModel::class))->getFileName();
-        self::assertStringContainsString($model, (string) file_get_contents($this->buildDir.'/stixx_openapi_command/openapi.'.hash('xxh128', 'default').'.json.meta'));
-        self::assertStringContainsString($model, (string) file_get_contents($this->buildDir.'/stixx_openapi_command/openapi.'.hash('xxh128', 'books').'.json.meta'));
+        self::assertStringContainsString($model, (string) file_get_contents($this->buildDir.'/stixx_openapi_command/openapi.v2.'.hash('xxh128', 'default').'.json.meta'));
+        self::assertStringContainsString($model, (string) file_get_contents($this->buildDir.'/stixx_openapi_command/openapi.v2.'.hash('xxh128', 'books').'.json.meta'));
     }
 
     public function testTracksAModelLoadedBeforeGenerationThatTheDocumentDescribes(): void
@@ -127,7 +130,7 @@ final class OpenApiSpecCacheTest extends TestCase
 
         // Assert
         $model = (string) (new ReflectionClass(PreloadedModel::class))->getFileName();
-        self::assertStringContainsString($model, (string) file_get_contents($this->buildDir.'/stixx_openapi_command/openapi.'.hash('xxh128', 'default').'.json.meta'));
+        self::assertStringContainsString($model, (string) file_get_contents($this->buildDir.'/stixx_openapi_command/openapi.v2.'.hash('xxh128', 'default').'.json.meta'));
     }
 
     public function testRegeneratesFromTheSameGeneratorInADebugWorker(): void
@@ -180,8 +183,8 @@ final class OpenApiSpecCacheTest extends TestCase
         // Assert
         self::assertSame([], $preload);
         self::assertTrue($cache->isOptional());
-        self::assertFileExists($this->buildDir.'/stixx_openapi_command/openapi.'.hash('xxh128', 'default').'.json');
-        self::assertFileDoesNotExist($this->buildDir.'/stixx_openapi_command/openapi.'.hash('xxh128', 'broken').'.json');
+        self::assertFileExists($this->buildDir.'/stixx_openapi_command/openapi.v2.'.hash('xxh128', 'default').'.json');
+        self::assertFileDoesNotExist($this->buildDir.'/stixx_openapi_command/openapi.v2.'.hash('xxh128', 'broken').'.json');
     }
 
     public function testGeneratesInMemoryWhenTheCacheCannotBeWritten(): void
@@ -196,6 +199,133 @@ final class OpenApiSpecCacheTest extends TestCase
         // Assert
         self::assertSame(1, $describer->calls);
         self::assertStringContainsString('/books', $json);
+    }
+
+    public function testLeavesServersOutOfTheDocumentAtEveryLevel(): void
+    {
+        // Arrange
+        $cache = new OpenApiSpecCache(new ApiDocGenerator([$this->describer('/books', servers: true)], []));
+
+        // Act
+        $json = $cache->jsonFor('default');
+
+        // Assert
+        self::assertStringContainsString('/books', $json);
+        self::assertStringNotContainsString('servers', $json);
+        self::assertStringNotContainsString('example.com', $json);
+    }
+
+    public function testNamesTheCacheAfterTheRuntimeValuesOfTheAreasEnv(): void
+    {
+        // Arrange
+        $cache = new OpenApiSpecCache(new ApiDocGenerator([$this->describer('/books')], []), null, $this->router(), new ConfigCacheFactory(false), $this->buildDir, null, false, ['default' => ['API_VERSION' => '2.0']]);
+
+        // Act
+        $cache->jsonFor('default');
+
+        // Assert
+        self::assertFileExists($this->buildDir.'/stixx_openapi_command/openapi.v2.'.hash('xxh128', 'default').'.'.hash('xxh128', serialize(['API_VERSION' => '2.0'])).'.json');
+    }
+
+    public function testLogsAnAreaItCouldNotWarm(): void
+    {
+        // Arrange
+        $default = new ApiDocGenerator([$this->describer('/default')], []);
+        /** @var ServiceLocator<ApiDocGenerator> $generators */
+        $generators = new ServiceLocator([
+            'default' => static fn (): ApiDocGenerator => $default,
+            'broken' => static fn (): ApiDocGenerator => throw new RuntimeException('Environment variable not found: "API_URL".'),
+        ]);
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->with(self::stringContains('Could not cache the OpenAPI document of Nelmio area "{area}"'), self::callback(static fn (array $context): bool => $context['area'] === 'broken' && is_string($context['message']) && str_contains($context['message'], 'API_URL')));
+        $cache = new OpenApiSpecCache($default, $generators, $this->router(), new ConfigCacheFactory(false), $this->buildDir, logger: $logger);
+
+        // Act
+        $cache->warmUp($this->buildDir.'/cache', $this->buildDir);
+
+        // Assert - handled by mock expectations
+    }
+
+    public function testLogsAWarmedDocumentItCouldNotKeepAsTheFallback(): void
+    {
+        // Arrange — a directory where the fallback copy should be written.
+        (new Filesystem())->mkdir($this->buildDir.'/stixx_openapi_command/warmed.openapi.v2.'.hash('xxh128', 'default').'.json');
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->with(self::stringContains('Could not keep the OpenAPI document of Nelmio area "{area}" as the fallback'));
+        $cache = $this->cacheWithEnv(new ApiDocGenerator([$this->describer('/books')], []), ['API_VERSION' => 'build'], $logger);
+
+        // Act
+        $cache->warmUp($this->buildDir.'/cache', $this->buildDir);
+
+        // Assert
+        self::assertFileExists($this->buildDir.'/stixx_openapi_command/openapi.v2.'.hash('xxh128', 'default').'.'.hash('xxh128', serialize(['API_VERSION' => 'build'])).'.json');
+    }
+
+    public function testCachesInTheCacheDirectoryWhenTheBuildDirectoryIsReadOnly(): void
+    {
+        // Arrange — a file where the build directory's cache folder should be.
+        $describer = $this->describer('/books');
+        $this->cacheWithReadOnlyBuildDir(new ApiDocGenerator([$describer], []))->jsonFor('default');
+        $next = $this->describer('/books');
+
+        // Act
+        $json = $this->cacheWithReadOnlyBuildDir(new ApiDocGenerator([$next], []))->jsonFor('default');
+
+        // Assert
+        self::assertSame(1, $describer->calls);
+        self::assertSame(0, $next->calls);
+        self::assertStringContainsString('/books', $json);
+    }
+
+    public function testFallsBackToTheWarmedDocumentWhenTheRuntimeEnvironmentCannotBeDescribed(): void
+    {
+        // Arrange
+        $this->cacheWithEnv(new ApiDocGenerator([$this->describer('/books')], []), ['API_VERSION' => 'warm-up'])->warmUp($this->buildDir.'/cache', $this->buildDir);
+        $this->cacheWithEnv(new ApiDocGenerator([$this->describer('/at-runtime')], []), ['API_VERSION' => 'runtime'])->jsonFor('default');
+        $failing = $this->failingDescriber();
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->with(self::stringContains('validating against the one cached at warm-up'));
+
+        // Act
+        $json = $this->cacheWithEnv(new ApiDocGenerator([$failing], []), ['API_VERSION' => null], $logger)->jsonFor('default');
+
+        // Assert
+        self::assertStringContainsString('/books', $json);
+        self::assertStringNotContainsString('/at-runtime', $json);
+    }
+
+    public function testKeepsTheFallbackSoTheNextRequestDoesNotDescribeAgain(): void
+    {
+        // Arrange
+        $this->cacheWithEnv(new ApiDocGenerator([$this->describer('/books')], []), ['API_VERSION' => 'build'])->warmUp($this->buildDir.'/cache', $this->buildDir);
+        $this->cacheWithEnv(new ApiDocGenerator([$this->failingDescriber()], []), ['API_VERSION' => null])->jsonFor('default');
+        $failing = $this->failingDescriber();
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::never())->method('warning');
+
+        // Act
+        $json = $this->cacheWithEnv(new ApiDocGenerator([$failing], []), ['API_VERSION' => null], $logger)->jsonFor('default');
+
+        // Assert
+        self::assertSame(0, $failing->calls);
+        self::assertStringContainsString('/books', $json);
+    }
+
+    public function testDoesNotFallBackInDebugMode(): void
+    {
+        // Arrange
+        $this->cacheWithEnv(new ApiDocGenerator([$this->describer('/books')], []), ['API_VERSION' => 'build'], debug: true)->warmUp($this->buildDir.'/cache', $this->buildDir);
+        $cache = $this->cacheWithEnv(new ApiDocGenerator([$this->failingDescriber()], []), ['API_VERSION' => null], debug: true);
+
+        // Act & Assert
+        $this->expectExceptionMessage('Environment variable not found');
+        $cache->jsonFor('default');
     }
 
     private function cache(ApiDocGenerator $generator, bool $debug = false): OpenApiSpecCache
@@ -217,8 +347,38 @@ final class OpenApiSpecCacheTest extends TestCase
     /**
      * @param class-string|null $loads
      */
-    private function describer(string $path, ?string $loads = null, ?string $schema = null): PathDescriber
+    private function describer(string $path, ?string $loads = null, ?string $schema = null, bool $servers = false): PathDescriber
     {
-        return new PathDescriber($path, $loads, $schema);
+        return new PathDescriber($path, $loads, $schema, $servers);
+    }
+
+    private function cacheWithReadOnlyBuildDir(ApiDocGenerator $generator): OpenApiSpecCache
+    {
+        return new OpenApiSpecCache($generator, null, $this->router(), new ConfigCacheFactory(false), $this->routesFile, null, false, [], null, $this->buildDir.'/var-cache');
+    }
+
+    /**
+     * @param array<string, mixed> $env
+     */
+    private function cacheWithEnv(ApiDocGenerator $generator, array $env, ?LoggerInterface $logger = null, bool $debug = false): OpenApiSpecCache
+    {
+        return new OpenApiSpecCache($generator, null, $this->router(), new ConfigCacheFactory($debug), $this->buildDir, null, $debug, ['default' => $env], $logger);
+    }
+
+    /**
+     * @return DescriberInterface&object{calls: int}
+     */
+    private function failingDescriber(): DescriberInterface
+    {
+        return new class () implements DescriberInterface {
+            public int $calls = 0;
+
+            public function describe(OpenApi $api): void
+            {
+                ++$this->calls;
+
+                throw new RuntimeException('Environment variable not found: "API_VERSION".');
+            }
+        };
     }
 }
