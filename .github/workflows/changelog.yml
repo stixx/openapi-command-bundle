@@ -28,5 +28,7 @@ jobs:
         with:
           php-version: '8.4'
           coverage: none
+      # Before publishing a release, run `php .github/scripts/check-changelog.php X.Y.Z` on the pulled main: it also
+      # checks that the entry is dated today (UTC), the day the GitHub release creates the tag.
       - name: Check CHANGELOG.md against the tags
         run: php .github/scripts/check-changelog.php
