@@ -30,6 +30,11 @@ final class RuntimeEnvironmentTest extends TestCase
 
     private string $cacheDir;
 
+    /**
+     * @var list<string>
+     */
+    private array $otherCacheDirs = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -43,7 +48,7 @@ final class RuntimeEnvironmentTest extends TestCase
         foreach (self::ENV as $name) {
             unset($_SERVER[$name], $_ENV[$name]);
         }
-        (new Filesystem())->remove($this->cacheDir);
+        (new Filesystem())->remove([$this->cacheDir, ...$this->otherCacheDirs]);
 
         parent::tearDown();
 
@@ -72,6 +77,20 @@ final class RuntimeEnvironmentTest extends TestCase
     public function testValidatesWhenTheServerPathDiffersFromTheAppsBaseUrl(): void
     {
         // Arrange
+        $kernel = $this->boot(['API_URL' => 'https://api.example.com/v1', 'API_VERSION' => 'build']);
+
+        // Act
+        $response = $kernel->handle($this->createBookRequest('/api/books'));
+
+        // Assert
+        self::assertSame(201, $response->getStatusCode());
+    }
+
+    #[WithoutErrorHandler]
+    public function testValidatesADocumentGeneratedWithAServerPathTheAppIsNotMountedBelow(): void
+    {
+        // Arrange
+        $this->cacheDir = $this->otherCacheDirs[] = sys_get_temp_dir().'/stixx_runtime_env_'.bin2hex(random_bytes(6));
         $kernel = $this->boot(['API_URL' => 'https://api.example.com/v1', 'API_VERSION' => 'build']);
 
         // Act

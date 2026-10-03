@@ -23,8 +23,10 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
   differed from the application's base URL made every request fail, also before 0.14.1. Server path prefixes no longer
   restrict which requests are validated; the router has already matched the route by then.
 - Other `%env()%` values in Nelmio's `documentation` or security configuration are part of the cached document's key,
-  so a runtime value that differs from the one at warm-up no longer leaves the build-time document in use. The cache
-  file name changed, so documents cached by 0.14.1 are not reused.
+  so a runtime value that differs from the one at warm-up no longer leaves the build-time document in use. Its document
+  is generated once, and cached in the cache directory when the build directory is read-only; if it cannot be
+  generated, the document cached at warm-up is used and a warning is logged. The cache file name changed, so documents
+  cached by 0.14.1 are not reused.
 
 ## [0.14.1] - 2026-10-03
 

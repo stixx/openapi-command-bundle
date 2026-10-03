@@ -127,11 +127,7 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
                 continue;
             }
 
-            $argument = $container->getDefinition($serviceId)->getArguments()[0] ?? null;
-            if (is_array($argument)) {
-                unset($argument['servers']);
-            }
-            $documentation[] = $argument;
+            $documentation[] = $this->withoutServers($container->getDefinition($serviceId)->getArguments()[0] ?? null);
         }
 
         $used = [];
@@ -145,6 +141,17 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
         }
 
         return $env;
+    }
+
+    private function withoutServers(mixed $value): mixed
+    {
+        if (!is_array($value)) {
+            return $value;
+        }
+
+        unset($value['servers']);
+
+        return array_map($this->withoutServers(...), $value);
     }
 
     private function areaConfig(ContainerBuilder $container, string $serviceId): mixed

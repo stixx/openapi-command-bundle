@@ -203,7 +203,7 @@ final class CollectNelmioApiDocRoutesPassTest extends TestCase
         $container->setDefinition('nelmio_api_doc.routes.default', new Definition(RouteCollection::class));
         $container->setDefinition('nelmio_api_doc.routes.admin', new Definition(RouteCollection::class));
         $container->setDefinition('nelmio_api_doc.describers.config', new Definition(ExternalDocDescriber::class, [
-            ['info' => ['version' => $env('API_VERSION')], 'servers' => [['url' => $env('API_URL')]]],
+            ['info' => ['version' => $env('API_VERSION')], 'servers' => [['url' => $env('API_URL')]], 'paths' => ['/books' => ['servers' => [['url' => $env('BOOKS_URL')]]]]],
         ]));
         $container->setDefinition('nelmio_api_doc.describers.config.admin', new Definition(ExternalDocDescriber::class, [
             ['servers' => $env('json:ADMIN_SERVERS'), 'info' => ['description' => $env('ADMIN_NOTE')]],

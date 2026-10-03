@@ -47,6 +47,7 @@ return static function (ContainerConfigurator $configurator): void {
             ->arg('$debug', param('kernel.debug'))
             ->arg('$areaEnv', param('stixx_openapi_command.nelmio.area_env'))
             ->arg('$logger', service('logger')->nullOnInvalid())
+            ->arg('$cacheDir', param('kernel.cache_dir'))
             ->tag('kernel.cache_warmer')
             ->tag('monolog.logger', ['channel' => 'stixx_openapi_command']);
 
