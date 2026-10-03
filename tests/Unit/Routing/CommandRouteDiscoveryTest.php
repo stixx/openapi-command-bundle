@@ -238,26 +238,26 @@ final class CommandRouteDiscoveryTest extends TestCase
         // Arrange
         $logger = $this->createMock(LoggerInterface::class);
         $path = $this->routingDir.'/contexts/*/Nothing';
-
-        // Assert
         $logger->expects(self::once())
             ->method('warning')
             ->with(self::stringContains('matches no PHP files'), ['path' => $path]);
 
         // Act
         $this->createDiscovery([$this->routingDir.'/contexts/*/Application/Command', $path], $logger, true)->discover();
+
+        // Assert - handled by mock expectations
     }
 
     public function testStaysQuietOutsideDebugMode(): void
     {
         // Arrange
         $logger = $this->createMock(LoggerInterface::class);
-
-        // Assert
         $logger->expects(self::never())->method('warning');
 
         // Act
         $this->createDiscovery([$this->routingDir.'/contexts/*/Nothing'], $logger, false)->discover();
+
+        // Assert - handled by mock expectations
     }
 
     /**
