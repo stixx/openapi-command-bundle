@@ -6,6 +6,7 @@ use Stixx\OpenApiCommandBundle\Routing\CommandRouteDiscovery;
 use Stixx\OpenApiCommandBundle\Routing\Loader\CommandRouteClassLoader;
 use Stixx\OpenApiCommandBundle\Routing\Loader\CommandRouteDirectoryLoader;
 use Stixx\OpenApiCommandBundle\Routing\Loader\RouterLoaderDecorator;
+use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRouteMap;
 use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Stixx\OpenApiCommandBundle\Routing\RouteSpecificitySorter;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -18,8 +19,17 @@ return static function (ContainerConfigurator $configurator): void {
             ->private();
 
     $services
-        ->set(NelmioAreaRoutesChecker::class)
+        ->set(NelmioAreaRouteMap::class)
             ->arg('$routesLocator', service('stixx_openapi_command.nelmio.routes_locator'))
+            ->arg('$router', service('router'))
+            ->arg('$configCacheFactory', service('config_cache_factory'))
+            ->arg('$buildDir', param('kernel.build_dir'))
+            ->arg('$areasHash', param('stixx_openapi_command.nelmio.areas_hash'))
+            ->tag('kernel.cache_warmer');
+
+    $services
+        ->set(NelmioAreaRoutesChecker::class)
+            ->arg('$routeMap', service(NelmioAreaRouteMap::class))
             ->arg('$pathPatterns', param('stixx_openapi_command.nelmio.path_patterns'));
 
     $services

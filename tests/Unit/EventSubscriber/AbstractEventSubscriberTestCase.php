@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\EventSubscriber;
 
 use PHPUnit\Framework\TestCase;
+use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRouteMap;
 use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
@@ -50,6 +51,6 @@ abstract class AbstractEventSubscriberTestCase extends TestCase
             'default' => static fn () => $collection,
         ]);
 
-        return new NelmioAreaRoutesChecker($locator);
+        return new NelmioAreaRoutesChecker(new NelmioAreaRouteMap($locator));
     }
 }

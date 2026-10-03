@@ -8,6 +8,16 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-10-03
+
+### Fixed
+
+- Finding which Nelmio area a request belongs to no longer loads the application's routes. It rebuilt the whole
+  route collection, including a scan of every `command_paths` entry, on every request that matched a route, API
+  routes or not: around 115 ms per request in a benchmark with 700 routes. The route-to-area map is now cached like
+  the router's matcher: written once by an optional cache warmer, or on first use, and refreshed in debug mode when
+  the routes change.
+
 ## [0.14.0] - 2026-10-03
 
 ### Added
@@ -315,7 +325,8 @@ Installing it with Composer is not enough. See the README's installation section
   details outside debug mode, and a `CommandValueResolver` that supports list endpoints and the combination of
   parameters with a request body.
 
-[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.14.0...HEAD
+[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.14.1...HEAD
+[0.14.1]: https://github.com/stixx/openapi-command-bundle/compare/0.14.0...0.14.1
 [0.14.0]: https://github.com/stixx/openapi-command-bundle/compare/0.13.3...0.14.0
 [0.13.3]: https://github.com/stixx/openapi-command-bundle/compare/0.13.2...0.13.3
 [0.13.2]: https://github.com/stixx/openapi-command-bundle/compare/0.13.1...0.13.2
