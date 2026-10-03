@@ -26,6 +26,9 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 - The route-to-area map is cached in the cache directory when the build directory is read-only, instead of loading
   the routes again in every request.
+- An OpenAPI document cached in the cache directory because the build directory is read-only is scoped to the
+  container build, so a later deploy that keeps the cache directory no longer validates against the previous
+  deploy's document.
 
 ### Upgrading
 

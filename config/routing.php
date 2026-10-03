@@ -10,6 +10,7 @@ use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRouteMap;
 use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Stixx\OpenApiCommandBundle\Routing\RouteSpecificitySorter;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\DependencyInjection\Parameter;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
@@ -25,7 +26,8 @@ return static function (ContainerConfigurator $configurator): void {
             ->arg('$configCacheFactory', service('config_cache_factory'))
             ->arg('$buildDir', param('kernel.build_dir'))
             ->arg('$areasHash', param('stixx_openapi_command.nelmio.areas_hash'))
-            ->arg('$cacheDir', param('kernel.cache_dir'));
+            ->arg('$cacheDir', param('kernel.cache_dir'))
+            ->arg('$buildId', new Parameter('container.build_id'));
 
     $services
         ->set(NelmioAreaRoutesChecker::class)

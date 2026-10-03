@@ -281,6 +281,18 @@ final class OpenApiSpecCacheTest extends TestCase
         self::assertStringContainsString('/books', $json);
     }
 
+    public function testDoesNotReuseTheCacheDirectoryCopyOfAnotherBuild(): void
+    {
+        // Arrange
+        $this->cacheWithReadOnlyBuildDir(new ApiDocGenerator([$this->describer('/books')], []), 'one')->jsonFor('default');
+
+        // Act
+        $json = $this->cacheWithReadOnlyBuildDir(new ApiDocGenerator([$this->describer('/authors')], []), 'two')->jsonFor('default');
+
+        // Assert
+        self::assertStringContainsString('/authors', $json);
+    }
+
     public function testFallsBackToTheWarmedDocumentWhenTheRuntimeEnvironmentCannotBeDescribed(): void
     {
         // Arrange
@@ -352,9 +364,9 @@ final class OpenApiSpecCacheTest extends TestCase
         return new PathDescriber($path, $loads, $schema, $servers);
     }
 
-    private function cacheWithReadOnlyBuildDir(ApiDocGenerator $generator): OpenApiSpecCache
+    private function cacheWithReadOnlyBuildDir(ApiDocGenerator $generator, string $buildId = 'build'): OpenApiSpecCache
     {
-        return new OpenApiSpecCache($generator, null, $this->router(), new ConfigCacheFactory(false), $this->routesFile, null, false, [], null, $this->buildDir.'/var-cache');
+        return new OpenApiSpecCache($generator, null, $this->router(), new ConfigCacheFactory(false), $this->routesFile, null, false, [], null, $this->buildDir.'/var-cache', $buildId);
     }
 
     /**
