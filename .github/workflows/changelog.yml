@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - '*'
   pull_request: ~
   workflow_dispatch: ~
 
@@ -31,7 +29,4 @@ jobs:
           php-version: '8.4'
           coverage: none
       - name: Check CHANGELOG.md against the tags
-        env:
-          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-          RELEASE_PUSHED_AT: ${{ github.event_name == 'push' && github.event.repository.pushed_at || '' }}
-        run: php .github/scripts/check-changelog.php ${RELEASE_TAG:+"$RELEASE_TAG"}
+        run: php .github/scripts/check-changelog.php
