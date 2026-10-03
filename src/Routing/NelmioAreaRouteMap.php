@@ -29,8 +29,6 @@ use Symfony\Component\Routing\RouterInterface;
  */
 final class NelmioAreaRouteMap implements CacheWarmerInterface
 {
-    private const string FILE = '/stixx_openapi_command/nelmio_area_routes.php';
-
     /**
      * @var array<string, string>|null
      */
@@ -44,6 +42,7 @@ final class NelmioAreaRouteMap implements CacheWarmerInterface
         private readonly ?RouterInterface $router = null,
         private readonly ?ConfigCacheFactoryInterface $configCacheFactory = null,
         private readonly ?string $buildDir = null,
+        private readonly string $areasHash = '',
     ) {
     }
 
@@ -61,7 +60,11 @@ final class NelmioAreaRouteMap implements CacheWarmerInterface
 
     public function warmUp(string $cacheDir, ?string $buildDir = null): array
     {
-        $this->areas = $this->load($buildDir ?? $cacheDir);
+        if ($buildDir === null) {
+            return [];
+        }
+
+        $this->areas = $this->load($buildDir);
 
         return [];
     }
@@ -78,7 +81,7 @@ final class NelmioAreaRouteMap implements CacheWarmerInterface
         $router = $this->router;
 
         try {
-            $cache = $this->configCacheFactory->cache($dir.self::FILE, function (ConfigCacheInterface $cache) use ($router): void {
+            $cache = $this->configCacheFactory->cache($dir.'/stixx_openapi_command/nelmio_area_routes.'.$this->areasHash.'.php', function (ConfigCacheInterface $cache) use ($router): void {
                 $cache->write('<?php return '.var_export($this->build(), true).";\n", $router->getRouteCollection()->getResources());
             });
         } catch (IOException) {

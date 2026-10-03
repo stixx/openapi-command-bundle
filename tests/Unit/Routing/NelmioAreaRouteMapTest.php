@@ -85,6 +85,32 @@ final class NelmioAreaRouteMapTest extends TestCase
         self::assertSame('admin', $area);
     }
 
+    public function testRebuildsWhenTheAreaConfigChanges(): void
+    {
+        // Arrange — the area config is not a route resource, so only its hash can tell the cached map is outdated.
+        $this->map($this->locator(['default' => ['api_books']]), 'before')->areaOf('api_books');
+        $map = $this->map($this->locator(['admin' => ['api_books']]), 'after');
+
+        // Act
+        $area = $map->areaOf('api_books');
+
+        // Assert
+        self::assertSame('admin', $area);
+    }
+
+    public function testDoesNotWarmUpWithoutABuildDirectory(): void
+    {
+        // Arrange
+        $map = $this->map($this->failingLocator());
+
+        // Act
+        $preload = $map->warmUp($this->buildDir.'/cache');
+
+        // Assert
+        self::assertSame([], $preload);
+        self::assertDirectoryDoesNotExist($this->buildDir.'/stixx_openapi_command');
+    }
+
     public function testBuildsInMemoryWhenTheCacheCannotBeWritten(): void
     {
         // Arrange — a file where the cache directory should be.
@@ -107,16 +133,16 @@ final class NelmioAreaRouteMapTest extends TestCase
 
         // Assert
         self::assertTrue($map->isOptional());
-        self::assertFileExists($this->buildDir.'/stixx_openapi_command/nelmio_area_routes.php');
+        self::assertFileExists($this->buildDir.'/stixx_openapi_command/nelmio_area_routes.areas.php');
         self::assertSame('default', $this->map($this->failingLocator())->areaOf('api_books'));
     }
 
     /**
      * @param ServiceLocator<RouteCollection> $locator
      */
-    private function map(ServiceLocator $locator): NelmioAreaRouteMap
+    private function map(ServiceLocator $locator, string $areasHash = 'areas'): NelmioAreaRouteMap
     {
-        return new NelmioAreaRouteMap($locator, $this->router(), new ConfigCacheFactory(true), $this->buildDir);
+        return new NelmioAreaRouteMap($locator, $this->router(), new ConfigCacheFactory(true), $this->buildDir, $areasHash);
     }
 
     private function router(): RouterInterface

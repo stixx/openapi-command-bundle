@@ -24,6 +24,7 @@ return static function (ContainerConfigurator $configurator): void {
             ->arg('$router', service('router'))
             ->arg('$configCacheFactory', service('config_cache_factory'))
             ->arg('$buildDir', param('kernel.build_dir'))
+            ->arg('$areasHash', param('stixx_openapi_command.nelmio.areas_hash'))
             ->tag('kernel.cache_warmer');
 
     $services

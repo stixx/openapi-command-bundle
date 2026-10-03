@@ -35,6 +35,7 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
         $areas = (array) $container->getParameter('nelmio_api_doc.areas');
         $routesMap = [];
         $pathPatterns = [];
+        $areaConfigs = [];
 
         $generatorsMap = [];
 
@@ -47,6 +48,7 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
 
             $routesMap[$area] = new Reference($serviceId);
             $pathPatterns[$area] = $this->extractPathPatterns($container, $serviceId);
+            $areaConfigs[$area] = $this->areaConfig($container, $serviceId);
 
             $generatorId = sprintf('nelmio_api_doc.generator.%s', $area);
             if ($container->has($generatorId)) {
@@ -65,6 +67,7 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
             ->setArguments([$generatorsMap]);
 
         $container->setParameter('stixx_openapi_command.nelmio.path_patterns', $pathPatterns);
+        $container->setParameter('stixx_openapi_command.nelmio.areas_hash', hash('xxh128', serialize($areaConfigs)));
     }
 
     /**
@@ -99,13 +102,7 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
      */
     private function extractPathPatterns(ContainerBuilder $container, string $serviceId): array
     {
-        $factory = $container->getDefinition($serviceId)->getFactory();
-        if (!is_array($factory) || !isset($factory[0]) || !$factory[0] instanceof Definition) {
-            return [];
-        }
-
-        $arguments = $factory[0]->getArguments();
-        $areaConfig = $arguments[2] ?? null;
+        $areaConfig = $this->areaConfig($container, $serviceId);
         if (!is_array($areaConfig) || !isset($areaConfig['path_patterns']) || !is_array($areaConfig['path_patterns'])) {
             return [];
         }
@@ -114,5 +111,15 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
             $areaConfig['path_patterns'],
             static fn ($pattern): bool => is_string($pattern) && $pattern !== '',
         ));
+    }
+
+    private function areaConfig(ContainerBuilder $container, string $serviceId): mixed
+    {
+        $factory = $container->getDefinition($serviceId)->getFactory();
+        if (!is_array($factory) || !isset($factory[0]) || !$factory[0] instanceof Definition) {
+            return null;
+        }
+
+        return $factory[0]->getArguments()[2] ?? null;
     }
 }
