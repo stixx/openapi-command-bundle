@@ -203,7 +203,8 @@ final class CollectNelmioApiDocRoutesPassTest extends TestCase
         $container->setDefinition('nelmio_api_doc.routes.default', new Definition(RouteCollection::class));
         $container->setDefinition('nelmio_api_doc.routes.admin', new Definition(RouteCollection::class));
         $container->setDefinition('nelmio_api_doc.describers.config', new Definition(ExternalDocDescriber::class, [
-            ['info' => ['version' => $env('API_VERSION')], 'servers' => [['url' => $env('API_URL')]], 'paths' => ['/books' => ['servers' => [['url' => $env('BOOKS_URL')]]]]],
+            ['info' => ['version' => $env('API_VERSION')], 'servers' => [['url' => $env('API_URL')]], 'paths' => ['/books' => ['servers' => [['url' => $env('BOOKS_URL')]], 'post' => ['servers' => [['url' => $env('POST_URL')]]]]],
+                'components' => ['schemas' => ['Mirror' => ['properties' => ['servers' => ['enum' => [$env('MIRRORS')]]]]]]],
         ]));
         $container->setDefinition('nelmio_api_doc.describers.config.admin', new Definition(ExternalDocDescriber::class, [
             ['servers' => $env('json:ADMIN_SERVERS'), 'info' => ['description' => $env('ADMIN_NOTE')]],
@@ -216,8 +217,8 @@ final class CollectNelmioApiDocRoutesPassTest extends TestCase
         // Assert
         self::assertSame(
             [
-                'default' => ['API_VERSION' => '%env(default::API_VERSION)%'],
-                'admin' => ['ADMIN_NOTE' => '%env(default::ADMIN_NOTE)%', 'API_VERSION' => '%env(default::API_VERSION)%'],
+                'default' => ['API_VERSION' => '%env(default::API_VERSION)%', 'MIRRORS' => '%env(default::MIRRORS)%'],
+                'admin' => ['ADMIN_NOTE' => '%env(default::ADMIN_NOTE)%', 'API_VERSION' => '%env(default::API_VERSION)%', 'MIRRORS' => '%env(default::MIRRORS)%'],
             ],
             $container->getParameter('stixx_openapi_command.nelmio.area_env'),
         );

@@ -25,6 +25,7 @@ use Symfony\Component\Config\Resource\FileResource;
 use Symfony\Component\Config\Resource\ResourceInterface;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Contracts\Service\ResetInterface;
@@ -38,7 +39,7 @@ use Throwable;
  */
 final class OpenApiSpecCache implements CacheWarmerInterface
 {
-    private const array OPERATIONS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'];
+    public const array OPERATIONS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'];
 
     /**
      * @var array<string, string>
@@ -91,6 +92,9 @@ final class OpenApiSpecCache implements CacheWarmerInterface
         foreach ($this->areas() as $area) {
             try {
                 $this->specs[$area] = $this->load($area, [$buildDir], false);
+                if ($this->envFingerprint($area) !== '') {
+                    (new Filesystem())->dumpFile($this->warmedFile($buildDir, $area), $this->specs[$area]);
+                }
             } catch (Throwable $exception) {
                 $this->logger?->warning('Could not cache the OpenAPI document of Nelmio area "{area}"; it is generated on first use instead: {message}', [
                     'area' => $area,
@@ -129,7 +133,7 @@ final class OpenApiSpecCache implements CacheWarmerInterface
         try {
             [$json, $resources] = $this->generate($area);
         } catch (Throwable $exception) {
-            $warmed = $atRuntime ? $this->warmedDocument($area, $dirs[0]) : null;
+            $warmed = $atRuntime && !$this->debug && $this->buildDir !== null ? $this->warmedDocument($area, $this->buildDir) : null;
             if ($warmed === null) {
                 throw $exception;
             }
@@ -140,7 +144,7 @@ final class OpenApiSpecCache implements CacheWarmerInterface
                 'exception' => $exception,
             ]);
 
-            return $warmed;
+            [$json, $resources] = [$warmed, []];
         }
 
         foreach ($dirs as $dir) {
@@ -158,20 +162,17 @@ final class OpenApiSpecCache implements CacheWarmerInterface
         return $json;
     }
 
-    private function warmedDocument(string $area, string $dir): ?string
+    private function warmedDocument(string $area, string $buildDir): ?string
     {
-        foreach (glob($dir.'/stixx_openapi_command/openapi.v2.'.hash('xxh128', $area).'*.json') ?: [] as $file) {
-            if (str_ends_with($file, '.meta.json')) {
-                continue;
-            }
+        $file = $this->warmedFile($buildDir, $area);
+        $json = is_file($file) ? file_get_contents($file) : false;
 
-            $json = file_get_contents($file);
-            if (is_string($json)) {
-                return $json;
-            }
-        }
+        return is_string($json) ? $json : null;
+    }
 
-        return null;
+    private function warmedFile(string $buildDir, string $area): string
+    {
+        return $buildDir.'/stixx_openapi_command/warmed.openapi.v2.'.hash('xxh128', $area).'.json';
     }
 
     /**

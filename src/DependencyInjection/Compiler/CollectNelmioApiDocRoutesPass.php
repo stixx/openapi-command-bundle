@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\DependencyInjection\Compiler;
 
+use Stixx\OpenApiCommandBundle\Validator\OpenApiSpecCache;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -143,15 +144,34 @@ final class CollectNelmioApiDocRoutesPass implements CompilerPassInterface
         return $env;
     }
 
-    private function withoutServers(mixed $value): mixed
+    private function withoutServers(mixed $documentation): mixed
     {
-        if (!is_array($value)) {
-            return $value;
+        if (!is_array($documentation)) {
+            return $documentation;
         }
 
-        unset($value['servers']);
+        unset($documentation['servers']);
+        if (!is_array($documentation['paths'] ?? null)) {
+            return $documentation;
+        }
 
-        return array_map($this->withoutServers(...), $value);
+        $paths = $documentation['paths'];
+        foreach ($paths as $path => $pathItem) {
+            if (!is_array($pathItem)) {
+                continue;
+            }
+
+            unset($pathItem['servers']);
+            foreach (OpenApiSpecCache::OPERATIONS as $method) {
+                if (is_array($pathItem[$method] ?? null)) {
+                    unset($pathItem[$method]['servers']);
+                }
+            }
+            $paths[$path] = $pathItem;
+        }
+        $documentation['paths'] = $paths;
+
+        return $documentation;
     }
 
     private function areaConfig(ContainerBuilder $container, string $serviceId): mixed

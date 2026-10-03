@@ -90,7 +90,8 @@ final class RuntimeEnvironmentTest extends TestCase
     public function testValidatesADocumentGeneratedWithAServerPathTheAppIsNotMountedBelow(): void
     {
         // Arrange
-        $this->cacheDir = $this->otherCacheDirs[] = sys_get_temp_dir().'/stixx_runtime_env_'.bin2hex(random_bytes(6));
+        $this->otherCacheDirs[] = $this->cacheDir;
+        $this->cacheDir = sys_get_temp_dir().'/stixx_runtime_env_'.bin2hex(random_bytes(6));
         $kernel = $this->boot(['API_URL' => 'https://api.example.com/v1', 'API_VERSION' => 'build']);
 
         // Act
