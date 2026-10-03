@@ -182,4 +182,33 @@ final class CollectNelmioApiDocRoutesPassTest extends TestCase
             $container->getParameter('stixx_openapi_command.nelmio.path_patterns')
         );
     }
+
+    public function testTheAreasHashChangesWithTheAreaConfig(): void
+    {
+        // Act
+        $hash = $this->areasHash(['name_patterns' => ['^api_']]);
+
+        // Assert
+        self::assertSame($hash, $this->areasHash(['name_patterns' => ['^api_']]));
+        self::assertNotSame($hash, $this->areasHash(['name_patterns' => ['^admin_']]));
+    }
+
+    /**
+     * @param array<string, mixed> $areaConfig
+     */
+    private function areasHash(array $areaConfig): mixed
+    {
+        $container = new ContainerBuilder();
+        $container->setParameter('nelmio_api_doc.areas', ['default']);
+        $container->setDefinition('nelmio_api_doc.routes.default', (new Definition(RouteCollection::class))
+            ->setFactory([
+                (new Definition(FilteredRouteCollectionBuilder::class))
+                    ->setArguments([new Reference('nelmio_api_doc.controller_reflector'), 'default', $areaConfig]),
+                'filter',
+            ]));
+
+        (new CollectNelmioApiDocRoutesPass())->process($container);
+
+        return $container->getParameter('stixx_openapi_command.nelmio.areas_hash');
+    }
 }

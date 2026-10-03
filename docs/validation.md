@@ -163,6 +163,8 @@ All tagged validators are executed in a chain during the `kernel.request` event,
 
 When several Nelmio areas are configured, each has its own OpenAPI document. `NelmioAreaRoutesChecker` resolves the area a request belongs to, and the request is validated against that area's document. Areas are checked in registration order and the first match wins.
 
+Each area's document is generated once and cached as JSON in the build directory: by `cache:warmup` / `cache:clear`, or by the first API request. In debug mode it is regenerated when your routes, your container configuration, the classes it describes or your Composer dependencies change. Anything Nelmio resolves at runtime, such as an `%env()%` value in `documentation.servers`, is captured when the document is generated, not on each request; clear the cache after changing it.
+
 ---
 
 ## Customizing Error Responses

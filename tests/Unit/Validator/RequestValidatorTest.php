@@ -26,7 +26,9 @@ use OpenApi\Annotations\Response;
 use OpenApi\Annotations\Schema;
 use OpenApi\Context;
 use PHPUnit\Framework\TestCase;
+use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRouteMap;
 use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
+use Stixx\OpenApiCommandBundle\Validator\OpenApiSpecCache;
 use Stixx\OpenApiCommandBundle\Validator\RequestValidator;
 use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 use Symfony\Component\DependencyInjection\ServiceLocator;
@@ -41,7 +43,7 @@ final class RequestValidatorTest extends TestCase
         // Arrange
         $describer = $this->createDescriber([]);
 
-        $validator = new RequestValidator(new ApiDocGenerator([$describer], []), $this->createPsrHttpFactory());
+        $validator = new RequestValidator(new OpenApiSpecCache(new ApiDocGenerator([$describer], [])), $this->createPsrHttpFactory());
 
         $request = Request::create('/test', 'POST');
 
@@ -65,7 +67,7 @@ final class RequestValidatorTest extends TestCase
             ]),
         ]);
 
-        $validator = new RequestValidator(new ApiDocGenerator([$describer], []), $this->createPsrHttpFactory());
+        $validator = new RequestValidator(new OpenApiSpecCache(new ApiDocGenerator([$describer], [])), $this->createPsrHttpFactory());
 
         $request = Request::create('/test', 'POST');
         // The request is missing the 'X-Required-Header' defined in the OpenAPI spec above
@@ -102,7 +104,7 @@ final class RequestValidatorTest extends TestCase
             }
         };
 
-        $validator = new RequestValidator(new ApiDocGenerator([$describer], []), $this->createPsrHttpFactory());
+        $validator = new RequestValidator(new OpenApiSpecCache(new ApiDocGenerator([$describer], [])), $this->createPsrHttpFactory());
 
         // Act
         $validator->validate(Request::create('/test', 'POST'));
@@ -123,9 +125,8 @@ final class RequestValidatorTest extends TestCase
         $request->attributes->set('_route', 'internal_route');
 
         $validator = new RequestValidator(
-            $defaultGenerator,
+            new OpenApiSpecCache($defaultGenerator, $this->createGeneratorsLocator($defaultGenerator, $internalGenerator)),
             $this->createPsrHttpFactory(),
-            $this->createGeneratorsLocator($defaultGenerator, $internalGenerator),
             $this->createAreaChecker(['default' => '/default', 'internal' => '/internal']),
         );
 
@@ -143,9 +144,8 @@ final class RequestValidatorTest extends TestCase
         $internalGenerator = new ApiDocGenerator([$this->createDescriberForPath('/internal')], []);
 
         $validator = new RequestValidator(
-            $defaultGenerator,
+            new OpenApiSpecCache($defaultGenerator, $this->createGeneratorsLocator($defaultGenerator, $internalGenerator)),
             $this->createPsrHttpFactory(),
-            $this->createGeneratorsLocator($defaultGenerator, $internalGenerator),
             $this->createAreaChecker(['default' => '/default', 'internal' => '/internal']),
         );
 
@@ -255,6 +255,6 @@ final class RequestValidatorTest extends TestCase
         /** @var ServiceLocator<RouteCollection> $locator */
         $locator = new ServiceLocator($routes);
 
-        return new NelmioAreaRoutesChecker($locator, $patterns);
+        return new NelmioAreaRoutesChecker(new NelmioAreaRouteMap($locator), $patterns);
     }
 }
