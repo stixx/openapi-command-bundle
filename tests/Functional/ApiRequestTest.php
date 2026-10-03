@@ -91,8 +91,8 @@ final class ApiRequestTest extends TestCase
         $warmer->warmUp($kernel->getCacheDir(), $kernel->getBuildDir());
 
         // Assert
-        $books = $kernel->getBuildDir().'/stixx_openapi_command/openapi.books.json';
-        self::assertFileExists($kernel->getBuildDir().'/stixx_openapi_command/openapi.default.json');
+        $books = $kernel->getBuildDir().'/stixx_openapi_command/openapi.'.hash('xxh128', 'books').'.json';
+        self::assertFileExists($kernel->getBuildDir().'/stixx_openapi_command/openapi.'.hash('xxh128', 'default').'.json');
         self::assertFileExists($books);
         $document = (string) file_get_contents($books);
         self::assertStringContainsString('/api/books/{id}', $document);

@@ -14,17 +14,12 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\Validator;
 
 use Nelmio\ApiDocBundle\ApiDocGenerator;
-use Nelmio\ApiDocBundle\Describer\DescriberInterface;
-use OpenApi\Annotations\Info;
-use OpenApi\Annotations\OpenApi;
-use OpenApi\Annotations\PathItem;
-use OpenApi\Annotations\Post;
-use OpenApi\Annotations\Response;
-use OpenApi\Context;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use RuntimeException;
 use Stixx\OpenApiCommandBundle\Tests\Mock\Validator\DescribedModel;
+use Stixx\OpenApiCommandBundle\Tests\Mock\Validator\PathDescriber;
+use Stixx\OpenApiCommandBundle\Tests\Mock\Validator\PreloadedModel;
 use Stixx\OpenApiCommandBundle\Validator\OpenApiSpecCache;
 use Symfony\Component\Config\ConfigCacheFactory;
 use Symfony\Component\Config\Resource\FileResource;
@@ -117,8 +112,38 @@ final class OpenApiSpecCacheTest extends TestCase
 
         // Assert
         $model = (string) (new ReflectionClass(DescribedModel::class))->getFileName();
-        self::assertStringContainsString($model, (string) file_get_contents($this->buildDir.'/stixx_openapi_command/openapi.default.json.meta'));
-        self::assertStringContainsString($model, (string) file_get_contents($this->buildDir.'/stixx_openapi_command/openapi.books.json.meta'));
+        self::assertStringContainsString($model, (string) file_get_contents($this->buildDir.'/stixx_openapi_command/openapi.'.hash('xxh128', 'default').'.json.meta'));
+        self::assertStringContainsString($model, (string) file_get_contents($this->buildDir.'/stixx_openapi_command/openapi.'.hash('xxh128', 'books').'.json.meta'));
+    }
+
+    public function testTracksAModelLoadedBeforeGenerationThatTheDocumentDescribes(): void
+    {
+        // Arrange
+        class_exists(PreloadedModel::class);
+        $cache = $this->cache(new ApiDocGenerator([$this->describer('/books', schema: 'PreloadedModel')], []), debug: true);
+
+        // Act
+        $cache->jsonFor('default');
+
+        // Assert
+        $model = (string) (new ReflectionClass(PreloadedModel::class))->getFileName();
+        self::assertStringContainsString($model, (string) file_get_contents($this->buildDir.'/stixx_openapi_command/openapi.'.hash('xxh128', 'default').'.json.meta'));
+    }
+
+    public function testRegeneratesFromTheSameGeneratorInADebugWorker(): void
+    {
+        // Arrange
+        $describer = $this->describer('/books');
+        $cache = $this->cache(new ApiDocGenerator([$describer], []), debug: true);
+        $cache->jsonFor('default');
+        $describer->path = '/authors';
+        touch($this->routesFile, time() + 10);
+
+        // Act
+        $json = $cache->jsonFor('default');
+
+        // Assert
+        self::assertStringContainsString('/authors', $json);
     }
 
     public function testUsesTheAreasOwnGeneratorAndTheDefaultOneOtherwise(): void
@@ -155,8 +180,8 @@ final class OpenApiSpecCacheTest extends TestCase
         // Assert
         self::assertSame([], $preload);
         self::assertTrue($cache->isOptional());
-        self::assertFileExists($this->buildDir.'/stixx_openapi_command/openapi.default.json');
-        self::assertFileDoesNotExist($this->buildDir.'/stixx_openapi_command/openapi.broken.json');
+        self::assertFileExists($this->buildDir.'/stixx_openapi_command/openapi.'.hash('xxh128', 'default').'.json');
+        self::assertFileDoesNotExist($this->buildDir.'/stixx_openapi_command/openapi.'.hash('xxh128', 'broken').'.json');
     }
 
     public function testGeneratesInMemoryWhenTheCacheCannotBeWritten(): void
@@ -191,38 +216,9 @@ final class OpenApiSpecCacheTest extends TestCase
 
     /**
      * @param class-string|null $loads
-     *
-     * @return DescriberInterface&object{calls: int}
      */
-    private function describer(string $path, ?string $loads = null): DescriberInterface
+    private function describer(string $path, ?string $loads = null, ?string $schema = null): PathDescriber
     {
-        return new class ($path, $loads) implements DescriberInterface {
-            public int $calls = 0;
-
-            public function __construct(private readonly string $path, private readonly ?string $loads)
-            {
-            }
-
-            public function describe(OpenApi $api): void
-            {
-                ++$this->calls;
-
-                if ($this->loads !== null) {
-                    class_exists($this->loads);
-                }
-
-                $api->info = new Info(['title' => 'Test', 'version' => '1.0.0', '_context' => new Context(['version' => '3.0.0'], null)]);
-                $api->paths = [
-                    new PathItem([
-                        'path' => $this->path,
-                        'post' => new Post([
-                            'responses' => [new Response(['response' => 200, 'description' => 'ok', '_context' => new Context(['version' => '3.0.0'], null)])],
-                            '_context' => new Context(['version' => '3.0.0'], null),
-                        ]),
-                        '_context' => new Context(['version' => '3.0.0'], null),
-                    ]),
-                ];
-            }
-        };
+        return new PathDescriber($path, $loads, $schema);
     }
 }

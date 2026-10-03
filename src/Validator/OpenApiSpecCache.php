@@ -25,6 +25,7 @@ use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Contracts\Service\ResetInterface;
 use Throwable;
 
 /**
@@ -101,7 +102,7 @@ final class OpenApiSpecCache implements CacheWarmerInterface
         $this->generated = null;
 
         try {
-            $cache = $this->configCacheFactory->cache($dir.'/stixx_openapi_command/openapi.'.rawurlencode($area).'.json', function (ConfigCacheInterface $cache) use ($area): void {
+            $cache = $this->configCacheFactory->cache($dir.'/stixx_openapi_command/openapi.'.hash('xxh128', $area).'.json', function (ConfigCacheInterface $cache) use ($area): void {
                 [$this->generated, $resources] = $this->generate($area);
                 $cache->write($this->generated, $resources);
             });
@@ -125,8 +126,13 @@ final class OpenApiSpecCache implements CacheWarmerInterface
     {
         $declaredBefore = $this->debug ? $this->declared() : [];
 
+        $generator = $this->generatorFor($area);
+        if ($this->debug && $generator instanceof ResetInterface) { // @phpstan-ignore instanceof.alwaysTrue
+            $generator->reset();
+        }
+
         try {
-            $json = $this->generatorFor($area)->generate()->toJson();
+            $json = $generator->generate()->toJson();
         } finally {
             if ($this->debug) {
                 $this->trackDescribedFiles($declaredBefore);
@@ -143,6 +149,8 @@ final class OpenApiSpecCache implements CacheWarmerInterface
             $resources[] = is_file($this->containerFile) ? new FileResource($this->containerFile) : new FileExistenceResource($this->containerFile);
         }
 
+        $this->trackSchemaClasses($json);
+
         foreach (array_keys($this->describedFiles) as $file) {
             $resources[] = new FileResource($file);
         }
@@ -156,9 +164,32 @@ final class OpenApiSpecCache implements CacheWarmerInterface
      */
     private function trackDescribedFiles(array $declaredBefore): void
     {
+        $this->track(array_diff($this->declared(), $declaredBefore));
+    }
+
+    private function trackSchemaClasses(string $json): void
+    {
+        $document = json_decode($json, true);
+        $components = is_array($document) ? ($document['components'] ?? null) : null;
+        $schemas = is_array($components) ? ($components['schemas'] ?? null) : null;
+        if (!is_array($schemas) || $schemas === []) {
+            return;
+        }
+
+        $this->track(array_filter(
+            $this->declared(),
+            static fn (string $class): bool => isset($schemas[substr((string) strrchr('\\'.$class, '\\'), 1)]),
+        ));
+    }
+
+    /**
+     * @param array<class-string> $classes
+     */
+    private function track(array $classes): void
+    {
         /** @var list<string> $vendors */
         $vendors = (new ComposerResource())->getVendors();
-        foreach (array_diff($this->declared(), $declaredBefore) as $class) {
+        foreach ($classes as $class) {
             $file = (new ReflectionClass($class))->getFileName();
             if ($file !== false && !$this->isVendor($file, $vendors)) {
                 $this->describedFiles[$file] = true;
