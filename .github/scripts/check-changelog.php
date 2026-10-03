@@ -73,6 +73,23 @@ function previousTag(array $tags, string $version): ?string
     return $previous;
 }
 
+/**
+ * When the tag was pushed, from the push event (RELEASE_PUSHED_AT), so a delayed or re-run job keeps the release day;
+ * otherwise now, which before publishing is the day you are about to publish.
+ */
+function releaseTime(): int
+{
+    $pushedAt = getenv('RELEASE_PUSHED_AT');
+    if (is_string($pushedAt) && $pushedAt !== '') {
+        $time = ctype_digit($pushedAt) ? (int) $pushedAt : strtotime($pushedAt);
+        if ($time !== false) {
+            return $time;
+        }
+    }
+
+    return time();
+}
+
 $releasing = $argv[1] ?? null;
 $errors = [];
 $error = static function (int $line, string $message) use (&$errors): void {
@@ -153,8 +170,8 @@ if ($releasing !== null) {
             $date = gmdate('Y-m-d', (int) substr($annotated, 4));
             $source = sprintf('annotated tag %s dates from %s', $releasing, $date);
         } else {
-            $date = gmdate('Y-m-d');
-            $source = sprintf('it is released today, %s', $date);
+            $date = gmdate('Y-m-d', releaseTime());
+            $source = sprintf('it is released on %s', $date);
         }
 
         if ($headings[$releasing]['date'] !== $date) {
