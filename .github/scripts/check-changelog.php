@@ -148,18 +148,17 @@ if ($releasing !== null) {
     if ($releasing !== $newest) {
         $error(1, sprintf('Tag %s is not the newest entry (%s).', $releasing, $newest ?? 'none'));
     } else {
-        $timestamp = git('for-each-ref', 'refs/tags/'.$releasing, '--format=%(creatordate:unix)')[0] ?? null;
-        $source = sprintf('tag %s', $releasing);
-        if ($timestamp === null) {
-            $timestamp = git('log', '-1', '--format=%ct', 'HEAD')[0] ?? null;
-            $source = 'HEAD (which the tag would point at)';
+        $annotated = git('for-each-ref', 'refs/tags/'.$releasing, '--format=%(objecttype) %(taggerdate:unix)')[0] ?? '';
+        if (str_starts_with($annotated, 'tag ')) {
+            $date = gmdate('Y-m-d', (int) substr($annotated, 4));
+            $source = sprintf('annotated tag %s dates from %s', $releasing, $date);
+        } else {
+            $date = gmdate('Y-m-d');
+            $source = sprintf('it is released today, %s', $date);
         }
 
-        $date = $timestamp === null ? null : gmdate('Y-m-d', (int) $timestamp);
-        if ($date === null) {
-            $error($headings[$releasing]['line'], sprintf('Could not read the date of tag %s.', $releasing));
-        } elseif ($headings[$releasing]['date'] !== $date) {
-            $error($headings[$releasing]['line'], sprintf('Entry %s is dated %s, but %s dates from %s (UTC; the commit date for a lightweight tag). Date the entry %s.', $releasing, $headings[$releasing]['date'] ?? 'never', $source, $date, $date));
+        if ($headings[$releasing]['date'] !== $date) {
+            $error($headings[$releasing]['line'], sprintf('Entry %s is dated %s, but %s (UTC). Date the entry %s.', $releasing, $headings[$releasing]['date'] ?? 'never', $source, $date));
         }
     }
 }
