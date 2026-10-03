@@ -26,6 +26,7 @@ use OpenApi\Annotations\Response;
 use OpenApi\Annotations\Schema;
 use OpenApi\Context;
 use PHPUnit\Framework\TestCase;
+use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRouteMap;
 use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Stixx\OpenApiCommandBundle\Validator\RequestValidator;
 use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
@@ -255,6 +256,6 @@ final class RequestValidatorTest extends TestCase
         /** @var ServiceLocator<RouteCollection> $locator */
         $locator = new ServiceLocator($routes);
 
-        return new NelmioAreaRoutesChecker($locator, $patterns);
+        return new NelmioAreaRoutesChecker(new NelmioAreaRouteMap($locator), $patterns);
     }
 }

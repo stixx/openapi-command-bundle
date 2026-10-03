@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\Routing;
 
 use PHPUnit\Framework\TestCase;
+use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRouteMap;
 use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,7 +27,7 @@ final class NelmioAreaRoutesTest extends TestCase
     {
         /** @var ServiceLocator<RouteCollection> $locator */
         $locator = new ServiceLocator([]);
-        $checker = new NelmioAreaRoutesChecker($locator);
+        $checker = new NelmioAreaRoutesChecker(new NelmioAreaRouteMap($locator));
 
         $request = new Request();
 
@@ -37,7 +38,7 @@ final class NelmioAreaRoutesTest extends TestCase
     {
         /** @var ServiceLocator<RouteCollection> $locator */
         $locator = new ServiceLocator([]);
-        $checker = new NelmioAreaRoutesChecker($locator);
+        $checker = new NelmioAreaRoutesChecker(new NelmioAreaRouteMap($locator));
 
         $request = new Request();
         $request->attributes->set('_route', '');
@@ -55,7 +56,7 @@ final class NelmioAreaRoutesTest extends TestCase
             'default' => static fn () => $collection,
         ]);
 
-        $checker = new NelmioAreaRoutesChecker($locator);
+        $checker = new NelmioAreaRoutesChecker(new NelmioAreaRouteMap($locator));
 
         $request = new Request();
         $request->attributes->set('_route', 'api_route');
@@ -73,7 +74,7 @@ final class NelmioAreaRoutesTest extends TestCase
             'default' => static fn () => $collection,
         ]);
 
-        $checker = new NelmioAreaRoutesChecker($locator);
+        $checker = new NelmioAreaRoutesChecker(new NelmioAreaRouteMap($locator));
 
         $request = new Request();
         $request->attributes->set('_route', 'missing_route');
@@ -95,7 +96,7 @@ final class NelmioAreaRoutesTest extends TestCase
             'area_two' => static fn () => $second,
         ]);
 
-        $checker = new NelmioAreaRoutesChecker($locator);
+        $checker = new NelmioAreaRoutesChecker(new NelmioAreaRouteMap($locator));
 
         $request = new Request();
         $request->attributes->set('_route', 'target');
@@ -117,7 +118,7 @@ final class NelmioAreaRoutesTest extends TestCase
             'collection' => static fn () => $collection,
         ]);
 
-        $checker = new NelmioAreaRoutesChecker($locator);
+        $checker = new NelmioAreaRoutesChecker(new NelmioAreaRouteMap($locator));
 
         $request = new Request();
         $request->attributes->set('_route', 'would_match');
@@ -134,7 +135,7 @@ final class NelmioAreaRoutesTest extends TestCase
             'not_a_route_collection' => static fn () => (object) ['not' => 'a route collection'],
         ]);
 
-        $checker = new NelmioAreaRoutesChecker($locator);
+        $checker = new NelmioAreaRoutesChecker(new NelmioAreaRouteMap($locator));
 
         $request = new Request();
         $request->attributes->set('_route', 'anything');
@@ -148,7 +149,7 @@ final class NelmioAreaRoutesTest extends TestCase
         // Simulates the 404 case: Symfony throws NotFoundHttpException before _route is set.
         /** @var ServiceLocator<RouteCollection> $locator */
         $locator = new ServiceLocator([]);
-        $checker = new NelmioAreaRoutesChecker($locator, ['default' => ['^/api']]);
+        $checker = new NelmioAreaRoutesChecker(new NelmioAreaRouteMap($locator), ['default' => ['^/api']]);
 
         $request = Request::create('/api/missing');
 
@@ -160,7 +161,7 @@ final class NelmioAreaRoutesTest extends TestCase
         // Simulates the 405 case: known path, wrong verb — _route is set to '' by the kernel.
         /** @var ServiceLocator<RouteCollection> $locator */
         $locator = new ServiceLocator([]);
-        $checker = new NelmioAreaRoutesChecker($locator, ['default' => ['^/api']]);
+        $checker = new NelmioAreaRoutesChecker(new NelmioAreaRouteMap($locator), ['default' => ['^/api']]);
 
         $request = Request::create('/api/books/1', 'PATCH');
         $request->attributes->set('_route', '');
@@ -172,7 +173,7 @@ final class NelmioAreaRoutesTest extends TestCase
     {
         /** @var ServiceLocator<RouteCollection> $locator */
         $locator = new ServiceLocator([]);
-        $checker = new NelmioAreaRoutesChecker($locator, ['default' => ['^/api']]);
+        $checker = new NelmioAreaRoutesChecker(new NelmioAreaRouteMap($locator), ['default' => ['^/api']]);
 
         $request = Request::create('/admin/dashboard');
 
@@ -189,7 +190,7 @@ final class NelmioAreaRoutesTest extends TestCase
         $locator = new ServiceLocator([
             'public' => static fn () => $collection,
         ]);
-        $checker = new NelmioAreaRoutesChecker($locator, ['admin' => ['^/admin']]);
+        $checker = new NelmioAreaRoutesChecker(new NelmioAreaRouteMap($locator), ['admin' => ['^/admin']]);
 
         $request = Request::create('/api/public');
         $request->attributes->set('_route', 'public_route');
@@ -201,7 +202,7 @@ final class NelmioAreaRoutesTest extends TestCase
     {
         /** @var ServiceLocator<RouteCollection> $locator */
         $locator = new ServiceLocator([]);
-        $checker = new NelmioAreaRoutesChecker($locator, [
+        $checker = new NelmioAreaRoutesChecker(new NelmioAreaRouteMap($locator), [
             'public' => ['^/api/public'],
             'internal' => ['^/api/internal'],
         ]);
