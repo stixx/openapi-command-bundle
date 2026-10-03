@@ -17,6 +17,7 @@ use InvalidArgumentException;
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Stixx\OpenApiCommandBundle\Routing\CommandRouteDiscovery;
 use Stixx\OpenApiCommandBundle\Routing\Loader\CommandRouteClassLoader;
 use Stixx\OpenApiCommandBundle\Routing\Loader\CommandRouteDirectoryLoader;
@@ -232,14 +233,41 @@ final class CommandRouteDiscoveryTest extends TestCase
         $this->createDiscovery(['/'])->discover();
     }
 
+    public function testWarnsInDebugModeWhenAnEntryMatchesNoFiles(): void
+    {
+        // Arrange
+        $logger = $this->createMock(LoggerInterface::class);
+        $path = $this->routingDir.'/contexts/*/Nothing';
+
+        // Assert
+        $logger->expects(self::once())
+            ->method('warning')
+            ->with(self::stringContains('matches no PHP files'), ['path' => $path]);
+
+        // Act
+        $this->createDiscovery([$this->routingDir.'/contexts/*/Application/Command', $path], $logger, true)->discover();
+    }
+
+    public function testStaysQuietOutsideDebugMode(): void
+    {
+        // Arrange
+        $logger = $this->createMock(LoggerInterface::class);
+
+        // Assert
+        $logger->expects(self::never())->method('warning');
+
+        // Act
+        $this->createDiscovery([$this->routingDir.'/contexts/*/Nothing'], $logger, false)->discover();
+    }
+
     /**
      * @param list<string> $paths
      */
-    private function createDiscovery(array $paths): CommandRouteDiscovery
+    private function createDiscovery(array $paths, ?LoggerInterface $logger = null, bool $debug = false): CommandRouteDiscovery
     {
         $locator = new FileLocator([$this->routingDir]);
         $directoryLoader = new CommandRouteDirectoryLoader($locator, new CommandRouteClassLoader());
 
-        return new CommandRouteDiscovery($directoryLoader, $locator, $paths);
+        return new CommandRouteDiscovery($directoryLoader, $locator, $paths, logger: $logger, debug: $debug);
     }
 }

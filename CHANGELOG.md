@@ -8,6 +8,14 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-10-03
+
+### Added
+
+- In debug mode, a `command_paths` entry that matches no PHP files is logged as a warning on the
+  `stixx_openapi_command` channel, so a typo or a changed directory layout shows up instead of silently adding no
+  routes. A glob that matches nothing still isn't an error.
+
 ## [0.14.0] - 2026-10-03
 
 ### Added
@@ -315,7 +323,8 @@ Installing it with Composer is not enough. See the README's installation section
   details outside debug mode, and a `CommandValueResolver` that supports list endpoints and the combination of
   parameters with a request body.
 
-[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.14.0...HEAD
+[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.14.1...HEAD
+[0.14.1]: https://github.com/stixx/openapi-command-bundle/compare/0.14.0...0.14.1
 [0.14.0]: https://github.com/stixx/openapi-command-bundle/compare/0.13.3...0.14.0
 [0.13.3]: https://github.com/stixx/openapi-command-bundle/compare/0.13.2...0.13.3
 [0.13.2]: https://github.com/stixx/openapi-command-bundle/compare/0.13.1...0.13.2

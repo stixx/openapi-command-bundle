@@ -15,6 +15,7 @@ namespace Stixx\OpenApiCommandBundle\Routing;
 
 use InvalidArgumentException;
 use LogicException;
+use Psr\Log\LoggerInterface;
 use Stixx\OpenApiCommandBundle\Routing\Loader\CommandRouteDirectoryLoader;
 use Symfony\Component\Config\FileLocatorInterface;
 use Symfony\Component\Config\Resource\GlobResource;
@@ -37,6 +38,8 @@ final class CommandRouteDiscovery
         private readonly FileLocatorInterface $locator,
         private readonly array $commandPaths,
         private readonly RouteSpecificitySorter $sorter = new RouteSpecificitySorter(),
+        private readonly ?LoggerInterface $logger = null,
+        private readonly bool $debug = false,
     ) {
     }
 
@@ -59,6 +62,10 @@ final class CommandRouteDiscovery
             $files = [];
             foreach ($resource as $file => $info) {
                 $files[] = $file;
+            }
+
+            if ($files === [] && $this->debug) {
+                $this->logger?->warning('The stixx_openapi_command.command_paths entry "{path}" matches no PHP files, so it adds no routes. Check it for a typo, or update it if your directory layout changed.', ['path' => $path]);
             }
 
             $discovered->addCollection($this->directoryLoader->loadFiles($files, CommandRouteDirectoryLoader::TYPE));
