@@ -63,6 +63,10 @@ final class Configuration implements ConfigurationInterface
                         ->booleanNode('problem_details')
                             ->defaultTrue()
                         ->end()
+                        ->booleanNode('warm_up')
+                            ->info('Generate each Nelmio area\'s OpenAPI document and route map during cache:warmup / cache:clear instead of on the first API request that needs them; costs build time and memory per area')
+                            ->defaultFalse()
+                        ->end()
                     ->end()
                 ->end()
             ->end();

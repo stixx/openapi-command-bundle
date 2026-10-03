@@ -123,6 +123,19 @@ final class NelmioAreaRouteMapTest extends TestCase
         self::assertSame('default', $area);
     }
 
+    public function testCachesInTheCacheDirectoryWhenTheBuildDirectoryIsReadOnly(): void
+    {
+        // Arrange — a file where the build directory should be.
+        $this->readOnlyMap($this->locator(['default' => ['api_books']]))->areaOf('api_books');
+        $map = $this->readOnlyMap($this->failingLocator());
+
+        // Act
+        $area = $map->areaOf('api_books');
+
+        // Assert
+        self::assertSame('default', $area);
+    }
+
     public function testWarmsUpAsAnOptionalCacheWarmer(): void
     {
         // Arrange
@@ -143,6 +156,14 @@ final class NelmioAreaRouteMapTest extends TestCase
     private function map(ServiceLocator $locator, string $areasHash = 'areas'): NelmioAreaRouteMap
     {
         return new NelmioAreaRouteMap($locator, $this->router(), new ConfigCacheFactory(true), $this->buildDir, $areasHash);
+    }
+
+    /**
+     * @param ServiceLocator<RouteCollection> $locator
+     */
+    private function readOnlyMap(ServiceLocator $locator): NelmioAreaRouteMap
+    {
+        return new NelmioAreaRouteMap($locator, $this->router(), new ConfigCacheFactory(true), $this->routesFile, 'areas', $this->buildDir.'/var-cache');
     }
 
     private function router(): RouterInterface

@@ -19,6 +19,8 @@ use Stixx\OpenApiCommandBundle\Model\Violation;
 use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
 use Stixx\OpenApiCommandBundle\Routing\CommandRouteDiscovery;
 use Stixx\OpenApiCommandBundle\Routing\Loader\RouterLoaderDecorator;
+use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRouteMap;
+use Stixx\OpenApiCommandBundle\Validator\OpenApiSpecCache;
 use Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -103,6 +105,14 @@ final class StixxOpenApiCommandExtension extends Extension implements PrependExt
         if ($commandPaths === []) {
             $container->removeDefinition(RouterLoaderDecorator::class);
             $container->removeDefinition(CommandRouteDiscovery::class);
+        }
+
+        /** @var array{problem_details: bool, warm_up: bool} $openapiConfig */
+        $openapiConfig = $config['openapi'];
+        if ($openapiConfig['warm_up']) {
+            foreach ([OpenApiSpecCache::class, NelmioAreaRouteMap::class] as $warmer) {
+                $container->getDefinition($warmer)->addTag('kernel.cache_warmer');
+            }
         }
     }
 

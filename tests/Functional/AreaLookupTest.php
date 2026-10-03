@@ -54,7 +54,7 @@ final class AreaLookupTest extends TestCase
     public function testAWarmedCacheResolvesTheAreaWithoutLoadingRoutes(): void
     {
         // Arrange
-        $warming = $this->bootKernel();
+        $warming = $this->bootKernel(warmUp: true);
         $warmer = $warming->getContainer()->get('cache_warmer');
         self::assertInstanceOf(CacheWarmerAggregate::class, $warmer);
         $warmer->enableOptionalWarmers();
@@ -87,9 +87,12 @@ final class AreaLookupTest extends TestCase
         self::assertSame(0, CountingRouteLoader::$loads);
     }
 
-    private function bootKernel(): RouteLoadCountingKernel
+    private function bootKernel(bool $warmUp = false): RouteLoadCountingKernel
     {
         $kernel = new RouteLoadCountingKernel('test', false, $this->cacheDir);
+        if ($warmUp) {
+            $kernel->addTestConfig(__DIR__.'/Resources/config/warm_up.php');
+        }
         $kernel->boot();
 
         return $kernel;

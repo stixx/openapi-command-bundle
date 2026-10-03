@@ -63,7 +63,7 @@ final class ApiRequestTest extends TestCase
     public function testAnApiRequestOnAWarmCacheLoadsNoRoutes(bool $debug): void
     {
         // Arrange
-        $warming = $this->bootKernel($debug);
+        $warming = $this->bootKernel($debug, __DIR__.'/Resources/config/warm_up.php');
         $warmer = $warming->getContainer()->get('cache_warmer');
         self::assertInstanceOf(CacheWarmerAggregate::class, $warmer);
         $warmer->enableOptionalWarmers();
@@ -82,6 +82,30 @@ final class ApiRequestTest extends TestCase
     public function testWarmingCachesTheDocumentOfEveryArea(): void
     {
         // Arrange
+        $kernel = $this->bootKernel(false, __DIR__.'/Resources/config/two_areas.php', __DIR__.'/Resources/config/warm_up.php');
+        $warmer = $kernel->getContainer()->get('cache_warmer');
+        self::assertInstanceOf(CacheWarmerAggregate::class, $warmer);
+        $warmer->enableOptionalWarmers();
+
+        // Act
+        $warmer->warmUp($kernel->getCacheDir(), $kernel->getBuildDir());
+
+        // Assert
+        $areasHash = $kernel->getContainer()->getParameter('stixx_openapi_command.nelmio.areas_hash');
+        self::assertIsString($areasHash);
+        self::assertFileExists($kernel->getBuildDir().'/stixx_openapi_command/nelmio_area_routes.'.$areasHash.'.php');
+        $books = $kernel->getBuildDir().'/stixx_openapi_command/openapi.v2.'.hash('xxh128', 'books').'.json';
+        self::assertFileExists($kernel->getBuildDir().'/stixx_openapi_command/openapi.v2.'.hash('xxh128', 'default').'.json');
+        self::assertFileExists($books);
+        $document = (string) file_get_contents($books);
+        self::assertStringContainsString('/api/books/{id}', $document);
+        self::assertStringContainsString('"BookRequest"', $document, 'The second area must be described as fully as the first');
+    }
+
+    #[WithoutErrorHandler]
+    public function testWarmingLeavesTheDocumentsAndAreaMapToTheFirstRequestByDefault(): void
+    {
+        // Arrange
         $kernel = $this->bootKernel(false, __DIR__.'/Resources/config/two_areas.php');
         $warmer = $kernel->getContainer()->get('cache_warmer');
         self::assertInstanceOf(CacheWarmerAggregate::class, $warmer);
@@ -91,12 +115,8 @@ final class ApiRequestTest extends TestCase
         $warmer->warmUp($kernel->getCacheDir(), $kernel->getBuildDir());
 
         // Assert
-        $books = $kernel->getBuildDir().'/stixx_openapi_command/openapi.v2.'.hash('xxh128', 'books').'.json';
-        self::assertFileExists($kernel->getBuildDir().'/stixx_openapi_command/openapi.v2.'.hash('xxh128', 'default').'.json');
-        self::assertFileExists($books);
-        $document = (string) file_get_contents($books);
-        self::assertStringContainsString('/api/books/{id}', $document);
-        self::assertStringContainsString('"BookRequest"', $document, 'The second area must be described as fully as the first');
+        self::assertDirectoryDoesNotExist($kernel->getBuildDir().'/stixx_openapi_command');
+        self::assertDirectoryDoesNotExist($kernel->getCacheDir().'/stixx_openapi_command');
     }
 
     #[WithoutErrorHandler]
@@ -114,11 +134,11 @@ final class ApiRequestTest extends TestCase
         self::assertSame(400, $response->getStatusCode());
     }
 
-    private function bootKernel(bool $debug, ?string $extraConfig = null): RouteLoadCountingKernel
+    private function bootKernel(bool $debug, string ...$extraConfigs): RouteLoadCountingKernel
     {
         $kernel = new RouteLoadCountingKernel('test', $debug, $this->cacheDir);
         $kernel->addTestConfig(__DIR__.'/Resources/config/scenario.php');
-        if ($extraConfig !== null) {
+        foreach ($extraConfigs as $extraConfig) {
             $kernel->addTestConfig($extraConfig);
         }
         $kernel->boot();
