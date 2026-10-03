@@ -17,6 +17,12 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
   routes or not: around 115 ms per request in a benchmark with 700 routes. The route-to-area map is now cached like
   the router's matcher: written once by an optional cache warmer, or on first use, and refreshed in debug mode when
   the routes change.
+- Validating an API request no longer generates the area's whole OpenAPI document, and loads every route, on each
+  request: around 3.5 s per API request in a benchmark with 500 commands, against about 45 ms now. Each area's
+  document is cached as JSON in the build directory, written by an optional cache warmer or by the first API request,
+  and regenerated in debug mode when routes, container configuration, described classes or Composer dependencies
+  change. Values Nelmio resolves at runtime, such as `%env()%` in `documentation.servers`, are now captured when the
+  document is generated.
 
 ## [0.14.0] - 2026-10-03
 

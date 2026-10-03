@@ -15,10 +15,8 @@ namespace Stixx\OpenApiCommandBundle\Validator;
 
 use League\OpenAPIValidation\PSR7\RequestValidator as OpenApiRequestValidator;
 use League\OpenAPIValidation\PSR7\ValidatorBuilder;
-use Nelmio\ApiDocBundle\ApiDocGenerator;
 use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
 use Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface;
-use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -26,16 +24,12 @@ use Symfony\Component\HttpFoundation\Request;
  */
 final class RequestValidator implements RequestValidatorInterface
 {
-    /** @var array<string, OpenApiRequestValidator> */
-    private array $cachedValidators = [];
+    /** @var array<string, array{string, OpenApiRequestValidator}> */
+    private array $validators = [];
 
-    /**
-     * @param ServiceLocator<ApiDocGenerator>|null $generatorsLocator
-     */
     public function __construct(
-        private readonly ApiDocGenerator $apiDocGenerator,
+        private readonly OpenApiSpecCache $specCache,
         private readonly HttpMessageFactoryInterface $psrHttpFactory,
-        private readonly ?ServiceLocator $generatorsLocator = null,
         private readonly ?NelmioAreaRoutesChecker $areaRoutesChecker = null,
     ) {
     }
@@ -43,7 +37,7 @@ final class RequestValidator implements RequestValidatorInterface
     public function validate(Request $request): void
     {
         $psrRequest = $this->psrHttpFactory->createRequest($request);
-        $this->getValidator($this->areaFor($request))->validate($psrRequest);
+        $this->validatorFor($this->areaFor($request))->validate($psrRequest);
     }
 
     private function areaFor(Request $request): string
@@ -51,20 +45,14 @@ final class RequestValidator implements RequestValidatorInterface
         return $this->areaRoutesChecker?->areaFor($request) ?? 'default';
     }
 
-    private function getValidator(string $area): OpenApiRequestValidator
+    private function validatorFor(string $area): OpenApiRequestValidator
     {
-        if (isset($this->cachedValidators[$area])) {
-            return $this->cachedValidators[$area];
+        $json = $this->specCache->jsonFor($area);
+
+        if (($this->validators[$area][0] ?? null) !== $json) {
+            $this->validators[$area] = [$json, new ValidatorBuilder()->fromJson($json)->getRequestValidator()];
         }
 
-        $generator = $this->generatorsLocator?->has($area) === true
-            ? $this->generatorsLocator->get($area)
-            : $this->apiDocGenerator;
-
-        $apiDoc = $generator->generate();
-
-        return $this->cachedValidators[$area] = new ValidatorBuilder()
-            ->fromJson($apiDoc->toJson())
-            ->getRequestValidator();
+        return $this->validators[$area][1];
     }
 }
