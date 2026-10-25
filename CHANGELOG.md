@@ -52,6 +52,9 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 - `cache_control` rejects a value that is not a string or `null`, such as `false`.
 - `zircote/swagger-php`, whose attributes describe the commands, is a direct dependency instead of coming only
   through NelmioApiDocBundle.
+- The minimum versions are `nelmio/api-doc-bundle` 5.11.1, whose generator can be reset so a debug worker
+  regenerates the OpenAPI document after a change, and `symfony/property-info` 7.4, as older versions fail on every API
+  request alongside `phpstan/phpdoc-parser` 2. CI now also runs the tests against the lowest allowed versions.
 
 ### Fixed
 

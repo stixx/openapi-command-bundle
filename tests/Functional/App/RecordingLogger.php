@@ -23,7 +23,13 @@ final class RecordingLogger extends AbstractLogger
      */
     public static array $records = [];
 
-    public function log(mixed $level, string|Stringable $message, array $context = []): void
+    /**
+     * Untyped, as psr/log 1 declares it.
+     *
+     * @param string|Stringable $message
+     * @param array<mixed> $context
+     */
+    public function log($level, $message, array $context = []): void
     {
         self::$records[] = ['level' => $level, 'message' => (string) $message, 'context' => $context];
     }
