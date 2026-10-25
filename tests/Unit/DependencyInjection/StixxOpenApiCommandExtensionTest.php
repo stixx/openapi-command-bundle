@@ -15,7 +15,11 @@ namespace Stixx\OpenApiCommandBundle\Tests\Unit\DependencyInjection;
 
 use PHPUnit\Framework\TestCase;
 use Stixx\OpenApiCommandBundle\DependencyInjection\StixxOpenApiCommandExtension;
+use Stixx\OpenApiCommandBundle\Responder\JsonResponder;
+use Stixx\OpenApiCommandBundle\Responder\JsonSerializedResponder;
+use Stixx\OpenApiCommandBundle\Responder\NullableResponder;
 use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
+use Stixx\OpenApiCommandBundle\Responder\ScalarResponder;
 use Stixx\OpenApiCommandBundle\Routing\CommandRouteDiscovery;
 use Stixx\OpenApiCommandBundle\Routing\Loader\RouterLoaderDecorator;
 use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRouteMap;
@@ -77,6 +81,30 @@ final class StixxOpenApiCommandExtensionTest extends TestCase
         // Assert
         self::assertFalse($container->getDefinition(OpenApiSpecCache::class)->hasTag('kernel.cache_warmer'));
         self::assertFalse($container->getDefinition(NelmioAreaRouteMap::class)->hasTag('kernel.cache_warmer'));
+    }
+
+    public function testRunsTheBuiltInRespondersAfterAResponderAtTheDefaultPriority(): void
+    {
+        // Arrange
+        $container = new ContainerBuilder();
+        $extension = new StixxOpenApiCommandExtension();
+
+        // Act
+        $extension->load([['command_paths' => []]], $container);
+
+        // Assert
+        $priorities = [];
+        foreach ($container->findTaggedServiceIds(ResponderInterface::TAG_NAME) as $id => $tags) {
+            /** @var array{priority?: int} $tag */
+            $tag = $tags[0];
+            $priorities[$id] = $tag['priority'] ?? 0;
+        }
+        self::assertSame([
+            JsonResponder::class => -100,
+            ScalarResponder::class => -100,
+            NullableResponder::class => -100,
+            JsonSerializedResponder::class => -200,
+        ], $priorities);
     }
 
     public function testWarmUpRegistersTheDocumentAndTheAreaMapAsCacheWarmers(): void

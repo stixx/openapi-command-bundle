@@ -21,13 +21,13 @@ use Symfony\Component\HttpFoundation\Response;
  */
 final readonly class ScalarResponder implements ResponderInterface
 {
-    public function respond(mixed $result, int $status): Response
+    public function respond(ResponseContext $context, int $status): Response
     {
-        return new JsonResponse($result, $status);
+        return new JsonResponse($context->getResult(), $status);
     }
 
-    public function supports(mixed $result): bool
+    public function supports(ResponseContext $context): bool
     {
-        return is_scalar($result);
+        return is_scalar($context->getResult());
     }
 }

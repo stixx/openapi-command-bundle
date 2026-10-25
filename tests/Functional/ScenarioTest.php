@@ -54,6 +54,27 @@ final class ScenarioTest extends AbstractKernelTestCase
     }
 
     #[WithoutErrorHandler]
+    public function testAnAutoconfiguredResponderTakesPrecedenceOverTheBuiltInOnes(): void
+    {
+        // Arrange
+        $kernel = $this->createKernelWithConfig(static function (Kernel $kernel): void {
+            $kernel->addTestConfig(__DIR__.'/Resources/config/scenario.php');
+            $kernel->addTestConfig(__DIR__.'/Resources/config/csv_responder.php');
+        });
+        $request = Request::create(uri: '/api/books', method: 'POST', content: '{"title": "Dune"}');
+        $request->headers->set('Content-Type', 'application/json');
+        $request->headers->set('Accept', 'text/csv');
+
+        // Act
+        $response = $kernel->handle($request);
+
+        // Assert
+        self::assertSame(201, $response->getStatusCode());
+        self::assertSame('text/csv; charset=UTF-8', $response->headers->get('Content-Type'));
+        self::assertSame("id,title\n1,Dune\n", $response->getContent());
+    }
+
+    #[WithoutErrorHandler]
     public function testUpdateBookSuccess(): void
     {
         // Arrange

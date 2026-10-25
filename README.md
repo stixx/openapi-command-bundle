@@ -189,9 +189,10 @@ The bundle distinguishes a small public API surface from its internal implementa
 | `Stixx\OpenApiCommandBundle\StixxOpenApiCommandBundle` | Bundle entry point |
 | `Stixx\OpenApiCommandBundle\Attribute\CommandObject` | Marker attribute for command arguments |
 | `Stixx\OpenApiCommandBundle\Exception\ApiProblemException` | Throw this from your code to express RFC 9457 problems |
-| `Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface` | Replace to customize how exceptions become problem responses |
+| `Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface` | Replace or decorate to customize how exceptions become problem responses |
 | `Stixx\OpenApiCommandBundle\Responder\ResponderInterface` | Implement to handle custom result shapes (CSV, XML, …) |
-| `Stixx\OpenApiCommandBundle\Response\StatusResolverInterface` | Replace to customize status code resolution |
+| `Stixx\OpenApiCommandBundle\Responder\StatusResolverInterface` | Replace or decorate to customize status code resolution |
+| `Stixx\OpenApiCommandBundle\Responder\ResponseContext` | The request, command and handler result passed to responders and the status resolver |
 | `Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface` | Implement to add custom request-level validation |
 | `Stixx\OpenApiCommandBundle\Model\ProblemDetails` | The problem a response is written from, and its OpenAPI schema; extend it to add members |
 | `Stixx\OpenApiCommandBundle\Model\ProblemDetailsInvalidRequestBody` | A problem with violations, and its OpenAPI schema |
@@ -207,9 +208,11 @@ See [Extension Points](docs/extension-points.md) for a worked example of each ex
 
 From 1.0.0 on, the bundle follows [Semantic Versioning](https://semver.org) for its public API:
 
-- the `@api` types above, and the services registered under those interface names, which you can alias or decorate;
+- the `@api` types above, and the services registered under `StatusResolverInterface` and
+  `ExceptionToApiProblemTransformerInterface`, which you can alias or decorate;
 - the configuration keys under `stixx_openapi_command:`;
-- the service tags named by `ResponderInterface::TAG_NAME` and `RequestValidatorInterface::TAG_NAME`;
+- the service tags named by `ResponderInterface::TAG_NAME` and `RequestValidatorInterface::TAG_NAME`, and the
+  priorities of the built-in responders: -100, and -200 for the catch-all for objects and arrays;
 - the OpenAPI component names the bundle registers for your annotations when `openapi.problem_details` is enabled
   (the default): the schemas `ProblemDetails`, `Violation` and `ProblemDetailsInvalidRequestBody`, and the
   `*ProblemDetailsResponse` responses;

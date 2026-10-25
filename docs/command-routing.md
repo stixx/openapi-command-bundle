@@ -68,12 +68,12 @@ sequenceDiagram
     Bus-->>Controller: Envelope with HandledStamp::getResult
     Note over Controller: HandlerFailedException is caught and<br/>WrappedExceptionUnwrapper unwraps to the leaf cause —<br/>recursive, covers nested handlers<br/>and DelayedMessageHandlingException.
 
-    Controller->>Status: resolve
+    Controller->>Status: resolve with request, command, result
     Note over Status: Reads first 2xx from the OpenAPI operation,<br/>falls back to 201 for POST, 204 for DELETE, 200 otherwise.
     Status-->>Controller: status code
-    Controller->>Responder: respond with result, status
+    Controller->>Responder: respond with context, status
     Responder->>Responder: First responder whose supports returns true
-    Note over Responder: Built-in chain:<br/>JsonResponder for JsonSerializable →<br/>JsonSerializedResponder for objects, arrays →<br/>ScalarResponder for string, int, float, bool →<br/>NullableResponder for null only.
+    Note over Responder: Your responders first, then the built-ins:<br/>JsonResponder for JsonSerializable,<br/>ScalarResponder for string, int, float, bool,<br/>NullableResponder for null →<br/>JsonSerializedResponder for other objects, arrays.
     Responder-->>Controller: Response
     Controller-->>Kernel: Response
     Kernel-->>Client: HTTP Response
@@ -262,7 +262,7 @@ Validation
 - Configure validation via bundle options (validation groups, toggle HTTP validation).
 
 Dispatch and response
-- The command is dispatched on the Messenger bus. The response status code is resolved by `Stixx\OpenApiCommandBundle\Response\StatusResolverInterface` based on request/command; the response is handled by a chain of responders implementing `Stixx\OpenApiCommandBundle\Responder\ResponderInterface`.
+- The command is dispatched on the Messenger bus. The response status code is resolved by `Stixx\OpenApiCommandBundle\Responder\StatusResolverInterface` from a `ResponseContext` holding the request, the command and the handler's result; the response is handled by a chain of responders implementing `Stixx\OpenApiCommandBundle\Responder\ResponderInterface`.
 
 ---
 
@@ -278,19 +278,21 @@ Create a class that implements `Stixx\OpenApiCommandBundle\Responder\ResponderIn
 namespace App\Responder;
 
 use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
+use Stixx\OpenApiCommandBundle\Responder\ResponseContext;
 use Symfony\Component\HttpFoundation\Response;
 
 final class CsvResponder implements ResponderInterface
 {
-    public function supports(mixed $result): bool
+    public function supports(ResponseContext $context): bool
     {
-        // Return true if this responder can handle the result
-        return is_array($result) && isset($result['format']) && $result['format'] === 'csv';
+        $result = $context->getResult();
+
+        return is_array($result) && ($result['format'] ?? null) === 'csv';
     }
 
-    public function respond(mixed $result, int $status): Response
+    public function respond(ResponseContext $context, int $status): Response
     {
-        $csvData = $this->convertToCsv($result['data']);
+        $csvData = $this->convertToCsv($context->getResult()['data']);
         
         return new Response($csvData, $status, [
             'Content-Type' => 'text/csv',
@@ -314,12 +316,12 @@ Register your responder as a service and tag it with `stixx_openapi_command.resp
 services:
     App\Responder\CsvResponder:
         tags:
-            - { name: 'stixx_openapi_command.response.responder', priority: 10 }
+            - { name: 'stixx_openapi_command.response.responder' }
 ```
 
 ### How it works
 
-The `ResponderChain` iterates through all registered responders and calls `supports($result)` on each. The first responder that returns `true` will be used to generate the `Response`. You can use the `priority` attribute in the tag to control the order of the responders.
+The bundle passes a `ResponseContext` to each tagged responder's `supports()` in priority order, and the first that returns `true` builds the `Response`. The built-in responders have negative priorities, so yours run first at the default priority; use the tag's `priority` attribute to order your own.
 
 ---
 

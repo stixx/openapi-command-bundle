@@ -19,7 +19,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Stixx\OpenApiCommandBundle\Responder\JsonSerializedResponder;
+use Stixx\OpenApiCommandBundle\Responder\ResponseContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -40,7 +42,7 @@ final class JsonSerializedResponderTest extends TestCase
             ->willReturn($json);
 
         // Act
-        $response = $responder->respond($result, $status);
+        $response = $responder->respond(self::contextFor($result), $status);
 
         // Assert
         self::assertInstanceOf(JsonResponse::class, $response);
@@ -56,7 +58,7 @@ final class JsonSerializedResponderTest extends TestCase
         $responder = new JsonSerializedResponder($serializer);
 
         // Act
-        $actual = $responder->supports($result);
+        $actual = $responder->supports(self::contextFor($result));
 
         // Assert
         self::assertSame($expected, $actual);
@@ -106,5 +108,10 @@ final class JsonSerializedResponderTest extends TestCase
             null,
             false,
         ];
+    }
+
+    private static function contextFor(mixed $result): ResponseContext
+    {
+        return new ResponseContext(new Request(), new stdClass(), $result);
     }
 }

@@ -23,7 +23,6 @@ return static function (ContainerConfigurator $configurator): void {
     $services
         ->set(RequestValidatorChain::class)
         ->arg('$validators', tagged_iterator(RequestValidatorInterface::TAG_NAME));
-    $services->alias(RequestValidatorInterface::class, RequestValidatorChain::class);
 
     $services
         ->set('stixx_openapi_command.psr17_factory', Psr17Factory::class);

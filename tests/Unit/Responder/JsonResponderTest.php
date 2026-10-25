@@ -18,7 +18,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Stixx\OpenApiCommandBundle\Responder\JsonResponder;
+use Stixx\OpenApiCommandBundle\Responder\ResponseContext;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 
 final class JsonResponderTest extends TestCase
 {
@@ -30,7 +32,7 @@ final class JsonResponderTest extends TestCase
         $status = 200;
 
         // Act
-        $response = $responder->respond($result, $status);
+        $response = $responder->respond(self::contextFor($result), $status);
 
         // Assert
         self::assertInstanceOf(JsonResponse::class, $response);
@@ -45,7 +47,7 @@ final class JsonResponderTest extends TestCase
         $responder = new JsonResponder();
 
         // Act
-        $actual = $responder->supports($result);
+        $actual = $responder->supports(self::contextFor($result));
 
         // Assert
         self::assertSame($expected, $actual);
@@ -85,5 +87,10 @@ final class JsonResponderTest extends TestCase
             null,
             false,
         ];
+    }
+
+    private static function contextFor(mixed $result): ResponseContext
+    {
+        return new ResponseContext(new Request(), new stdClass(), $result);
     }
 }

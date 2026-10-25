@@ -22,7 +22,7 @@ interface ResponderInterface
 {
     public const string TAG_NAME = 'stixx_openapi_command.response.responder';
 
-    public function respond(mixed $result, int $status): Response;
+    public function supports(ResponseContext $context): bool;
 
-    public function supports(mixed $result): bool;
+    public function respond(ResponseContext $context, int $status): Response;
 }
