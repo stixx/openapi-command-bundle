@@ -59,6 +59,33 @@ final class ConfigurationTest extends TestCase
         $processor->processConfiguration($configuration, []);
     }
 
+    public function testCacheControlRejectsANonString(): void
+    {
+        // Arrange
+        $configuration = new Configuration();
+        $processor = new Processor();
+
+        // Assert
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('Expected a string of Cache-Control directives or null, got false.');
+
+        // Act
+        $processor->processConfiguration($configuration, [['command_paths' => [], 'cache_control' => false]]);
+    }
+
+    public function testCacheControlAcceptsNull(): void
+    {
+        // Arrange
+        $configuration = new Configuration();
+        $processor = new Processor();
+
+        // Act
+        $config = $processor->processConfiguration($configuration, [['command_paths' => [], 'cache_control' => null]]);
+
+        // Assert
+        self::assertNull($config['cache_control']);
+    }
+
     public function testCommandPathsRejectAnEmptyEntry(): void
     {
         // Arrange

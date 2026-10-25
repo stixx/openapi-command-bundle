@@ -187,7 +187,7 @@ The bundle distinguishes a small public API surface from its internal implementa
 | Type | What it is |
 |---|---|
 | `Stixx\OpenApiCommandBundle\StixxOpenApiCommandBundle` | Bundle entry point |
-| `Stixx\OpenApiCommandBundle\Attribute\CommandObject` | Marker attribute for command arguments |
+| `Stixx\OpenApiCommandBundle\Attribute\CommandObject` | Marks the controller argument a request is mapped to, or sets a command's controller |
 | `Stixx\OpenApiCommandBundle\Exception\ApiProblemException` | Throw this from your code to express RFC 9457 problems |
 | `Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface` | Replace or decorate to customize how exceptions become problem responses |
 | `Stixx\OpenApiCommandBundle\Responder\ResponderInterface` | Implement to handle custom result shapes (CSV, XML, …) |
