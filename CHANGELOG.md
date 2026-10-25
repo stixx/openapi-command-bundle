@@ -24,7 +24,7 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 - **A route without an `operationId` is named after its class in snake_case**: `CreateInvoiceCommand` becomes
   `command_create_invoice_command` instead of `command_createinvoicecommand`. The `operationId` Nelmio documents for
-  it changes with it, e.g. `post_command_create_invoice_command`. See **Upgrading** below.
+  it changes with it; by default it becomes `post_command_create_invoice_command`. See **Upgrading** below.
 - **`ApiProblemException` wraps a `ProblemDetails`.** Problem responses are written from the same `ProblemDetails`,
   `ProblemDetailsInvalidRequestBody` and `Violation` classes their OpenAPI schemas are generated from, so the
   documentation and the responses no longer disagree. A test pins every documented example to the response the
@@ -77,9 +77,11 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ### Upgrading
 
-- Update references to the names of routes without an `operationId`, such as `path()` or `redirectToRoute()` calls,
-  and regenerate API clients whose method names come from the documented `operationId`. To keep a previous name, set
-  it as the `operationId` of the operation.
+- Update references to the names of routes without an `operationId`, such as `path()` or `redirectToRoute()` calls
+  and Nelmio area `name_patterns`, and regenerate API clients whose method names come from the documented
+  `operationId`. Setting the previous route name as the `operationId` keeps the route name; setting the previous
+  documented one, such as `post_command_createinvoicecommand`, keeps the documented `operationId` and makes it the
+  route name.
 - Construct an `ApiProblemException` from a problem: replace
   `new ApiProblemException(statusCode: 409, title: 'Out of stock', detail: $detail)` with
   `new ApiProblemException(new ProblemDetails(409, 'Out of stock', $detail))`, or use `ApiProblemException::fromStatus()`

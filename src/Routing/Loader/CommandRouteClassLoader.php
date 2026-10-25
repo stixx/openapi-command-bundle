@@ -138,7 +138,7 @@ final class CommandRouteClassLoader extends AttributeClassLoader
     {
         $words = preg_replace('/(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/', '_', $class->getShortName()) ?? '';
 
-        return 'command_'.strtolower($words);
+        return 'command_'.mb_strtolower($words);
     }
 
     /**

@@ -191,6 +191,8 @@ final class CommandRouteClassLoaderTest extends TestCase
         yield 'words' => ['CreateInvoiceCommand', 'command_create_invoice_command'];
         yield 'acronym' => ['ImportCSVFileCommand', 'command_import_csv_file_command'];
         yield 'digits' => ['RenewV2TokenCommand', 'command_renew_v2_token_command'];
+        yield 'single letter' => ['ACommand', 'command_a_command'];
+        yield 'underscored' => ['Create_InvoiceCommand', 'command_create_invoice_command'];
     }
 
     public function testControllerResolutionOrder(): void
