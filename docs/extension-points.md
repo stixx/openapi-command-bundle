@@ -6,7 +6,7 @@ The bundle exposes four interfaces (`@api`) you can implement to plug into the r
 |---|---|---|
 | `Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface` | Cross-field / header / security checks on the raw `Request` before deserialization | `RequestValidator` (validates against the generated OpenAPI document) |
 | `Stixx\OpenApiCommandBundle\Responder\ResponderInterface` | The shape and `Content-Type` of successful responses | `JsonResponder`, `JsonSerializedResponder`, `ScalarResponder`, `NullableResponder` (chained) |
-| `Stixx\OpenApiCommandBundle\Responder\StatusResolverInterface` | The HTTP status code returned for a given command + request | `ResponseStatusResolver` (reads the OpenAPI operation's first 2xx, falls back to `201` for `POST`, `204` for `DELETE`, `200` otherwise) |
+| `Stixx\OpenApiCommandBundle\Responder\StatusResolverInterface` | The HTTP status code returned for a given request, command and handler result | `ResponseStatusResolver` (reads the OpenAPI operation's first 2xx, falls back to `201` for `POST`, `204` for `DELETE`, `200` otherwise) |
 | `Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface` | How thrown exceptions become problem responses | `DefaultExceptionToApiProblemTransformer` |
 
 Request validators and responders are auto-discovered via `autoconfigure`: implement the interface, register the class as a service, and the bundle picks it up. Tag-based registration (when you cannot use autoconfigure) is documented below. The status resolver and the exception transformer have one implementation each, which you replace by aliasing or decorating the interface's service, as shown per interface below.
@@ -68,7 +68,10 @@ final class CsvResponder implements ResponderInterface
 
     public function respond(ResponseContext $context, int $status): Response
     {
-        return new Response($context->getResult()->csv, $status, ['Content-Type' => 'text/csv']);
+        /** @var CsvPayload $payload */
+        $payload = $context->getResult();
+
+        return new Response($payload->csv, $status, ['Content-Type' => 'text/csv']);
     }
 }
 ```

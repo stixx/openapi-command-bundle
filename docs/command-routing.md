@@ -71,9 +71,9 @@ sequenceDiagram
     Controller->>Status: resolve with request, command, result
     Note over Status: Reads first 2xx from the OpenAPI operation,<br/>falls back to 201 for POST, 204 for DELETE, 200 otherwise.
     Status-->>Controller: status code
-    Controller->>Responder: respond with result, status
+    Controller->>Responder: respond with context, status
     Responder->>Responder: First responder whose supports returns true
-    Note over Responder: Built-in chain:<br/>JsonResponder for JsonSerializable →<br/>JsonSerializedResponder for objects, arrays →<br/>ScalarResponder for string, int, float, bool →<br/>NullableResponder for null only.
+    Note over Responder: Your responders first, then the built-ins:<br/>JsonResponder for JsonSerializable,<br/>ScalarResponder for string, int, float, bool,<br/>NullableResponder for null →<br/>JsonSerializedResponder for other objects, arrays.
     Responder-->>Controller: Response
     Controller-->>Kernel: Response
     Kernel-->>Client: HTTP Response

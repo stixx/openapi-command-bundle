@@ -38,8 +38,9 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
   and import `Stixx\OpenApiCommandBundle\Responder\StatusResolverInterface` instead of the `Response` namespace.
 - A service that aliased or decorated `ResponderInterface` or `RequestValidatorInterface` to change every response or
   request no longer applies; use a `kernel.response` or `kernel.request` listener.
-- Responders tagged with a negative priority now run between or after the built-in ones, which have -100, and -200
-  for the catch-all for objects and arrays.
+- A responder at the default priority always runs before the built-in ones. To keep one as a fallback for results
+  the built-ins don't support, give it a priority below -200. Responders tagged with a negative priority now run
+  between or after the built-in ones, which have -100, and -200 for the catch-all for objects and arrays.
 
 ## [0.15.0] - 2026-10-03
 
