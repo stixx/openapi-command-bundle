@@ -6,7 +6,7 @@ The bundle exposes four interfaces (`@api`) you can implement to plug into the r
 |---|---|---|
 | `Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface` | Cross-field / header / security checks on the raw `Request` before deserialization | `RequestValidator` (validates against the generated OpenAPI document) |
 | `Stixx\OpenApiCommandBundle\Responder\ResponderInterface` | The shape and `Content-Type` of successful responses | `JsonResponder`, `JsonSerializedResponder`, `ScalarResponder`, `NullableResponder` (chained) |
-| `Stixx\OpenApiCommandBundle\Response\StatusResolverInterface` | The HTTP status code returned for a given command + request | `ResponseStatusResolver` (reads the OpenAPI operation's first 2xx, falls back to `201` for `POST`, `204` for `DELETE`, `200` otherwise) |
+| `Stixx\OpenApiCommandBundle\Responder\StatusResolverInterface` | The HTTP status code returned for a given command + request | `ResponseStatusResolver` (reads the OpenAPI operation's first 2xx, falls back to `201` for `POST`, `204` for `DELETE`, `200` otherwise) |
 | `Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface` | How thrown exceptions become problem responses | `DefaultExceptionToApiProblemTransformer` |
 
 Request validators and responders are auto-discovered via `autoconfigure`: implement the interface, register the class as a service, and the bundle picks it up. Tag-based registration (when you cannot use autoconfigure) is documented below. The status resolver and the exception transformer have one implementation each, which you replace by aliasing or decorating the interface's service, as shown per interface below.
@@ -49,36 +49,40 @@ The bundle also runs its built-in `RequestValidator` in the same chain; it valid
 
 ## Custom responders (`ResponderInterface`)
 
-Run after the handler returns a result. Use this for non-JSON responses (CSV, XML, binary) or for custom serialization of specific result types. The chain checks `supports($result)` in priority order; the first responder that returns `true` wins.
+Run after the handler returns a result. Use this for non-JSON responses (CSV, XML, binary), for custom serialization of specific result types, or to answer on the request's `Accept` header. Both methods receive a `ResponseContext` holding the request, the command and the handler's result. The chain checks `supports()` in priority order; the first responder that returns `true` wins.
 
 ```php
 namespace App\Responder;
 
 use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
+use Stixx\OpenApiCommandBundle\Responder\ResponseContext;
 use Symfony\Component\HttpFoundation\Response;
 
 final class CsvResponder implements ResponderInterface
 {
-    public function supports(mixed $result): bool
+    public function supports(ResponseContext $context): bool
     {
-        return $result instanceof CsvPayload;
+        return $context->getResult() instanceof CsvPayload
+            && in_array('text/csv', $context->getRequest()->getAcceptableContentTypes(), true);
     }
 
-    public function respond(mixed $result, int $status): Response
+    public function respond(ResponseContext $context, int $status): Response
     {
-        return new Response($result->csv, $status, ['Content-Type' => 'text/csv']);
+        return new Response($context->getResult()->csv, $status, ['Content-Type' => 'text/csv']);
     }
 }
 ```
+
+With autoconfiguration, implementing the interface is enough. Otherwise tag the service:
 
 ```yaml
 services:
     App\Responder\CsvResponder:
         tags:
-            - { name: 'stixx_openapi_command.response.responder', priority: 10 }
+            - { name: 'stixx_openapi_command.response.responder' }
 ```
 
-Higher priority runs first. The bundle's built-in responders cover JSON-serializable objects, arrays/Traversable, scalars, and `null`. See [Command Routing & Request Handling](command-routing.md#customizing-responses-responders) for the chain ordering.
+Higher priority runs first. The bundle's built-in responders, for `null`, scalars, `JsonSerializable` objects and, last, any other object or array, have negative priorities, so a responder at the default priority runs before them. A result no responder supports is a 500. To change every response, for example to add a header, listen to `kernel.response` instead. See [Command Routing & Request Handling](command-routing.md#customizing-responses-responders) for the chain ordering.
 
 ---
 
@@ -87,14 +91,14 @@ Higher priority runs first. The bundle's built-in responders cover JSON-serializ
 Decides which HTTP status the response carries. Implement this if you want a project-wide override of the bundle's default. There is only one resolver active — register a service for the interface and the bundle's default is replaced.
 
 ```php
-namespace App\Response;
+namespace App\Responder;
 
-use Stixx\OpenApiCommandBundle\Response\StatusResolverInterface;
-use Symfony\Component\HttpFoundation\Request;
+use Stixx\OpenApiCommandBundle\Responder\ResponseContext;
+use Stixx\OpenApiCommandBundle\Responder\StatusResolverInterface;
 
 final class AlwaysOkStatusResolver implements StatusResolverInterface
 {
-    public function resolve(Request $request, object $command): int
+    public function resolve(ResponseContext $context): int
     {
         return 200;
     }
@@ -104,11 +108,11 @@ final class AlwaysOkStatusResolver implements StatusResolverInterface
 ```yaml
 # config/services.yaml
 services:
-    Stixx\OpenApiCommandBundle\Response\StatusResolverInterface:
-        alias: App\Response\AlwaysOkStatusResolver
+    Stixx\OpenApiCommandBundle\Responder\StatusResolverInterface:
+        alias: App\Responder\AlwaysOkStatusResolver
 ```
 
-A more realistic implementation usually wraps the default and overrides only specific commands:
+A more realistic implementation usually wraps the default and overrides only specific commands or results. The resolver runs after the handler, so it can see the result:
 
 ```php
 final readonly class CustomStatusResolver implements StatusResolverInterface
@@ -117,13 +121,17 @@ final readonly class CustomStatusResolver implements StatusResolverInterface
         private StatusResolverInterface $inner,
     ) {}
 
-    public function resolve(Request $request, object $command): int
+    public function resolve(ResponseContext $context): int
     {
-        if ($command instanceof BulkImportCommand) {
+        if ($context->getCommand() instanceof BulkImportCommand) {
             return 202; // Accepted
         }
 
-        return $this->inner->resolve($request, $command);
+        if ($context->getResult() === null) {
+            return 204;
+        }
+
+        return $this->inner->resolve($context);
     }
 }
 ```
@@ -132,8 +140,8 @@ Wire it as a decorator:
 
 ```yaml
 services:
-    App\Response\CustomStatusResolver:
-        decorates: 'Stixx\OpenApiCommandBundle\Response\StatusResolverInterface'
+    App\Responder\CustomStatusResolver:
+        decorates: 'Stixx\OpenApiCommandBundle\Responder\StatusResolverInterface'
         arguments:
             $inner: '@.inner'
 ```

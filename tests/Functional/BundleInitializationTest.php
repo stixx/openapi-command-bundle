@@ -18,8 +18,7 @@ use Stixx\OpenApiCommandBundle\Controller\ArgumentResolver\CommandValueResolver;
 use Stixx\OpenApiCommandBundle\Controller\CommandController;
 use Stixx\OpenApiCommandBundle\EventSubscriber\{ApiExceptionSubscriber, RequestValidatorSubscriber};
 use Stixx\OpenApiCommandBundle\Exception\{DefaultExceptionToApiProblemTransformer, ExceptionToApiProblemTransformerInterface};
-use Stixx\OpenApiCommandBundle\Responder\{JsonResponder, JsonSerializedResponder, NullableResponder, ResponderChain, ResponderInterface};
-use Stixx\OpenApiCommandBundle\Response\{ResponseStatusResolver, StatusResolverInterface};
+use Stixx\OpenApiCommandBundle\Responder\{JsonResponder, JsonSerializedResponder, NullableResponder, ResponderChain, ResponderInterface, ResponseStatusResolver, StatusResolverInterface};
 use Stixx\OpenApiCommandBundle\RouteDescriber\CommandRouteDescriber;
 use Stixx\OpenApiCommandBundle\Routing\CommandRouteDiscovery;
 use Stixx\OpenApiCommandBundle\Routing\Loader\{CommandRouteClassLoader, CommandRouteDirectoryLoader, RouterLoaderDecorator};
@@ -56,7 +55,7 @@ final class BundleInitializationTest extends AbstractKernelTestCase
 
         // Responders
         $this->assertTrue($container->has(ResponderChain::class));
-        $this->assertTrue($container->has(ResponderInterface::class));
+        $this->assertFalse($container->has(ResponderInterface::class));
         $this->assertTrue($container->has(JsonResponder::class));
         $this->assertTrue($container->has(JsonSerializedResponder::class));
         $this->assertTrue($container->has(NullableResponder::class));
@@ -78,7 +77,7 @@ final class BundleInitializationTest extends AbstractKernelTestCase
 
         // Validators
         $this->assertTrue($container->has(RequestValidatorChain::class));
-        $this->assertTrue($container->has(RequestValidatorInterface::class));
+        $this->assertFalse($container->has(RequestValidatorInterface::class));
         $this->assertTrue($container->has(RequestValidator::class));
 
         // Serializer

@@ -191,7 +191,8 @@ The bundle distinguishes a small public API surface from its internal implementa
 | `Stixx\OpenApiCommandBundle\Exception\ApiProblemException` | Throw this from your code to express RFC 7807 problems |
 | `Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface` | Replace to customize how exceptions become problem responses |
 | `Stixx\OpenApiCommandBundle\Responder\ResponderInterface` | Implement to handle custom result shapes (CSV, XML, …) |
-| `Stixx\OpenApiCommandBundle\Response\StatusResolverInterface` | Replace to customize status code resolution |
+| `Stixx\OpenApiCommandBundle\Responder\StatusResolverInterface` | Replace or decorate to customize status code resolution |
+| `Stixx\OpenApiCommandBundle\Responder\ResponseContext` | The request, command and handler result passed to responders and the status resolver |
 | `Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface` | Implement to add custom request-level validation |
 | `Stixx\OpenApiCommandBundle\Model\ProblemDetails` | OpenAPI schema model — reference from your annotations |
 | `Stixx\OpenApiCommandBundle\Model\ProblemDetailsInvalidRequestBody` | OpenAPI schema model — reference from your annotations |
@@ -207,7 +208,8 @@ See [Extension Points](docs/extension-points.md) for a worked example of each ex
 
 From 1.0.0 on, the bundle follows [Semantic Versioning](https://semver.org) for its public API:
 
-- the `@api` types above, and the services registered under those interface names, which you can alias or decorate;
+- the `@api` types above, and the services registered under `StatusResolverInterface` and
+  `ExceptionToApiProblemTransformerInterface`, which you can alias or decorate;
 - the configuration keys under `stixx_openapi_command:`;
 - the service tags named by `ResponderInterface::TAG_NAME` and `RequestValidatorInterface::TAG_NAME`;
 - the OpenAPI component names the bundle registers for your annotations when `openapi.problem_details` is enabled

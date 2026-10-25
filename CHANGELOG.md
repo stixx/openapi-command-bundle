@@ -8,6 +8,39 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-25
+
+### Added
+
+- `ResponseContext`, holding the request, the command and the handler's result. Responders and the status resolver
+  receive it, so a responder can answer on the request's `Accept` header and a status resolver can see the result.
+
+### Changed
+
+- **`ResponderInterface` and `StatusResolverInterface` take a `ResponseContext`.** See **Upgrading** below.
+- **`StatusResolverInterface` and `ResponseStatusResolver` moved from the `Response` namespace to `Responder`.**
+- **The built-in responders have negative priorities**, so a responder of yours at the default priority runs before
+  them whatever order the services are registered in.
+
+### Removed
+
+- The `ResponderInterface` and `RequestValidatorInterface` service aliases. They pointed at the bundle's internal
+  chains, and a decorator of either was autoconfigured into the chain it decorated. Tag a responder or request
+  validator, or implement the interface with autoconfiguration, to add one. `StatusResolverInterface` and
+  `ExceptionToApiProblemTransformerInterface` can still be aliased or decorated.
+
+### Upgrading
+
+- In a responder, replace `supports(mixed $result)` with `supports(ResponseContext $context)` and
+  `respond(mixed $result, int $status)` with `respond(ResponseContext $context, int $status)`, and read the result
+  from `$context->getResult()`.
+- In a status resolver, replace `resolve(Request $request, object $command)` with `resolve(ResponseContext $context)`,
+  and import `Stixx\OpenApiCommandBundle\Responder\StatusResolverInterface` instead of the `Response` namespace.
+- A service that aliased or decorated `ResponderInterface` or `RequestValidatorInterface` to change every response or
+  request no longer applies; use a `kernel.response` or `kernel.request` listener.
+- Responders tagged with a negative priority now run between or after the built-in ones, which have -100, and -200
+  for the catch-all for objects and arrays.
+
 ## [0.15.0] - 2026-10-03
 
 ### Added
@@ -390,7 +423,8 @@ Installing it with Composer is not enough. See the README's installation section
   details outside debug mode, and a `CommandValueResolver` that supports list endpoints and the combination of
   parameters with a request body.
 
-[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.15.0...HEAD
+[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.16.0...HEAD
+[0.16.0]: https://github.com/stixx/openapi-command-bundle/compare/0.15.0...0.16.0
 [0.15.0]: https://github.com/stixx/openapi-command-bundle/compare/0.14.2...0.15.0
 [0.14.2]: https://github.com/stixx/openapi-command-bundle/compare/0.14.1...0.14.2
 [0.14.1]: https://github.com/stixx/openapi-command-bundle/compare/0.14.0...0.14.1

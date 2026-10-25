@@ -13,13 +13,16 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\Controller;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Stixx\OpenApiCommandBundle\Controller\CommandController;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
 use Stixx\OpenApiCommandBundle\Exception\WrappedExceptionUnwrapper;
+use Stixx\OpenApiCommandBundle\Responder\ResponderChain;
 use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
-use Stixx\OpenApiCommandBundle\Response\StatusResolverInterface;
+use Stixx\OpenApiCommandBundle\Responder\ResponseContext;
+use Stixx\OpenApiCommandBundle\Responder\StatusResolverInterface;
 use Stixx\OpenApiCommandBundle\Tests\Mock\Command\ExampleCommand;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -59,17 +62,17 @@ final class CommandControllerTest extends TestCase
         $statusResolver = $this->createMock(StatusResolverInterface::class);
         $statusResolver->expects(self::once())
             ->method('resolve')
-            ->with($request, $command)
+            ->with(self::equalTo(new ResponseContext($request, $command, $result)))
             ->willReturn(201);
 
         $responder = $this->createMock(ResponderInterface::class);
         $responder->expects(self::once())
             ->method('respond')
-            ->with($result, 201)
+            ->with(self::equalTo(new ResponseContext($request, $command, $result)), 201)
             ->willReturn(new Response((string) json_encode($result), 201, ['Content-Type' => 'application/json']));
 
         // Act
-        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, new WrappedExceptionUnwrapper());
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $this->chainOf($responder), new WrappedExceptionUnwrapper());
         $response = $controller($request, $command);
 
         // Assert
@@ -98,16 +101,16 @@ final class CommandControllerTest extends TestCase
 
         $statusResolver = $this->createMock(StatusResolverInterface::class);
         $statusResolver->method('resolve')
-            ->with($request, $command)
+            ->with(self::equalTo(new ResponseContext($request, $command, $result)))
             ->willReturn(200);
 
         $responder = $this->createMock(ResponderInterface::class);
         $responder->method('respond')
-            ->with($result, 200)
+            ->with(self::equalTo(new ResponseContext($request, $command, $result)), 200)
             ->willReturn(new Response((string) json_encode($result), 200));
 
         // Act
-        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, new WrappedExceptionUnwrapper(), validationEnabled: false);
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $this->chainOf($responder), new WrappedExceptionUnwrapper(), validationEnabled: false);
         $response = $controller($request, $command);
 
         // Assert
@@ -140,7 +143,7 @@ final class CommandControllerTest extends TestCase
         $responder = $this->createMock(ResponderInterface::class);
 
         // Act
-        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, new WrappedExceptionUnwrapper(), validationEnabled: true);
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $this->chainOf($responder), new WrappedExceptionUnwrapper(), validationEnabled: true);
 
         try {
             $controller($request, $command);
@@ -175,7 +178,7 @@ final class CommandControllerTest extends TestCase
         $responder->method('respond')->willReturn(new Response((string) json_encode($result), 200));
 
         // Act
-        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, new WrappedExceptionUnwrapper());
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $this->chainOf($responder), new WrappedExceptionUnwrapper());
         $response = $controller($request, $command);
 
         // Assert — Symfony's ResponseHeaderBag appends 'private' when no 'public' directive is present
@@ -206,7 +209,7 @@ final class CommandControllerTest extends TestCase
         $responder->method('respond')->willReturn(new Response((string) json_encode($result), 200));
 
         // Act
-        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, new WrappedExceptionUnwrapper(), cacheControl: null);
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $this->chainOf($responder), new WrappedExceptionUnwrapper(), cacheControl: null);
         $response = $controller($request, $command);
 
         // Assert — Symfony sets a computed default; the controller must not override it
@@ -237,7 +240,7 @@ final class CommandControllerTest extends TestCase
         $responder->method('respond')->willReturn(new Response((string) json_encode($result), 200));
 
         // Act
-        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, new WrappedExceptionUnwrapper(), cacheControl: 'no-cache, private');
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $this->chainOf($responder), new WrappedExceptionUnwrapper(), cacheControl: 'no-cache, private');
         $response = $controller($request, $command);
 
         // Assert
@@ -271,7 +274,7 @@ final class CommandControllerTest extends TestCase
         $responder = $this->createMock(ResponderInterface::class);
 
         // Act
-        $controller = new CommandController($messageBus, $validator, $statusResolver, $responder, new WrappedExceptionUnwrapper(), validationEnabled: true);
+        $controller = new CommandController($messageBus, $validator, $statusResolver, $this->chainOf($responder), new WrappedExceptionUnwrapper(), validationEnabled: true);
 
         // Assert
         try {
@@ -280,5 +283,12 @@ final class CommandControllerTest extends TestCase
         } catch (RuntimeException $e) {
             self::assertSame('boom', $e->getMessage());
         }
+    }
+
+    private function chainOf(ResponderInterface&MockObject $responder): ResponderChain
+    {
+        $responder->method('supports')->willReturn(true);
+
+        return new ResponderChain([$responder]);
     }
 }

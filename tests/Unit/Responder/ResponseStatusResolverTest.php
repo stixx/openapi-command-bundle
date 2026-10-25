@@ -11,11 +11,12 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Stixx\OpenApiCommandBundle\Tests\Unit\Response;
+namespace Stixx\OpenApiCommandBundle\Tests\Unit\Responder;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Stixx\OpenApiCommandBundle\Response\ResponseStatusResolver;
+use Stixx\OpenApiCommandBundle\Responder\ResponseContext;
+use Stixx\OpenApiCommandBundle\Responder\ResponseStatusResolver;
 use Stixx\OpenApiCommandBundle\Tests\Mock\Command\DeleteWithStringResponseCommand;
 use Stixx\OpenApiCommandBundle\Tests\Mock\Command\ExampleCommand;
 use Stixx\OpenApiCommandBundle\Tests\Mock\Command\GetWithNon2xxResponsesCommand;
@@ -34,7 +35,7 @@ final class ResponseStatusResolverTest extends TestCase
         $command = new ExampleCommand();
 
         // Act
-        $status = $resolver->resolve($request, $command);
+        $status = $resolver->resolve(new ResponseContext($request, $command, null));
 
         // Assert
         self::assertSame($expected, $status);
@@ -63,7 +64,7 @@ final class ResponseStatusResolverTest extends TestCase
         $resolver = new ResponseStatusResolver();
 
         // Act
-        $status = $resolver->resolve($request, $command);
+        $status = $resolver->resolve(new ResponseContext($request, $command, null));
 
         // Assert
         self::assertSame($expected, $status);
@@ -90,7 +91,7 @@ final class ResponseStatusResolverTest extends TestCase
         $resolver = new ResponseStatusResolver();
 
         // Act
-        $status = $resolver->resolve($request, $command);
+        $status = $resolver->resolve(new ResponseContext($request, $command, null));
 
         // Assert
         self::assertSame($expected, $status);

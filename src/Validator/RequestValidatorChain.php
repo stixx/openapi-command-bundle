@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\Request;
 /**
  * @internal
  */
-final readonly class RequestValidatorChain implements RequestValidatorInterface
+final readonly class RequestValidatorChain
 {
     /**
      * @param iterable<RequestValidatorInterface> $validators
