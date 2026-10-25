@@ -144,7 +144,7 @@ By default the bundle prepends reusable response components to your NelmioApiDoc
 
 | Component | Status |
 |---|---|
-| `InvalidRequestProblemDetailsResponse` | 400, a request that does not match the OpenAPI document |
+| `InvalidRequestProblemDetailsResponse` | 400, a request that does not match the OpenAPI document or cannot be mapped to the command |
 | `UnauthorizedProblemDetailsResponse` | 401 |
 | `ForbiddenProblemDetailsResponse` | 403 |
 | `ResourceNotFoundProblemDetailsResponse` | 404 |

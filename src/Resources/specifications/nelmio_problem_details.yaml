@@ -3,11 +3,13 @@ nelmio_api_doc:
     components:
       responses:
         InvalidRequestProblemDetailsResponse:
-          description: RFC 9457 Problem Details for a request that does not match the API specification
+          description: RFC 9457 Problem Details for a request that does not match the API specification or cannot be mapped to the command
           content:
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/ProblemDetailsInvalidRequestBody'
+                anyOf:
+                  - $ref: '#/components/schemas/ProblemDetailsInvalidRequestBody'
+                  - $ref: '#/components/schemas/ProblemDetails'
               example:
                 type: 'about:blank'
                 title: 'Bad Request'

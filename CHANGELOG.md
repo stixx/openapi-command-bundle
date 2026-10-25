@@ -39,8 +39,7 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
   validation errors.
 - A 400 for an argument the Nelmio renderer rejects no longer has an `invalid_argument` violation.
 - In the documented schemas, `code` and `constraint` of a `Violation` are optional and `ProblemDetailsInvalidRequestBody`
-  requires `violations`. `InvalidRequestProblemDetailsResponse` references only `ProblemDetailsInvalidRequestBody`
-  instead of `anyOf` it and `ProblemDetails`, so clients generated from the document change.
+  requires `violations`, so clients generated from the document change.
 - References to RFC 7807 point to RFC 9457, which replaces it.
 
 ### Fixed
@@ -72,8 +71,8 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 - API clients that match on `title` see the reason phrases above instead of `Unauthenticated`, `Resource Not Found`,
   `Unprocessable Entity`, `An error occurred.`, `The request body contains errors` and
   `The request body could not be processed`.
-- `InvalidRequestProblemDetailsResponse` describes a 400 with violations only; reference
-  `UnprocessableEntityProblemDetailsResponse` for the 422 a failing command returns.
+- `InvalidRequestProblemDetailsResponse` describes a 400; reference `UnprocessableEntityProblemDetailsResponse` for the
+  422 a failing command returns.
 
 ## [0.15.0] - 2026-10-03
 
