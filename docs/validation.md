@@ -1,6 +1,6 @@
 # Validation & Error Handling
 
-The bundle validates incoming requests in two distinct layers, and provides RFC 7807-compliant Problem Details responses when either layer rejects the request.
+The bundle validates incoming requests in two distinct layers, and provides RFC 9457 Problem Details responses when either layer rejects the request.
 
 | Layer | What it validates | Driven by | When it runs |
 |---|---|---|---|
@@ -63,7 +63,7 @@ If you need to use specific validation groups, you can configure them globally i
 
 ## Error Handling & Problem Details
 
-When an error occurs (validation fail, malformed JSON, mapping error, etc.), the bundle returns a response using the **RFC 7807 (Problem Details for HTTP APIs)** standard.
+When an error occurs (validation fail, malformed JSON, mapping error, etc.), the bundle returns a response using **RFC 9457 (Problem Details for HTTP APIs)**. The `title` is the HTTP reason phrase of the status, such as `Not Found`; what went wrong is in `detail` and, for a rejected request, in `violations`.
 
 ### Content-Type
 
@@ -71,11 +71,14 @@ Problem responses use the `application/problem+json` media type.
 
 ### Example Validation Error Response
 
+A command that fails validation returns a 422:
+
 ```json
 {
   "type": "about:blank",
-  "title": "The request body could not be processed",
+  "title": "Unprocessable Content",
   "status": 422,
+  "detail": "Validation failed",
   "violations": [
     {
       "propertyPath": "email",
@@ -88,16 +91,43 @@ Problem responses use the `application/problem+json` media type.
 }
 ```
 
-> **Note**: `detail` is only emitted when `kernel.debug` is `true` (development environment). In production, `detail` is suppressed to avoid leaking exception messages to clients. Public-facing context belongs in `title`; the per-property reason is in each violation's `message`.
-
-### Mapping Errors
-
-If the request body cannot be mapped to your command DTO (e.g., missing required properties in the JSON, type mismatch), the bundle throws a `BadRequestHttpException` which is transformed into a Problem Details response:
+A request that does not match the OpenAPI document returns a 400, with a violation naming the invalid value. Its
+`code` is the JSON Schema keyword that failed, and its `propertyPath` uses the JSON names of the request:
 
 ```json
 {
   "type": "about:blank",
-  "title": "Unable to map request to command",
+  "title": "Bad Request",
+  "status": 400,
+  "detail": "The request does not match the API specification.",
+  "violations": [
+    {
+      "propertyPath": "email",
+      "message": "Keyword validation failed: Value cannot be null",
+      "code": "nullable",
+      "constraint": "openapi_request_validation",
+      "error": null
+    }
+  ]
+}
+```
+
+A violation always has `propertyPath`, which is empty when it concerns the whole request or command, and `message`.
+`constraint` and `error` are only set for Symfony constraints.
+
+> **Note**: the `detail` the bundle writes for its own problems, and any `detail` your code passes to
+> `ApiProblemException`, is always sent. When the bundle turns any other exception into a problem, its message becomes
+> the `detail` only when `kernel.debug` is `true`, because exception messages can reveal routes, class names and data.
+
+### Mapping Errors
+
+If the request body cannot be mapped to your command DTO (e.g., missing required properties in the JSON, type mismatch), the bundle throws a `BadRequestHttpException` which is transformed into a Problem Details response. In debug mode
+it includes the exception message as `detail`:
+
+```json
+{
+  "type": "about:blank",
+  "title": "Bad Request",
   "status": 400,
   "detail": "Unable to map request to command: Required parameter \"name\" is missing"
 }
@@ -107,7 +137,19 @@ If the request body cannot be mapped to your command DTO (e.g., missing required
 
 ## Documenting Problem Details in OpenAPI
 
-By default the bundle prepends a small set of reusable response components — `DefaultProblemDetailsResponse`, `ResourceNotFoundProblemDetailsResponse`, etc. — to your NelmioApiDoc configuration so your generated OpenAPI document describes the error shape. To opt out:
+By default the bundle prepends reusable response components to your NelmioApiDoc configuration, so your generated OpenAPI document describes the error shape:
+
+| Component | Status |
+|---|---|
+| `InvalidRequestProblemDetailsResponse` | 400, a request that does not match the OpenAPI document |
+| `UnauthorizedProblemDetailsResponse` | 401 |
+| `ForbiddenProblemDetailsResponse` | 403 |
+| `ResourceNotFoundProblemDetailsResponse` | 404 |
+| `ConflictProblemDetailsResponse` | 409 |
+| `UnprocessableEntityProblemDetailsResponse` | 422, a command that fails validation |
+| `DefaultProblemDetailsResponse` | 500 |
+
+Reference them from your operations, e.g. `#[OA\Response(ref: '#/components/responses/UnprocessableEntityProblemDetailsResponse', response: 422)]`. Their schemas are built from the same `ProblemDetails`, `ProblemDetailsInvalidRequestBody` and `Violation` classes the responses are written from. To opt out:
 
 ```yaml
 stixx_openapi_command:

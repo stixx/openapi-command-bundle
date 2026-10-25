@@ -16,6 +16,7 @@ namespace Stixx\OpenApiCommandBundle\Tests\Functional;
 use PHPUnit\Framework\Attributes\WithoutErrorHandler;
 use Stixx\OpenApiCommandBundle\Tests\Functional\App\Kernel;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Validator\Constraints\NotBlank;
 
 final class ScenarioTest extends AbstractKernelTestCase
 {
@@ -132,9 +133,48 @@ final class ScenarioTest extends AbstractKernelTestCase
         self::assertSame('application/problem+json', $response->headers->get('Content-Type'));
         $data = json_decode($response->getContent() ?: 'null', true, 512, JSON_THROW_ON_ERROR);
         self::assertIsArray($data);
-        self::assertSame(422, $data['status'] ?? null);
-        self::assertSame('Validation failed', $data['detail'] ?? null);
-        self::assertArrayHasKey('violations', $data);
+        self::assertSame([
+            'type' => 'about:blank',
+            'title' => 'Unprocessable Content',
+            'status' => 422,
+            'detail' => 'Validation failed',
+            'violations' => [[
+                'propertyPath' => 'title',
+                'message' => 'This value should not be blank.',
+                'code' => NotBlank::IS_BLANK_ERROR,
+                'constraint' => 'NotBlank',
+                'error' => 'IS_BLANK_ERROR',
+            ]],
+        ], $data);
+    }
+
+    #[WithoutErrorHandler]
+    public function testRequestThatDoesNotMatchTheSpecificationNamesTheInvalidProperty(): void
+    {
+        // Arrange
+        $kernel = $this->createKernelWithConfig(static function (Kernel $kernel): void {
+            $kernel->addTestConfig(__DIR__.'/Resources/config/scenario.php');
+        });
+
+        $request = Request::create(uri: '/api/books', method: 'POST', content: '{"title": 42}');
+        $request->headers->set('Content-Type', 'application/json');
+
+        // Act
+        $response = $kernel->handle($request);
+
+        // Assert
+        self::assertSame(400, $response->getStatusCode());
+        $data = json_decode($response->getContent() ?: 'null', true, 512, JSON_THROW_ON_ERROR);
+        self::assertIsArray($data);
+        self::assertSame('Bad Request', $data['title'] ?? null);
+        self::assertSame('The request does not match the API specification.', $data['detail'] ?? null);
+        self::assertIsArray($data['violations'] ?? null);
+        self::assertCount(1, $data['violations']);
+        self::assertIsArray($data['violations'][0]);
+        self::assertSame(['propertyPath', 'message', 'code', 'constraint', 'error'], array_keys($data['violations'][0]));
+        self::assertSame('title', $data['violations'][0]['propertyPath']);
+        self::assertSame('type', $data['violations'][0]['code']);
+        self::assertSame('openapi_request_validation', $data['violations'][0]['constraint']);
     }
 
     #[WithoutErrorHandler]

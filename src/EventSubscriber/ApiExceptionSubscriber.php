@@ -79,7 +79,7 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
         $payload = $this->normalizer->normalize($throwable, JsonEncoder::FORMAT);
 
         // Throwable headers (e.g. Allow on 405, Retry-After on 503) are kept, but our problem+json
-        // Content-Type must take precedence to stay RFC 7807 compliant.
+        // Content-Type must take precedence to stay RFC 9457 compliant.
         return new JsonResponse($payload, $throwable->getStatusCode(), array_merge(
             $throwable->getHeaders(),
             ['Content-Type' => 'application/problem+json'],
@@ -91,7 +91,7 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
         return new JsonResponse(
             [
                 'type' => 'about:blank',
-                'title' => 'An error occurred.',
+                'title' => 'Internal Server Error',
                 'status' => Response::HTTP_INTERNAL_SERVER_ERROR,
             ],
             Response::HTTP_INTERNAL_SERVER_ERROR,

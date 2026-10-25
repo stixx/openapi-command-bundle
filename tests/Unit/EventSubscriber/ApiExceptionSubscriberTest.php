@@ -20,6 +20,8 @@ use Stixx\OpenApiCommandBundle\EventSubscriber\ApiExceptionSubscriber;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
 use Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface;
 use Stixx\OpenApiCommandBundle\Exception\WrappedExceptionUnwrapper;
+use Stixx\OpenApiCommandBundle\Model\ProblemDetails;
+use Stixx\OpenApiCommandBundle\Model\Violation;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -62,9 +64,7 @@ final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
         $kernel = $this->createMock(KernelInterface::class);
         $request = new Request();
 
-        $violations = [
-            ['constraint' => 'x', 'message' => 'y'],
-        ];
+        $violations = [new Violation('x', 'y')];
         $apiProblem = ApiProblemException::badRequest(
             detail: 'bad',
             violations: $violations
@@ -78,7 +78,7 @@ final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
         $normalizer = $this->createMock(NormalizerInterface::class);
         $normalizer->expects(self::once())
             ->method('normalize')
-            ->willReturn(['detail' => 'bad', 'violations' => $violations, 'status' => 400, 'title' => 'The request body contains errors', 'type' => 'about:blank']);
+            ->willReturn(['detail' => 'bad', 'violations' => $violations, 'status' => 400, 'title' => 'Bad Request', 'type' => 'about:blank']);
 
         $transformer = $this->createMock(ExceptionToApiProblemTransformerInterface::class);
         $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer, new WrappedExceptionUnwrapper());
@@ -98,10 +98,10 @@ final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
         /** @var array<string, mixed> $data */
         $data = json_decode($content, true);
         self::assertSame('about:blank', $data['type']);
-        self::assertSame('The request body contains errors', $data['title']);
+        self::assertSame('Bad Request', $data['title']);
         self::assertSame(400, $data['status']);
         self::assertSame('bad', $data['detail']);
-        self::assertSame($violations, $data['violations']);
+        self::assertSame([['propertyPath' => 'x', 'message' => 'y', 'code' => null, 'constraint' => null, 'error' => null]], $data['violations']);
     }
 
     #[DataProvider('exceptionMappingProvider')]
@@ -115,7 +115,7 @@ final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
         $routes = $this->createNelmioAreaRoutesWithRouteName($routeName);
         $request->attributes->set('_route', $routeName);
 
-        $apiProblem = new ApiProblemException($expectedStatus, $expectedTitle);
+        $apiProblem = new ApiProblemException(new ProblemDetails($expectedStatus, $expectedTitle));
 
         $transformer = $this->createMock(ExceptionToApiProblemTransformerInterface::class);
         $transformer->expects(self::once())
@@ -182,7 +182,7 @@ final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
         /** @var array<string, mixed> $data */
         $data = json_decode($content, true);
         self::assertSame('about:blank', $data['type']);
-        self::assertSame('An error occurred.', $data['title']);
+        self::assertSame('Internal Server Error', $data['title']);
         self::assertSame(500, $data['status']);
     }
 
@@ -208,7 +208,7 @@ final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
             ->willReturn($apiProblem);
 
         $normalizer = $this->createMock(NormalizerInterface::class);
-        $normalizer->method('normalize')->willReturn(['status' => 500, 'title' => 'An error occurred.', 'type' => 'about:blank']);
+        $normalizer->method('normalize')->willReturn(['status' => 500, 'title' => 'Internal Server Error', 'type' => 'about:blank']);
 
         $subscriber = new ApiExceptionSubscriber($routes, $normalizer, $transformer, new WrappedExceptionUnwrapper());
 
@@ -226,6 +226,6 @@ final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
     public static function exceptionMappingProvider(): iterable
     {
         yield 'forbidden from access denied' => [new AccessDeniedHttpException(), 'api_forbidden', 403, 'Forbidden'];
-        yield 'server error from generic exception' => [new RuntimeException('oops'), 'api_error', 500, 'An error occurred.'];
+        yield 'server error from generic exception' => [new RuntimeException('oops'), 'api_error', 500, 'Internal Server Error'];
     }
 }

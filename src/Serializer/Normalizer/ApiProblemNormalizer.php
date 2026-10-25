@@ -14,25 +14,21 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Serializer\Normalizer;
 
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
-use Symfony\Component\Serializer\Normalizer\NormalizerAwareInterface;
-use Symfony\Component\Serializer\Normalizer\NormalizerAwareTrait;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 /**
+ * Reads the public properties of the problem, as Nelmio does when it documents the model.
+ *
  * @internal
  */
-final class ApiProblemNormalizer implements NormalizerInterface, NormalizerAwareInterface
+final class ApiProblemNormalizer implements NormalizerInterface
 {
-    use NormalizerAwareTrait;
-
-    public function __construct(private readonly bool $debug)
-    {
-    }
+    private const array MEMBERS = ['type', 'title', 'status', 'detail', 'instance'];
 
     /**
      * @param array<string, mixed> $context
      */
-    public function supportsNormalization($data, ?string $format = null, array $context = []): bool
+    public function supportsNormalization(mixed $data, ?string $format = null, array $context = []): bool
     {
         return $data instanceof ApiProblemException;
     }
@@ -41,27 +37,17 @@ final class ApiProblemNormalizer implements NormalizerInterface, NormalizerAware
      * @param ApiProblemException $data
      * @param array<string, mixed> $context
      *
-     * @return array{type:string,title:string,status:int,detail?:string,instance?:string,violations?:mixed}
+     * @return array<string, mixed>
      */
-    public function normalize($data, ?string $format = null, array $context = []): array
+    public function normalize(mixed $data, ?string $format = null, array $context = []): array
     {
-        $payload = [
-            'type' => $data->getType(),
-            'title' => $data->getTitle(),
-            'status' => $data->getStatusCode(),
-        ];
+        $members = get_object_vars($data->getProblem());
 
-        if ($data->getInstance() !== null) {
-            $payload['instance'] = $data->getInstance();
-        }
-
-        if ($this->debug && $data->getDetail() !== null) {
-            $payload['detail'] = $data->getDetail();
-        }
-
-        $violations = $data->getViolations();
-        if ($violations !== null && $violations !== []) {
-            $payload['violations'] = $this->normalizer->normalize($violations, $format, $context);
+        $payload = [];
+        foreach (array_replace(array_fill_keys(self::MEMBERS, null), $members) as $name => $value) {
+            if ($value !== null) {
+                $payload[(string) $name] = $value;
+            }
         }
 
         return $payload;

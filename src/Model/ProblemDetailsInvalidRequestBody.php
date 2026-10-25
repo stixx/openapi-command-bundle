@@ -21,24 +21,37 @@ use OpenApi\Attributes as OA;
  */
 #[OA\Schema(
     title: 'InvalidRequestBody',
-    properties: [
-        new OA\Property(property: 'violations', type: 'array', items: new OA\Items(ref: new Model(type: Violation::class)), maxItems: 100),
-    ],
+    required: ['type', 'title', 'status', 'violations'],
     example: [
         'type' => 'about:blank',
-        'title' => 'The request body contains errors.',
-        'status' => 400,
+        'title' => 'Unprocessable Content',
+        'status' => 422,
         'detail' => 'Validation failed.',
         'violations' => [
             [
-                'propertyPath' => 'foo',
+                'propertyPath' => 'title',
                 'message' => 'This value should not be blank.',
-                'code' => 'c1ac8c7d-eab5-458f-a950-fcf121d23059',
+                'code' => 'c1051bb4-d103-4f74-8988-acbcafc7fdc3',
                 'constraint' => 'NotBlank',
+                'error' => 'IS_BLANK_ERROR',
             ],
         ],
     ]
 )]
-final class ProblemDetailsInvalidRequestBody extends ProblemDetails
+class ProblemDetailsInvalidRequestBody extends ProblemDetails
 {
+    /**
+     * @param list<Violation> $violations
+     */
+    public function __construct(
+        int $status,
+        string $title,
+        #[OA\Property(type: 'array', items: new OA\Items(ref: new Model(type: Violation::class)))]
+        public readonly array $violations,
+        ?string $detail = null,
+        string $type = 'about:blank',
+        ?string $instance = null,
+    ) {
+        parent::__construct($status, $title, $detail, $type, $instance);
+    }
 }
