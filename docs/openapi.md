@@ -40,7 +40,7 @@ final class CreateItemCommand
 }
 ```
 
-The `path` property defines the URL, and the `operationId` is used as the Symfony route name.
+The `path` property defines the URL, and the `operationId` is used as the Symfony route name. Without an `operationId`, the route is named `command_` followed by the class short name in snake_case, so `CreateInvoiceCommand` becomes `command_create_invoice_command`, and by default Nelmio documents its `operationId` as the method followed by that name, e.g. `post_command_create_invoice_command`.
 
 ---
 

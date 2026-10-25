@@ -136,10 +136,9 @@ final class CommandRouteClassLoader extends AttributeClassLoader
      */
     private function defaultNameFromClass(ReflectionClass $class): string
     {
-        $short = $class->getShortName();
-        $base = strtolower(preg_replace('/[^A-Za-z0-9_]+/', '_', $short) ?? '');
+        $words = preg_replace('/(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/', '_', $class->getShortName()) ?? '';
 
-        return 'command_'.$base;
+        return 'command_'.mb_strtolower($words);
     }
 
     /**
