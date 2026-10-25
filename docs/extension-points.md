@@ -1,6 +1,6 @@
 # Extension Points
 
-The bundle exposes four interfaces (`@api`) you can implement to plug into the request lifecycle, plus the `ApiProblemException` class for expressing RFC 9457 problems from your code. This page collects an example for each.
+The bundle exposes four interfaces (`@api`) you can implement to plug into the request lifecycle, plus the `ApiProblemException` class for expressing RFC 9457 problems from your code and the `ResponseContext` that responders and status resolvers receive. This page collects an example for each.
 
 | Interface | What it lets you customize | Default implementation (`@internal`) |
 |---|---|---|
