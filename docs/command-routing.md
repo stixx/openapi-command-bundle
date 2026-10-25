@@ -227,14 +227,14 @@ final class RemoveEmployeeCommand
 Override the controller via OpenAPI vendor extension:
 
 ```php
-#[OA\Post(path: '/api/import', operationId: 'import_data', x: ['controller' => App\\Controller\\CustomCommandController::class])]
+#[OA\Post(path: '/api/import', operationId: 'import_data', x: ['controller' => App\Controller\CustomCommandController::class])]
 final class ImportDataCommand {}
 ```
 
 Or via a class-level CommandObject attribute (not visible in the generated OpenAPI):
 
 ```php
-#[CommandObject(controller: App\\Controller\\CustomCommandController::class)]
+#[CommandObject(controller: App\Controller\CustomCommandController::class)]
 #[OA\Post(path: '/api/import', operationId: 'import_data')]
 final class ImportDataCommand {}
 ```

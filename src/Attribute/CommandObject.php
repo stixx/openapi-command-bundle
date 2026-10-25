@@ -26,7 +26,7 @@ final readonly class CommandObject
 {
     /**
      * @param class-string|null $class
-     * @param class-string|null $controller
+     * @param string|null $controller a controller class, Class::method or service id
      */
     public function __construct(
         public ?string $class = null,
