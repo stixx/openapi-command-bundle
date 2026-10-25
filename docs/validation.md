@@ -113,7 +113,7 @@ A request that does not match the OpenAPI document returns a 400, with a violati
 }
 ```
 
-A header violation has an empty `propertyPath` and names the header in its `message`. A violation always has
+For a header or cookie, `propertyPath` is its name. A violation always has
 `propertyPath`, which is empty when it concerns the whole request or command, and `message`.
 `error` is only set for Symfony constraints, and `code` is empty when an OpenAPI failure is not a JSON Schema
 keyword.

@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Exception;
 
+use League\OpenAPIValidation\PSR7\Exception\Validation\InvalidCookies;
+use League\OpenAPIValidation\PSR7\Exception\Validation\InvalidHeaders;
 use League\OpenAPIValidation\PSR7\Exception\Validation\InvalidParameter;
 use League\OpenAPIValidation\PSR7\Exception\Validation\RequiredParameterMissing;
 use League\OpenAPIValidation\Schema\Exception\KeywordMismatch;
@@ -73,19 +75,26 @@ final class ViolationMapper
                 $path .= ($path === '' ? '' : '.').$key;
             }
         }
-        $path = $path === '' ? $parameter ?? '' : $path;
-
-        $message = $schemaMismatch?->getMessage() ?: $failure->getPrevious()?->getMessage() ?: $failure->getMessage();
-        if ($path === '' && $message !== $failure->getMessage()) {
-            $message = $failure->getMessage().': '.$message;
-        }
+        $path = $path === '' ? $parameter ?? self::headerOrCookieOf($failure) : $path;
 
         return new Violation(
             propertyPath: $path,
-            message: $message,
+            message: $schemaMismatch?->getMessage() ?: $failure->getPrevious()?->getMessage() ?: $failure->getMessage(),
             code: $schemaMismatch instanceof KeywordMismatch ? $schemaMismatch->keyword() : null,
             constraint: self::OPENAPI_CONSTRAINT,
         );
+    }
+
+    /**
+     * League names an invalid header or cookie only in a message that also quotes its value, which may be a secret.
+     */
+    private static function headerOrCookieOf(Throwable $failure): string
+    {
+        if (!$failure instanceof InvalidHeaders && !$failure instanceof InvalidCookies) {
+            return '';
+        }
+
+        return preg_match('/^Value ".*" for (?:header|cookie) "([^"]+)" is invalid/s', $failure->getMessage(), $matches) === 1 ? $matches[1] : '';
     }
 
     private static function errorName(Constraint $constraint, string $code): ?string

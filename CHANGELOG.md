@@ -32,8 +32,6 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 - **A violation of the OpenAPI document names the invalid value** in `propertyPath`, such as `title` or
   `authors[0].name` as Symfony's validator writes it, and the JSON Schema keyword that failed in `code`. It used to
   have only `constraint` and `message`.
-- A request the OpenAPI document has no operation for returns a 500 instead of a 400: the router matched it, so the
-  document is at fault.
 - An `HttpException` with a status below 400 becomes a 500 problem instead of a problem with that status.
 - A violation that concerns the whole command has an empty `propertyPath` instead of `null`.
 - The bundle no longer registers serializer normalizers for `ApiProblemException`, `ConstraintViolationList` and

@@ -59,7 +59,7 @@ final class DefaultExceptionToApiProblemTransformerTest extends TestCase
         yield 'OpenAPI validation' => [new OpenApiValidationFailed('Body does not match schema'), 400, 'Bad Request', 'The request does not match the API specification.'];
         yield 'Nelmio render argument' => [new RenderInvalidArgumentException('Invalid argument'), 400, 'Bad Request', null];
         yield 'HTTP exception' => [new HttpException(409, 'App\Entity\Order object not found'), 409, 'Conflict', null];
-        yield 'operation missing from the OpenAPI document' => [NoOperation::fromPathAndMethod('/api/books', 'get'), 500, 'Internal Server Error', null];
+        yield 'operation missing from the OpenAPI document' => [NoOperation::fromPathAndMethod('/api/books', 'head'), 400, 'Bad Request', 'The request does not match the API specification.'];
         yield 'redirect' => [new HttpException(302, 'Moved', headers: ['Location' => '/elsewhere']), 500, 'Internal Server Error', null];
         yield 'generic exception' => [new Exception('SQLSTATE[23000]'), 500, 'Internal Server Error', null];
     }

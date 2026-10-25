@@ -77,7 +77,7 @@ final class ViolationMapperTest extends TestCase
 
         yield 'missing query parameter' => ['', [], '{"title": "Dune"}', $violation('limit', 'Missing required argument "limit" for Request [post /books]')];
         yield 'invalid query parameter' => ['limit=many', [], '{"title": "Dune"}', $violation('limit', 'Value expected to be \'integer\', but \'string\' given.', 'type')];
-        yield 'invalid header' => ['limit=1', ['X-Trace' => 'abc'], '{"title": "Dune"}', $violation('', 'Value "abc" for header "X-Trace" is invalid for Request [post /books]: Value expected to be \'integer\', but \'string\' given.', 'type')];
+        yield 'invalid header' => ['limit=1', ['X-Trace' => 'abc'], '{"title": "Dune"}', $violation('X-Trace', 'Value expected to be \'integer\', but \'string\' given.', 'type')];
         yield 'missing body property' => ['limit=1', [], '{}', $violation('title', 'Keyword validation failed: Required property \'title\' must be present in the object', 'required')];
         yield 'invalid body property' => ['limit=1', [], '{"title": 42}', $violation('title', 'Value expected to be \'string\', but \'integer\' given.', 'type')];
         yield 'invalid nested body property' => ['limit=1', [], '{"title": "Dune", "authors": [{"name": 1}]}', $violation('authors[0].name', 'Value expected to be \'string\', but \'integer\' given.', 'type')];
