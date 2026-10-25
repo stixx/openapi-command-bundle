@@ -120,3 +120,32 @@ jobs:
         run: composer update --prefer-dist --no-progress
       - name: Run tests
         run: composer test
+
+  tests-lowest:
+    name: Tests (PHP 8.4, lowest dependencies)
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: json
+          coverage: none
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+      - name: Cache dependencies
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: 8.4-lowest-composer-${{ hashFiles('**/composer.json') }}
+          restore-keys: 8.4-lowest-composer-
+      - name: Install dependencies
+        run: composer update --prefer-lowest --prefer-stable --prefer-dist --no-progress
+      - name: Run tests
+        run: composer test
