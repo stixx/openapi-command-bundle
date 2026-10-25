@@ -41,6 +41,11 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 - In the documented schemas, `code` and `constraint` of a `Violation` are optional and `ProblemDetailsInvalidRequestBody`
   requires `violations`, so clients generated from the document change.
 - References to RFC 7807 point to RFC 9457, which replaces it.
+- `CommandObject` is readonly, and its `controller` defaults to `null` instead of the bundle's internal
+  `CommandController`; a command without one is still routed to `CommandController`.
+- `cache_control` rejects a value that is not a string or `null`, such as `false`.
+- `zircote/swagger-php`, whose attributes describe the commands, is a direct dependency instead of coming only
+  through NelmioApiDocBundle.
 
 ### Fixed
 
@@ -71,6 +76,9 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 - API clients that match on `title` see the reason phrases above instead of `Unauthenticated`, `Resource Not Found`,
   `Unprocessable Entity`, `An error occurred.`, `The request body contains errors` and
   `The request body could not be processed`.
+- Code that reads `CommandObject::$controller` gets `null` when no controller is set, and can no longer assign its
+  properties.
+- Set `cache_control: null` instead of `false` to leave the header as Symfony sets it.
 - `InvalidRequestProblemDetailsResponse` describes a 400; reference `UnprocessableEntityProblemDetailsResponse` for the
   422 a failing command returns.
 

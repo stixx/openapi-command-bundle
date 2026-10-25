@@ -14,17 +14,23 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Attribute;
 
 use Attribute;
-use Stixx\OpenApiCommandBundle\Controller\CommandController;
 
 /**
+ * On a controller parameter, marks the argument the request is mapped to; $class overrides the parameter's type.
+ * On a command class, $controller replaces the bundle's controller for each of its operations.
+ *
  * @api
  */
 #[Attribute(Attribute::TARGET_PARAMETER | Attribute::TARGET_CLASS)]
-final class CommandObject
+final readonly class CommandObject
 {
+    /**
+     * @param class-string|null $class
+     * @param class-string|null $controller
+     */
     public function __construct(
         public ?string $class = null,
-        public ?string $controller = CommandController::class,
+        public ?string $controller = null,
     ) {
     }
 }

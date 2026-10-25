@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\Attribute;
 
 use PHPUnit\Framework\TestCase;
+use stdClass;
 use Stixx\OpenApiCommandBundle\Attribute\CommandObject;
 use Stixx\OpenApiCommandBundle\Controller\CommandController;
 
@@ -26,16 +27,16 @@ final class CommandObjectTest extends TestCase
 
         // Assert
         self::assertNull($attribute->class);
-        self::assertSame(CommandController::class, $attribute->controller);
+        self::assertNull($attribute->controller);
     }
 
     public function testConstructorCustomValues(): void
     {
         // Act
-        $attribute = new CommandObject(class: 'App\Command\MyCommand', controller: 'App\Controller\CustomController');
+        $attribute = new CommandObject(class: stdClass::class, controller: CommandController::class);
 
         // Assert
-        self::assertSame('App\Command\MyCommand', $attribute->class);
-        self::assertSame('App\Controller\CustomController', $attribute->controller);
+        self::assertSame(stdClass::class, $attribute->class);
+        self::assertSame(CommandController::class, $attribute->controller);
     }
 }
