@@ -26,7 +26,7 @@ use OpenApi\Attributes as OA;
         'type' => 'about:blank',
         'title' => 'Unprocessable Content',
         'status' => 422,
-        'detail' => 'Validation failed.',
+        'detail' => 'Validation failed',
         'violations' => [
             [
                 'propertyPath' => 'title',

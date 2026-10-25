@@ -65,16 +65,24 @@ final class ViolationMapper
             }
         }
 
-        $path = [];
+        $path = '';
         foreach ($schemaMismatch?->dataBreadCrumb()?->buildChain() ?? [] as $key) {
-            if (is_int($key) || (is_string($key) && $key !== '')) {
-                $path[] = (string) $key;
+            if (is_int($key)) {
+                $path .= '['.$key.']';
+            } elseif (is_string($key) && $key !== '') {
+                $path .= ($path === '' ? '' : '.').$key;
             }
+        }
+        $path = $path === '' ? $parameter ?? '' : $path;
+
+        $message = $schemaMismatch?->getMessage() ?: $failure->getPrevious()?->getMessage() ?: $failure->getMessage();
+        if ($path === '' && $message !== $failure->getMessage()) {
+            $message = $failure->getMessage().': '.$message;
         }
 
         return new Violation(
-            propertyPath: $path === [] ? $parameter ?? '' : implode('.', $path),
-            message: $schemaMismatch?->getMessage() ?: $failure->getPrevious()?->getMessage() ?: $failure->getMessage(),
+            propertyPath: $path,
+            message: $message,
             code: $schemaMismatch instanceof KeywordMismatch ? $schemaMismatch->keyword() : null,
             constraint: self::OPENAPI_CONSTRAINT,
         );

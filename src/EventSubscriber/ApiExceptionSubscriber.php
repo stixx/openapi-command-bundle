@@ -80,10 +80,14 @@ final readonly class ApiExceptionSubscriber implements EventSubscriberInterface
 
         // Throwable headers (e.g. Allow on 405, Retry-After on 503) are kept, but our problem+json
         // Content-Type must take precedence to stay RFC 9457 compliant.
-        return new JsonResponse($payload, $throwable->getStatusCode(), array_merge(
+        $response = new JsonResponse(null, $throwable->getStatusCode(), array_merge(
             $throwable->getHeaders(),
             ['Content-Type' => 'application/problem+json'],
         ));
+        // Violations can quote request values, which need not be valid UTF-8.
+        $response->setEncodingOptions($response->getEncodingOptions() | JSON_INVALID_UTF8_SUBSTITUTE);
+
+        return $response->setData($payload);
     }
 
     private function buildFallbackResponse(): JsonResponse

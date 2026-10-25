@@ -68,6 +68,7 @@ final class ProblemDetailsExamplesTest extends AbstractKernelTestCase
         yield 'not found' => ['ResourceNotFoundProblemDetailsResponse', static fn (?string $detail) => ApiProblemException::notFound($detail)];
         yield 'conflict' => ['ConflictProblemDetailsResponse', static fn (?string $detail) => ApiProblemException::conflict($detail)];
         yield 'default' => ['DefaultProblemDetailsResponse', static fn (?string $detail) => ApiProblemException::serverError($detail)];
+        yield 'violations schema' => ['#/components/schemas/ProblemDetailsInvalidRequestBody', ApiProblemException::unprocessableEntity(...)];
     }
 
     #[WithoutErrorHandler]
@@ -77,7 +78,10 @@ final class ProblemDetailsExamplesTest extends AbstractKernelTestCase
         $components = array_keys($this->spec()['components']['responses']);
 
         // Assert
-        self::assertEqualsCanonicalizing(array_column(iterator_to_array(self::componentProvider(), false), 0), $components);
+        self::assertEqualsCanonicalizing(
+            array_filter(array_column(iterator_to_array(self::componentProvider(), false), 0), static fn (string $name): bool => !str_starts_with($name, '#')),
+            $components,
+        );
     }
 
     private static function nullableString(mixed $value): ?string
@@ -92,21 +96,26 @@ final class ProblemDetailsExamplesTest extends AbstractKernelTestCase
      */
     private function exampleOf(string $component): array
     {
-        /** @var array<string, mixed> $example */
-        $example = $this->spec()['components']['responses'][$component]['content']['application/problem+json']['example'];
+        $spec = $this->spec();
+        $example = str_starts_with($component, '#/components/schemas/')
+            ? $spec['components']['schemas'][substr($component, strlen('#/components/schemas/'))]['example'] ?? null
+            : $spec['components']['responses'][$component]['content']['application/problem+json']['example'] ?? null;
+        self::assertIsArray($example);
+        /** @var array<string, mixed> $documented */
+        $documented = $example;
 
-        return $example;
+        return $documented;
     }
 
     /**
-     * @return array{components: array{responses: array<string, array{content: array{'application/problem+json': array{example: mixed}}}>}}
+     * @return array{components: array{responses: array<string, array{content: array{'application/problem+json': array{example?: mixed}}}>, schemas: array<string, array{example?: mixed}>}}
      */
     private function spec(): array
     {
         /** @var ApiDocGenerator $generator */
         $generator = self::getContainer()->get('nelmio_api_doc.generator.default');
 
-        /** @var array{components: array{responses: array<string, array{content: array{'application/problem+json': array{example: mixed}}}>}} $spec */
+        /** @var array{components: array{responses: array<string, array{content: array{'application/problem+json': array{example?: mixed}}}>, schemas: array<string, array{example?: mixed}>}} $spec */
         $spec = json_decode($generator->generate()->toJson(), true, 512, JSON_THROW_ON_ERROR);
 
         return $spec;

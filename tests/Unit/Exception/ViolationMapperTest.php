@@ -33,7 +33,10 @@ final class ViolationMapperTest extends TestCase
           "paths": {
             "/books": {
               "post": {
-                "parameters": [{"name": "limit", "in": "query", "required": true, "schema": {"type": "integer"}}],
+                "parameters": [
+                  {"name": "limit", "in": "query", "required": true, "schema": {"type": "integer"}},
+                  {"name": "X-Trace", "in": "header", "schema": {"type": "integer"}}
+                ],
                 "requestBody": {"required": true, "content": {"application/json": {"schema": {
                   "type": "object",
                   "required": ["title"],
@@ -49,32 +52,36 @@ final class ViolationMapperTest extends TestCase
         }
         JSON;
 
+    /**
+     * @param array<string, string> $headers
+     */
     #[DataProvider('openApiFailureProvider')]
-    public function testPointsAnOpenApiViolationAtTheInvalidValue(string $query, string $body, string $propertyPath, ?string $code): void
+    public function testPointsAnOpenApiViolationAtTheInvalidValue(string $query, array $headers, string $body, Violation $expected): void
     {
         // Arrange
-        $failure = $this->validationFailureFor($query, $body);
+        $failure = $this->validationFailureFor($query, $headers, $body);
 
         // Act
         $violation = ViolationMapper::fromOpenApiValidation($failure);
 
         // Assert
-        self::assertSame($propertyPath, $violation->propertyPath);
-        self::assertSame($code, $violation->code);
-        self::assertSame('openapi_request_validation', $violation->constraint);
-        self::assertNotSame('', $violation->message);
+        self::assertEquals($expected, $violation);
     }
 
     /**
-     * @return iterable<string, array{string, string, string, string|null}>
+     * @return iterable<string, array{string, array<string, string>, string, Violation}>
      */
     public static function openApiFailureProvider(): iterable
     {
-        yield 'missing query parameter' => ['', '{"title": "Dune"}', 'limit', null];
-        yield 'invalid query parameter' => ['limit=many', '{"title": "Dune"}', 'limit', 'type'];
-        yield 'missing body property' => ['limit=1', '{}', 'title', 'required'];
-        yield 'invalid body property' => ['limit=1', '{"title": 42}', 'title', 'type'];
-        yield 'invalid nested body property' => ['limit=1', '{"title": "Dune", "authors": [{"name": 1}]}', 'authors.0.name', 'type'];
+        $violation = static fn (string $propertyPath, string $message, ?string $code = null): Violation => new Violation($propertyPath, $message, $code, 'openapi_request_validation');
+
+        yield 'missing query parameter' => ['', [], '{"title": "Dune"}', $violation('limit', 'Missing required argument "limit" for Request [post /books]')];
+        yield 'invalid query parameter' => ['limit=many', [], '{"title": "Dune"}', $violation('limit', 'Value expected to be \'integer\', but \'string\' given.', 'type')];
+        yield 'invalid header' => ['limit=1', ['X-Trace' => 'abc'], '{"title": "Dune"}', $violation('', 'Value "abc" for header "X-Trace" is invalid for Request [post /books]: Value expected to be \'integer\', but \'string\' given.', 'type')];
+        yield 'missing body property' => ['limit=1', [], '{}', $violation('title', 'Keyword validation failed: Required property \'title\' must be present in the object', 'required')];
+        yield 'invalid body property' => ['limit=1', [], '{"title": 42}', $violation('title', 'Value expected to be \'string\', but \'integer\' given.', 'type')];
+        yield 'invalid nested body property' => ['limit=1', [], '{"title": "Dune", "authors": [{"name": 1}]}', $violation('authors[0].name', 'Value expected to be \'string\', but \'integer\' given.', 'type')];
+        yield 'invalid JSON' => ['limit=1', [], '{"title":', $violation('', 'JSON parsing failed with "Syntax error" for Request [post /books]')];
     }
 
     public function testMapsAConstraintViolationWithItsConstraintAndErrorName(): void
@@ -95,10 +102,13 @@ final class ViolationMapperTest extends TestCase
         ], $violations);
     }
 
-    private function validationFailureFor(string $query, string $body): ValidationFailed
+    /**
+     * @param array<string, string> $headers
+     */
+    private function validationFailureFor(string $query, array $headers, string $body): ValidationFailed
     {
         $validator = new ValidatorBuilder()->fromJson(self::SPEC)->getRequestValidator();
-        $request = new ServerRequest('POST', '/books?'.$query, ['Content-Type' => 'application/json'], $body);
+        $request = new ServerRequest('POST', '/books?'.$query, $headers + ['Content-Type' => 'application/json'], $body);
         parse_str($query, $queryParams);
 
         try {

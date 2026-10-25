@@ -22,6 +22,7 @@ use Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterfa
 use Stixx\OpenApiCommandBundle\Exception\WrappedExceptionUnwrapper;
 use Stixx\OpenApiCommandBundle\Model\ProblemDetails;
 use Stixx\OpenApiCommandBundle\Model\Violation;
+use Stixx\OpenApiCommandBundle\Serializer\Normalizer\ApiProblemNormalizer;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -102,6 +103,31 @@ final class ApiExceptionSubscriberTest extends AbstractEventSubscriberTestCase
         self::assertSame(400, $data['status']);
         self::assertSame('bad', $data['detail']);
         self::assertSame([['propertyPath' => 'x', 'message' => 'y', 'code' => null, 'constraint' => null, 'error' => null]], $data['violations']);
+    }
+
+    public function testRepliesWithAProblemWhenAViolationQuotesInvalidUtf8(): void
+    {
+        // Arrange
+        $kernel = $this->createMock(KernelInterface::class);
+        $request = new Request();
+        $request->attributes->set('_route', 'api_problem');
+        $apiProblem = ApiProblemException::badRequest(violations: [new Violation('s', "Length of '\xFF\xFE' must be shorter or equal to 1")]);
+        $event = new ExceptionEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST, $apiProblem);
+        $subscriber = new ApiExceptionSubscriber(
+            $this->createNelmioAreaRoutesWithRouteName('api_problem'),
+            new ApiProblemNormalizer(),
+            $this->createMock(ExceptionToApiProblemTransformerInterface::class),
+            new WrappedExceptionUnwrapper(),
+        );
+
+        // Act
+        $subscriber->onKernelException($event);
+
+        // Assert
+        $response = $event->getResponse();
+        self::assertNotNull($response);
+        self::assertSame(400, $response->getStatusCode());
+        self::assertStringContainsString('\\ufffd\\ufffd', (string) $response->getContent());
     }
 
     #[DataProvider('exceptionMappingProvider')]

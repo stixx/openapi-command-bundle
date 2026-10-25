@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Exception;
 
+use League\OpenAPIValidation\PSR7\Exception\MultipleOperationsMismatchForRequest;
+use League\OpenAPIValidation\PSR7\Exception\NoPath;
 use League\OpenAPIValidation\PSR7\Exception\ValidationFailed as OpenApiValidationFailed;
 use Nelmio\ApiDocBundle\Exception\RenderInvalidArgumentException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -22,6 +24,7 @@ use Throwable;
 
 /**
  * Exception messages can reveal routes, classes and data, so outside debug they never reach the response.
+ * A request the OpenAPI document has no operation for passed the router, so the document is at fault, not the client.
  *
  * @internal
  */
@@ -41,6 +44,9 @@ final readonly class DefaultExceptionToApiProblemTransformer implements Exceptio
             (class_exists($accessDeniedExceptionClass) && is_a($throwable, $accessDeniedExceptionClass)) => ApiProblemException::forbidden(),
             $throwable instanceof AccessDeniedHttpException => ApiProblemException::forbidden(),
             $throwable instanceof NotFoundHttpException => ApiProblemException::notFound(),
+            $throwable instanceof NoPath, $throwable instanceof MultipleOperationsMismatchForRequest => ApiProblemException::serverError(
+                detail: $this->messageOf($throwable),
+            ),
             $throwable instanceof OpenApiValidationFailed => ApiProblemException::badRequest(
                 detail: 'The request does not match the API specification.',
                 violations: [ViolationMapper::fromOpenApiValidation($throwable)],
@@ -48,7 +54,7 @@ final readonly class DefaultExceptionToApiProblemTransformer implements Exceptio
             $throwable instanceof RenderInvalidArgumentException => ApiProblemException::badRequest(
                 detail: $this->messageOf($throwable),
             ),
-            $throwable instanceof HttpExceptionInterface => ApiProblemException::fromStatus(
+            $throwable instanceof HttpExceptionInterface && $throwable->getStatusCode() >= 400 => ApiProblemException::fromStatus(
                 $throwable->getStatusCode(),
                 $this->messageOf($throwable),
                 // HttpExceptionInterface::getHeaders() is typed as plain `array`.

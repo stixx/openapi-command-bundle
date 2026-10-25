@@ -30,11 +30,24 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 - **The `detail` the bundle writes for its own problems, and the `detail` your code passes to `ApiProblemException`,
   is sent outside debug mode as well.** The message of any other exception is still only sent in debug mode.
 - **A violation of the OpenAPI document names the invalid value** in `propertyPath`, such as `title` or
-  `authors.0.name`, and the JSON Schema keyword that failed in `code`. It used to have only `constraint` and `message`.
+  `authors[0].name` as Symfony's validator writes it, and the JSON Schema keyword that failed in `code`. It used to
+  have only `constraint` and `message`.
+- A request the OpenAPI document has no operation for returns a 500 instead of a 400: the router matched it, so the
+  document is at fault.
+- An `HttpException` with a status below 400 becomes a 500 problem instead of a problem with that status.
 - A violation that concerns the whole command has an empty `propertyPath` instead of `null`.
-- The bundle no longer registers serializer normalizers for `ConstraintViolationList` and `ConstraintViolation` with
-  the application's serializer, so they no longer change how your own code serializes validation errors.
+- The bundle no longer registers serializer normalizers for `ApiProblemException`, `ConstraintViolationList` and
+  `ConstraintViolation` with the application's serializer, so they no longer change how your own code serializes
+  validation errors.
+- A 400 for an argument the Nelmio renderer rejects no longer has an `invalid_argument` violation.
+- In the documented schemas, `code` and `constraint` of a `Violation` are optional and `ProblemDetailsInvalidRequestBody`
+  requires `violations`. `InvalidRequestProblemDetailsResponse` references only `ProblemDetailsInvalidRequestBody`
+  instead of `anyOf` it and `ProblemDetails`, so clients generated from the document change.
 - References to RFC 7807 point to RFC 9457, which replaces it.
+
+### Fixed
+
+- A violation that quotes a request value which is not valid UTF-8 no longer turns the 400 into a generic 500.
 
 ### Removed
 
@@ -54,8 +67,13 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
   objects or a `ConstraintViolationList` instead of arrays.
 - The `detail` you pass to `ApiProblemException` now reaches clients in production. If you pass an exception message
   or other internals, move them to the exception chain with `previous`.
-- API clients that match on `title` see the reason phrases above instead of `Unauthenticated`,
-  `An error occurred.`, `The request body contains errors` and `The request body could not be processed`.
+- `ProblemDetails` takes `(status, title, detail, type, instance)`, with `status` and `title` required, and its
+  properties are readonly. `ProblemDetailsInvalidRequestBody` takes `(status, title, violations, detail, type,
+  instance)` and is no longer final. The properties of `Violation` are readonly, and its `code` and `constraint` are
+  optional.
+- API clients that match on `title` see the reason phrases above instead of `Unauthenticated`, `Resource Not Found`,
+  `Unprocessable Entity`, `An error occurred.`, `The request body contains errors` and
+  `The request body could not be processed`.
 - `InvalidRequestProblemDetailsResponse` describes a 400 with violations only; reference
   `UnprocessableEntityProblemDetailsResponse` for the 422 a failing command returns.
 

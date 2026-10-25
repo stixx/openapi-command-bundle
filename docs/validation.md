@@ -40,7 +40,7 @@ final class CreateUserCommand
 }
 ```
 
-If a request fails validation, the bundle will interrupt the flow and return a `422 Unprocessable Entity` response with violation details. Mapping/decode failures (malformed JSON, missing required fields the serializer cannot fill in) return `400 Bad Request` instead.
+If a request fails validation, the bundle will interrupt the flow and return a `422 Unprocessable Content` response with violation details. Mapping/decode failures (malformed JSON, missing required fields the serializer cannot fill in) return `400 Bad Request` instead.
 
 ### Configuration
 
@@ -92,7 +92,8 @@ A command that fails validation returns a 422:
 ```
 
 A request that does not match the OpenAPI document returns a 400, with a violation naming the invalid value. Its
-`code` is the JSON Schema keyword that failed, and its `propertyPath` uses the JSON names of the request:
+`code` is the JSON Schema keyword that failed, and its `propertyPath` uses the JSON names of the request, such as
+`authors[0].name`:
 
 ```json
 {
@@ -112,8 +113,10 @@ A request that does not match the OpenAPI document returns a 400, with a violati
 }
 ```
 
-A violation always has `propertyPath`, which is empty when it concerns the whole request or command, and `message`.
-`constraint` and `error` are only set for Symfony constraints.
+A header violation has an empty `propertyPath` and names the header in its `message`. A violation always has
+`propertyPath`, which is empty when it concerns the whole request or command, and `message`.
+`error` is only set for Symfony constraints, and `code` is empty when an OpenAPI failure is not a JSON Schema
+keyword.
 
 > **Note**: the `detail` the bundle writes for its own problems, and any `detail` your code passes to
 > `ApiProblemException`, is always sent. When the bundle turns any other exception into a problem, its message becomes

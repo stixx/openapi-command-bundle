@@ -195,11 +195,32 @@ services:
 
 ## Throwing problem responses directly: `ApiProblemException`
 
+For the cases where the surrounding code is *already* HTTP-aware (controllers, kernel listeners), throw `ApiProblemException` directly. The bundle's `ApiExceptionSubscriber` renders it as `application/problem+json` with the right status, headers, and violation list.
+
+```php
+use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
+use Symfony\Component\HttpFoundation\Response;
+
+throw ApiProblemException::forbidden('You cannot perform this action on archived projects.');
+
+// With violations, as a list of Violation objects or a ConstraintViolationList:
+throw ApiProblemException::unprocessableEntity(
+    detail: 'The import contains invalid rows.',
+    violations: $validator->validate($import),
+);
+
+// Any other status, titled with its reason phrase:
+throw ApiProblemException::fromStatus(Response::HTTP_SERVICE_UNAVAILABLE, 'Try again later.', ['Retry-After' => '120'], $previous);
+```
+
+Available named constructors: `unauthenticated`, `forbidden`, `notFound`, `conflict`, `badRequest`, `unprocessableEntity`, `serverError` and `fromStatus`. The `detail` you pass is always sent, so keep exception messages and other internals out of it. `getProblem()` returns the `ProblemDetails` the response is written from.
+
 ### Adding members to a problem
 
 RFC 9457 lets a problem type carry its own members. Extend `ProblemDetails` and add them as public properties: the
 bundle writes every public property of the problem into the response, after the standard members, and Nelmio reads
-the same properties when it documents the class.
+the same properties when it documents the class. The members are encoded with `json_encode()`, so give them scalar,
+array or `JsonSerializable` values; the serializer's name converter, groups and `#[SerializedName]` don't apply.
 
 ```php
 namespace App\Problem;
@@ -223,22 +244,3 @@ final class OutOfStockProblem extends ProblemDetails
 
 Throw it with `new ApiProblemException(new OutOfStockProblem($sku))`, and document it with
 `#[OA\Response(response: 409, description: 'Out of stock', content: new OA\JsonContent(ref: new Model(type: OutOfStockProblem::class)))]`.
-
-For the cases where the surrounding code is *already* HTTP-aware (controllers, kernel listeners), throw `ApiProblemException` directly. The bundle's `ApiExceptionSubscriber` renders it as `application/problem+json` with the right status, headers, and violation list.
-
-```php
-use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
-
-throw ApiProblemException::forbidden('You cannot perform this action on archived projects.');
-
-// With violations, as a list of Violation objects or a ConstraintViolationList:
-throw ApiProblemException::unprocessableEntity(
-    detail: 'The import contains invalid rows.',
-    violations: $validator->validate($import),
-);
-
-// Any other status, titled with its reason phrase:
-throw ApiProblemException::fromStatus(Response::HTTP_SERVICE_UNAVAILABLE, 'Try again later.', ['Retry-After' => '120'], $previous);
-```
-
-Available named constructors: `unauthenticated`, `forbidden`, `notFound`, `conflict`, `badRequest`, `unprocessableEntity`, `serverError` and `fromStatus`. The `detail` you pass is always sent, so keep exception messages and other internals out of it. `getProblem()` returns the `ProblemDetails` the response is written from.
