@@ -62,7 +62,7 @@ final class AreaLookupTest extends TestCase
         CountingRouteLoader::$loads = 0;
 
         // Act
-        $area = $this->areaOf($this->bootKernel(), 'command_createbookcommand');
+        $area = $this->areaOf($this->bootKernel(), 'command_create_book_command');
 
         // Assert
         self::assertSame('default', $area);
@@ -74,12 +74,12 @@ final class AreaLookupTest extends TestCase
     {
         // Arrange
         $first = $this->bootKernel();
-        self::assertSame('default', $this->areaOf($first, 'command_createbookcommand'));
+        self::assertSame('default', $this->areaOf($first, 'command_create_book_command'));
         $loadsByTheFirstRequest = CountingRouteLoader::$loads;
         CountingRouteLoader::$loads = 0;
 
         // Act
-        $area = $this->areaOf($this->bootKernel(), 'command_deletebookcommand');
+        $area = $this->areaOf($this->bootKernel(), 'command_delete_book_command');
 
         // Assert
         self::assertSame(1, $loadsByTheFirstRequest);

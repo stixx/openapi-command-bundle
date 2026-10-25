@@ -52,13 +52,13 @@ final class RouteDiscoveryTest extends AbstractKernelTestCase
         $routes = $router->getRouteCollection();
 
         // Assert
-        $createBook = $routes->get('command_createbookcommand');
+        $createBook = $routes->get('command_create_book_command');
         self::assertNotNull($createBook, 'Expected the command route to be discovered');
         self::assertSame('/api/books', $createBook->getPath());
         self::assertSame(['POST'], $createBook->getMethods());
 
-        self::assertNotNull($routes->get('command_updatebookcommand'));
-        self::assertNotNull($routes->get('command_deletebookcommand'));
+        self::assertNotNull($routes->get('command_update_book_command'));
+        self::assertNotNull($routes->get('command_delete_book_command'));
 
         // Without these the router cache would miss added or edited commands.
         $resources = $routes->getResources();
@@ -103,9 +103,9 @@ final class RouteDiscoveryTest extends AbstractKernelTestCase
         $routes = $router->getRouteCollection();
 
         // Assert
-        self::assertNotNull($routes->get('command_createbookcommand'));
-        self::assertNotNull($routes->get('command_updatebookcommand'));
-        self::assertNotNull($routes->get('command_deletebookcommand'));
+        self::assertNotNull($routes->get('command_create_book_command'));
+        self::assertNotNull($routes->get('command_update_book_command'));
+        self::assertNotNull($routes->get('command_delete_book_command'));
     }
 
     #[WithoutErrorHandler]

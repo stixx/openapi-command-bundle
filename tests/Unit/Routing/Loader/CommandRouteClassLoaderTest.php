@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\Routing\Loader;
 
 use LogicException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stixx\OpenApiCommandBundle\Attribute\CommandObject;
 use Stixx\OpenApiCommandBundle\Controller\CommandController;
@@ -156,9 +157,40 @@ final class CommandRouteClassLoaderTest extends TestCase
         $names = array_keys($collection->all());
         sort($names);
 
-        // default name is command_{short_class}
-        $base = 'command_twogetnoidcommand';
+        $base = 'command_two_get_no_id_command';
         self::assertSame([$base, $base.'_2'], $names);
+    }
+
+    #[DataProvider('shortNameProvider')]
+    public function testNamesARouteWithoutOperationIdAfterTheClassInSnakeCase(string $shortName, string $routeName): void
+    {
+        // Arrange
+        if (!class_exists(__NAMESPACE__.'\\'.$shortName)) {
+            eval(sprintf(<<<'PHP'
+                namespace Stixx\OpenApiCommandBundle\Tests\Unit\Routing\Loader;
+                use OpenApi\Attributes as OA;
+                #[OA\Post(path: '/%s')]
+                final class %s {}
+                PHP, $shortName, $shortName));
+        }
+        /** @var class-string $fqcn */
+        $fqcn = self::classNamespace($shortName);
+
+        // Act
+        $names = array_keys(new CommandRouteClassLoader()->load($fqcn)->all());
+
+        // Assert
+        self::assertSame([$routeName], $names);
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function shortNameProvider(): iterable
+    {
+        yield 'words' => ['CreateInvoiceCommand', 'command_create_invoice_command'];
+        yield 'acronym' => ['ImportCSVFileCommand', 'command_import_csv_file_command'];
+        yield 'digits' => ['RenewV2TokenCommand', 'command_renew_v2_token_command'];
     }
 
     public function testControllerResolutionOrder(): void

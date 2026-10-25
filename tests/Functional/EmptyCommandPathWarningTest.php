@@ -60,6 +60,6 @@ final class EmptyCommandPathWarningTest extends AbstractKernelTestCase
 
         $router = $kernel->getContainer()->get('router');
         self::assertInstanceOf(RouterInterface::class, $router);
-        self::assertNotNull($router->getRouteCollection()->get('command_createbookcommand'));
+        self::assertNotNull($router->getRouteCollection()->get('command_create_book_command'));
     }
 }

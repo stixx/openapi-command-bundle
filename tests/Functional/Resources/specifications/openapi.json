@@ -8,7 +8,7 @@
         "/api/books": {
             "post": {
                 "summary": "Create a book",
-                "operationId": "post_command_createbookcommand",
+                "operationId": "post_command_create_book_command",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -42,7 +42,7 @@
         "/api/books/{id}": {
             "put": {
                 "summary": "Update a book",
-                "operationId": "put_command_updatebookcommand",
+                "operationId": "put_command_update_book_command",
                 "parameters": [
                     {
                         "name": "id",
@@ -87,7 +87,7 @@
             },
             "delete": {
                 "summary": "Delete a book",
-                "operationId": "delete_command_deletebookcommand",
+                "operationId": "delete_command_delete_book_command",
                 "parameters": [
                     {
                         "name": "id",
