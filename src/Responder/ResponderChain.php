@@ -17,7 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * @internal
  */
-final readonly class ResponderChain implements ResponderInterface
+final readonly class ResponderChain
 {
     /**
      * @param iterable<ResponderInterface> $responders
@@ -26,21 +26,16 @@ final readonly class ResponderChain implements ResponderInterface
     {
     }
 
-    public function respond(mixed $result, int $status): Response
+    public function respond(ResponseContext $context, int $status): Response
     {
         foreach ($this->responders as $responder) {
-            if (!$responder->supports($result)) {
+            if (!$responder->supports($context)) {
                 continue;
             }
 
-            return $responder->respond($result, $status);
+            return $responder->respond($context, $status);
         }
 
         throw new OutOfBoundsException('No supported responder found.');
-    }
-
-    public function supports(mixed $result): bool
-    {
-        return true;
     }
 }

@@ -28,15 +28,16 @@ final readonly class JsonSerializedResponder implements ResponderInterface
     {
     }
 
-    public function respond(mixed $result, int $status): Response
+    public function respond(ResponseContext $context, int $status): Response
     {
-        $json = $this->serializer->serialize($result, JsonEncoder::FORMAT);
+        $json = $this->serializer->serialize($context->getResult(), JsonEncoder::FORMAT);
 
         return JsonResponse::fromJsonString($json, $status);
     }
 
-    public function supports(mixed $result): bool
+    public function supports(ResponseContext $context): bool
     {
+        $result = $context->getResult();
         if ($result instanceof JsonSerializable) {
             return false;
         }

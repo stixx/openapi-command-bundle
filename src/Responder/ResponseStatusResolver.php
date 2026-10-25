@@ -11,7 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Stixx\OpenApiCommandBundle\Response;
+namespace Stixx\OpenApiCommandBundle\Responder;
 
 use OpenApi\Annotations\Operation;
 use OpenApi\Attributes as OAT;
@@ -24,10 +24,10 @@ use Symfony\Component\HttpFoundation\Request;
  */
 final class ResponseStatusResolver implements StatusResolverInterface
 {
-    public function resolve(Request $request, object $command): int
+    public function resolve(ResponseContext $context): int
     {
-        $method = strtoupper($request->getMethod());
-        $operation = $this->findOperationAttributeForMethod($command, $method);
+        $method = strtoupper($context->getRequest()->getMethod());
+        $operation = $this->findOperationAttributeForMethod($context->getCommand(), $method);
 
         if ($operation !== null) {
             $status = $this->first2xxFromOperation($operation);

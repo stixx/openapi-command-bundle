@@ -11,14 +11,12 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace Stixx\OpenApiCommandBundle\Response;
-
-use Symfony\Component\HttpFoundation\Request;
+namespace Stixx\OpenApiCommandBundle\Responder;
 
 /**
  * @api
  */
 interface StatusResolverInterface
 {
-    public function resolve(Request $request, object $command): int;
+    public function resolve(ResponseContext $context): int;
 }

@@ -16,8 +16,10 @@ namespace Stixx\OpenApiCommandBundle\Tests\Unit\Responder;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use stdClass;
+use Stixx\OpenApiCommandBundle\Responder\ResponseContext;
 use Stixx\OpenApiCommandBundle\Responder\ScalarResponder;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 
 final class ScalarResponderTest extends TestCase
 {
@@ -31,7 +33,7 @@ final class ScalarResponderTest extends TestCase
         $responder = new ScalarResponder();
 
         // Act
-        $response = $responder->respond($result, 200);
+        $response = $responder->respond(self::contextFor($result), 200);
 
         // Assert
         self::assertInstanceOf(JsonResponse::class, $response);
@@ -61,7 +63,7 @@ final class ScalarResponderTest extends TestCase
         $responder = new ScalarResponder();
 
         // Act
-        $actual = $responder->supports($result);
+        $actual = $responder->supports(self::contextFor($result));
 
         // Assert
         self::assertSame($expected, $actual);
@@ -83,5 +85,10 @@ final class ScalarResponderTest extends TestCase
         yield 'null' => [null, false];
         yield 'array' => [[], false];
         yield 'object' => [new stdClass(), false];
+    }
+
+    private static function contextFor(mixed $result): ResponseContext
+    {
+        return new ResponseContext(new Request(), new stdClass(), $result);
     }
 }

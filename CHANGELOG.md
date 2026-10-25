@@ -17,6 +17,8 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 - An `UnprocessableEntityProblemDetailsResponse` component for a command that fails validation.
 - Extending `ProblemDetails` adds members to a problem: the bundle writes every public property of the problem into
   the response, and the same properties document it.
+- `ResponseContext`, holding the request, the command and the handler's result. Responders and the status resolver
+  receive it, so a responder can answer on the request's `Accept` header and a status resolver can see the result.
 
 ### Changed
 
@@ -41,6 +43,10 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 - In the documented schemas, `code` and `constraint` of a `Violation` are optional and `ProblemDetailsInvalidRequestBody`
   requires `violations`, so clients generated from the document change.
 - References to RFC 7807 point to RFC 9457, which replaces it.
+- **`ResponderInterface` and `StatusResolverInterface` take a `ResponseContext`.** See **Upgrading** below.
+- **`StatusResolverInterface` and `ResponseStatusResolver` moved from the `Response` namespace to `Responder`.**
+- **The built-in responders have negative priorities**, so a responder of yours at the default priority runs before
+  them whatever order the services are registered in.
 - `CommandObject` is readonly, and its `controller` defaults to `null` instead of the bundle's internal
   `CommandController`; a command without one is still routed to `CommandController`.
 - `cache_control` rejects a value that is not a string or `null`, such as `false`.
@@ -58,6 +64,10 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 - The `$title` parameter of `ApiProblemException::badRequest()` and `unprocessableEntity()`.
 - The `maxItems` of 100 on the documented `violations`, which the responses never enforced.
 - The `stixx_openapi_command.problem_serializer` service.
+- The `ResponderInterface` and `RequestValidatorInterface` service aliases. They pointed at the bundle's internal
+  chains, and a decorator of either was autoconfigured into the chain it decorated. Tag a responder or request
+  validator, or implement the interface with autoconfiguration, to add one. `StatusResolverInterface` and
+  `ExceptionToApiProblemTransformerInterface` can still be aliased or decorated.
 
 ### Upgrading
 
@@ -81,6 +91,16 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 - Set `cache_control: null` instead of `false` to leave the header as Symfony sets it.
 - `InvalidRequestProblemDetailsResponse` describes a 400; reference `UnprocessableEntityProblemDetailsResponse` for the
   422 a failing command returns.
+- In a responder, replace `supports(mixed $result)` with `supports(ResponseContext $context)` and
+  `respond(mixed $result, int $status)` with `respond(ResponseContext $context, int $status)`, and read the result
+  from `$context->getResult()`.
+- In a status resolver, replace `resolve(Request $request, object $command)` with `resolve(ResponseContext $context)`,
+  and import `Stixx\OpenApiCommandBundle\Responder\StatusResolverInterface` instead of the `Response` namespace.
+- A service that aliased or decorated `ResponderInterface` or `RequestValidatorInterface` to change every response or
+  request no longer applies; use a `kernel.response` or `kernel.request` listener.
+- A responder at the default priority always runs before the built-in ones. To keep one as a fallback for results
+  the built-ins don't support, give it a priority below -200. Responders tagged with a negative priority now run
+  between or after the built-in ones, which have -100, and -200 for the catch-all for objects and arrays.
 
 ## [0.15.0] - 2026-10-03
 

@@ -16,8 +16,9 @@ namespace Stixx\OpenApiCommandBundle\Controller;
 use Stixx\OpenApiCommandBundle\Attribute\CommandObject;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
 use Stixx\OpenApiCommandBundle\Exception\WrappedExceptionUnwrapper;
-use Stixx\OpenApiCommandBundle\Responder\ResponderInterface;
-use Stixx\OpenApiCommandBundle\Response\StatusResolverInterface;
+use Stixx\OpenApiCommandBundle\Responder\ResponderChain;
+use Stixx\OpenApiCommandBundle\Responder\ResponseContext;
+use Stixx\OpenApiCommandBundle\Responder\StatusResolverInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
@@ -36,7 +37,7 @@ readonly class CommandController
         private MessageBusInterface $commandBus,
         private ValidatorInterface $validator,
         private StatusResolverInterface $statusResolver,
-        private ResponderInterface $responder,
+        private ResponderChain $responder,
         private WrappedExceptionUnwrapper $exceptionUnwrapper,
         private bool $validationEnabled = true,
         /** @var string[] */
@@ -64,7 +65,8 @@ readonly class CommandController
         $handled = $envelope->last(HandledStamp::class);
         $result = $handled?->getResult();
 
-        $response = $this->responder->respond($result, $this->statusResolver->resolve($request, $command));
+        $context = new ResponseContext($request, $command, $result);
+        $response = $this->responder->respond($context, $this->statusResolver->resolve($context));
 
         if (!empty($this->cacheControl)) {
             $response->headers->set('Cache-Control', $this->cacheControl);

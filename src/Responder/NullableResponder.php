@@ -20,13 +20,13 @@ use Symfony\Component\HttpFoundation\Response;
  */
 final readonly class NullableResponder implements ResponderInterface
 {
-    public function respond(mixed $result, int $status): Response
+    public function respond(ResponseContext $context, int $status): Response
     {
         return new Response(null, $status);
     }
 
-    public function supports(mixed $result): bool
+    public function supports(ResponseContext $context): bool
     {
-        return $result === null;
+        return $context->getResult() === null;
     }
 }

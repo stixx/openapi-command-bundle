@@ -15,7 +15,10 @@ namespace Stixx\OpenApiCommandBundle\Tests\Unit\Responder;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 use Stixx\OpenApiCommandBundle\Responder\NullableResponder;
+use Stixx\OpenApiCommandBundle\Responder\ResponseContext;
+use Symfony\Component\HttpFoundation\Request;
 
 final class NullableResponderTest extends TestCase
 {
@@ -26,7 +29,7 @@ final class NullableResponderTest extends TestCase
         $status = 204;
 
         // Act
-        $response = $responder->respond(null, $status);
+        $response = $responder->respond(self::contextFor(null), $status);
 
         // Assert
         self::assertSame('', $response->getContent());
@@ -40,7 +43,7 @@ final class NullableResponderTest extends TestCase
         $responder = new NullableResponder();
 
         // Act
-        $actual = $responder->supports($result);
+        $actual = $responder->supports(self::contextFor($result));
 
         // Assert
         self::assertSame($expected, $actual);
@@ -85,5 +88,10 @@ final class NullableResponderTest extends TestCase
             ['foo'],
             false,
         ];
+    }
+
+    private static function contextFor(mixed $result): ResponseContext
+    {
+        return new ResponseContext(new Request(), new stdClass(), $result);
     }
 }

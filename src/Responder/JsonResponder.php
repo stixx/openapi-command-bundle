@@ -22,13 +22,13 @@ use Symfony\Component\HttpFoundation\Response;
  */
 final readonly class JsonResponder implements ResponderInterface
 {
-    public function respond(mixed $result, int $status): Response
+    public function respond(ResponseContext $context, int $status): Response
     {
-        return new JsonResponse($result, $status);
+        return new JsonResponse($context->getResult(), $status);
     }
 
-    public function supports(mixed $result): bool
+    public function supports(ResponseContext $context): bool
     {
-        return $result instanceof JsonSerializable;
+        return $context->getResult() instanceof JsonSerializable;
     }
 }
