@@ -94,7 +94,7 @@ If `problem_details` is enabled in the configuration (which it is by default), t
 - `Violation`
 - `ProblemDetailsInvalidRequestBody`
 
-These models will be used to describe error responses (400, 404, etc.) in your generated documentation, providing a clear schema for client developers.
+They are the classes the bundle writes its problem responses from, so the documented schema is what clients receive. The bundle also registers response components that reference them; see [Documenting Problem Details in OpenAPI](validation.md#documenting-problem-details-in-openapi).
 
 ---
 

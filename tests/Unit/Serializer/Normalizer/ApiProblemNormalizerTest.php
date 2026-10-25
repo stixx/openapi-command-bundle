@@ -13,122 +13,71 @@ declare(strict_types=1);
 
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\Serializer\Normalizer;
 
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 use Stixx\OpenApiCommandBundle\Exception\ApiProblemException;
+use Stixx\OpenApiCommandBundle\Model\ProblemDetails;
+use Stixx\OpenApiCommandBundle\Model\Violation;
 use Stixx\OpenApiCommandBundle\Serializer\Normalizer\ApiProblemNormalizer;
-use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 final class ApiProblemNormalizerTest extends TestCase
 {
-    public function testSupportsNormalization(): void
+    public function testSupportsOnlyApiProblems(): void
     {
         // Arrange
-        $normalizer = new ApiProblemNormalizer(false);
-        $apiProblem = new ApiProblemException(400);
+        $normalizer = new ApiProblemNormalizer();
 
         // Act & Assert
-        self::assertTrue($normalizer->supportsNormalization($apiProblem));
+        self::assertTrue($normalizer->supportsNormalization(ApiProblemException::serverError()));
         self::assertFalse($normalizer->supportsNormalization(new stdClass()));
+        self::assertSame([ApiProblemException::class => true], $normalizer->getSupportedTypes(null));
     }
 
-    public function testGetSupportedTypes(): void
+    public function testLeavesOutTheMembersThatAreNotSet(): void
     {
-        // Arrange
-        $normalizer = new ApiProblemNormalizer(false);
-
         // Act
-        $types = $normalizer->getSupportedTypes(null);
+        $payload = new ApiProblemNormalizer()->normalize(ApiProblemException::serverError());
 
         // Assert
-        self::assertSame([ApiProblemException::class => true], $types);
+        self::assertSame(['type' => 'about:blank', 'title' => 'Internal Server Error', 'status' => 500], $payload);
     }
 
-    /**
-     * @param array<string, mixed> $expected
-     */
-    #[DataProvider('normalizeProvider')]
-    public function testNormalize(bool $debug, ApiProblemException $exception, array $expected): void
+    public function testWritesTheMembersOfASubclassAfterTheStandardOnes(): void
     {
         // Arrange
-        $normalizer = new ApiProblemNormalizer($debug);
+        $problem = new class (409, 'Stock is reserved', 'https://example.com/problems/out-of-stock', '/orders/7', 'SKU-1') extends ProblemDetails {
+            public function __construct(int $status, ?string $detail, string $type, ?string $instance, public readonly string $sku)
+            {
+                parent::__construct($status, 'Out of stock', $detail, $type, $instance);
+            }
+        };
 
         // Act
-        $result = $normalizer->normalize($exception);
+        $payload = new ApiProblemNormalizer()->normalize(new ApiProblemException($problem));
 
         // Assert
-        self::assertSame($expected, $result);
+        self::assertSame([
+            'type' => 'https://example.com/problems/out-of-stock',
+            'title' => 'Out of stock',
+            'status' => 409,
+            'detail' => 'Stock is reserved',
+            'instance' => '/orders/7',
+            'sku' => 'SKU-1',
+        ], $payload);
     }
 
-    /**
-     * @return iterable<string, array{0: bool, 1: ApiProblemException, 2: array<string, mixed>}>
-     */
-    public static function normalizeProvider(): iterable
-    {
-        yield 'basic' => [
-            false,
-            new ApiProblemException(400, 'Title', 'Type'),
-            [
-                'type' => 'Type',
-                'title' => 'Title',
-                'status' => 400,
-            ],
-        ];
-
-        yield 'with instance' => [
-            false,
-            new ApiProblemException(400, 'Title', 'Type', instance: '/instance'),
-            [
-                'type' => 'Type',
-                'title' => 'Title',
-                'status' => 400,
-                'instance' => '/instance',
-            ],
-        ];
-
-        yield 'with detail (debug false)' => [
-            false,
-            new ApiProblemException(400, 'Title', 'Type', detail: 'Detail'),
-            [
-                'type' => 'Type',
-                'title' => 'Title',
-                'status' => 400,
-            ],
-        ];
-
-        yield 'with detail (debug true)' => [
-            true,
-            new ApiProblemException(400, 'Title', 'Type', detail: 'Detail'),
-            [
-                'type' => 'Type',
-                'title' => 'Title',
-                'status' => 400,
-                'detail' => 'Detail',
-            ],
-        ];
-    }
-
-    public function testNormalizeWithViolations(): void
+    public function testWritesEveryFieldOfAViolation(): void
     {
         // Arrange
-        $violations = [['field' => 'foo', 'message' => 'bar']];
-        $exception = ApiProblemException::badRequest(violations: $violations);
-        $normalizer = new ApiProblemNormalizer(false);
-
-        $innerNormalizer = $this->createMock(NormalizerInterface::class);
-        $innerNormalizer->expects(self::once())
-            ->method('normalize')
-            ->with($violations, 'json', ['context' => 'foo'])
-            ->willReturn($violations);
-
-        $normalizer->setNormalizer($innerNormalizer);
+        $exception = ApiProblemException::badRequest(violations: [new Violation('title', 'Value cannot be null', 'nullable', 'openapi_request_validation')]);
 
         // Act
-        $result = $normalizer->normalize($exception, 'json', ['context' => 'foo']);
+        $json = json_encode(new ApiProblemNormalizer()->normalize($exception), JSON_THROW_ON_ERROR);
 
         // Assert
-        self::assertArrayHasKey('violations', $result);
-        self::assertSame($violations, $result['violations']);
+        self::assertSame(
+            '{"type":"about:blank","title":"Bad Request","status":400,"violations":[{"propertyPath":"title","message":"Value cannot be null","code":"nullable","constraint":"openapi_request_validation","error":null}]}',
+            $json,
+        );
     }
 }

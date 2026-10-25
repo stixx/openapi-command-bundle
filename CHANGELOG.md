@@ -8,6 +8,72 @@ may contain breaking changes; read the **Upgrading** notes before bumping a mino
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-25
+
+### Added
+
+- `ApiProblemException::fromStatus()` for a problem with any status, titled with its reason phrase, and
+  `ApiProblemException::conflict()`.
+- An `UnprocessableEntityProblemDetailsResponse` component for a command that fails validation.
+- Extending `ProblemDetails` adds members to a problem: the bundle writes every public property of the problem into
+  the response, and the same properties document it.
+
+### Changed
+
+- **`ApiProblemException` wraps a `ProblemDetails`.** Problem responses are written from the same `ProblemDetails`,
+  `ProblemDetailsInvalidRequestBody` and `Violation` classes their OpenAPI schemas are generated from, so the
+  documentation and the responses no longer disagree. A test pins every documented example to the response the
+  bundle sends. See **Upgrading** below.
+- **A problem is titled with the HTTP reason phrase of its status**, such as `Unauthorized`, `Not Found`,
+  `Unprocessable Content` and `Internal Server Error`; what went wrong is in `detail`. Titles used to differ between
+  the responses and the documentation.
+- **The `detail` the bundle writes for its own problems, and the `detail` your code passes to `ApiProblemException`,
+  is sent outside debug mode as well.** The message of any other exception is still only sent in debug mode.
+- **A violation of the OpenAPI document names the invalid value** in `propertyPath`, such as `title` or
+  `authors[0].name` as Symfony's validator writes it, and the JSON Schema keyword that failed in `code`. It used to
+  have only `constraint` and `message`.
+- An `HttpException` with a status below 400 becomes a 500 problem instead of a problem with that status.
+- A violation that concerns the whole command has an empty `propertyPath` instead of `null`.
+- The bundle no longer registers serializer normalizers for `ApiProblemException`, `ConstraintViolationList` and
+  `ConstraintViolation` with the application's serializer, so they no longer change how your own code serializes
+  validation errors.
+- A 400 for an argument the Nelmio renderer rejects no longer has an `invalid_argument` violation.
+- In the documented schemas, `code` and `constraint` of a `Violation` are optional and `ProblemDetailsInvalidRequestBody`
+  requires `violations`, so clients generated from the document change.
+- References to RFC 7807 point to RFC 9457, which replaces it.
+
+### Fixed
+
+- A violation that quotes a request value which is not valid UTF-8 no longer turns the 400 into a generic 500.
+
+### Removed
+
+- `ApiProblemException::getTitle()`, `getType()`, `getDetail()`, `getInstance()` and `getViolations()`; read the
+  members from `getProblem()`.
+- The `$title` parameter of `ApiProblemException::badRequest()` and `unprocessableEntity()`.
+- The `maxItems` of 100 on the documented `violations`, which the responses never enforced.
+- The `stixx_openapi_command.problem_serializer` service.
+
+### Upgrading
+
+- Construct an `ApiProblemException` from a problem: replace
+  `new ApiProblemException(statusCode: 409, title: 'Out of stock', detail: $detail)` with
+  `new ApiProblemException(new ProblemDetails(409, 'Out of stock', $detail))`, or use `ApiProblemException::fromStatus()`
+  for a problem titled with its reason phrase. `headers` and `previous` are the second and third arguments.
+- `badRequest()` and `unprocessableEntity()` take `(detail, violations)`, with the violations as a list of `Violation`
+  objects or a `ConstraintViolationList` instead of arrays.
+- The `detail` you pass to `ApiProblemException` now reaches clients in production. If you pass an exception message
+  or other internals, move them to the exception chain with `previous`.
+- `ProblemDetails` takes `(status, title, detail, type, instance)`, with `status` and `title` required, and its
+  properties are readonly. `ProblemDetailsInvalidRequestBody` takes `(status, title, violations, detail, type,
+  instance)` and is no longer final. The properties of `Violation` are readonly, and its `code` and `constraint` are
+  optional.
+- API clients that match on `title` see the reason phrases above instead of `Unauthenticated`, `Resource Not Found`,
+  `Unprocessable Entity`, `An error occurred.`, `The request body contains errors` and
+  `The request body could not be processed`.
+- `InvalidRequestProblemDetailsResponse` describes a 400; reference `UnprocessableEntityProblemDetailsResponse` for the
+  422 a failing command returns.
+
 ## [0.15.0] - 2026-10-03
 
 ### Added
@@ -390,7 +456,8 @@ Installing it with Composer is not enough. See the README's installation section
   details outside debug mode, and a `CommandValueResolver` that supports list endpoints and the combination of
   parameters with a request body.
 
-[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.15.0...HEAD
+[Unreleased]: https://github.com/stixx/openapi-command-bundle/compare/0.16.0...HEAD
+[0.16.0]: https://github.com/stixx/openapi-command-bundle/compare/0.15.0...0.16.0
 [0.15.0]: https://github.com/stixx/openapi-command-bundle/compare/0.14.2...0.15.0
 [0.14.2]: https://github.com/stixx/openapi-command-bundle/compare/0.14.1...0.14.2
 [0.14.1]: https://github.com/stixx/openapi-command-bundle/compare/0.14.0...0.14.1

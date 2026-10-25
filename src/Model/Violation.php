@@ -18,22 +18,20 @@ use OpenApi\Attributes as OA;
 /**
  * @api
  */
-#[OA\Schema(
-    required: [
-        'propertyPath',
-        'message',
-        'code',
-        'constraint',
-    ]
-)]
+#[OA\Schema(required: ['propertyPath', 'message'])]
 final class Violation
 {
     public function __construct(
-        public string $propertyPath,
-        public string $message,
-        public string $code,
-        public string $constraint,
-        public ?string $error,
+        #[OA\Property(description: 'Path of the invalid value; empty when the violation concerns the whole request or command.')]
+        public readonly string $propertyPath,
+        #[OA\Property(description: 'A human-readable explanation of the violation.')]
+        public readonly string $message,
+        #[OA\Property(description: 'Machine-readable code: the Symfony constraint error code, or the failed JSON Schema keyword.')]
+        public readonly ?string $code = null,
+        #[OA\Property(description: 'Short name of the Symfony constraint, or "openapi_request_validation".')]
+        public readonly ?string $constraint = null,
+        #[OA\Property(description: 'Name of the Symfony constraint error constant, e.g. IS_BLANK_ERROR.')]
+        public readonly ?string $error = null,
     ) {
     }
 }

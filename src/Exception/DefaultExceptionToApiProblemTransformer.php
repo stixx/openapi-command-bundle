@@ -15,17 +15,22 @@ namespace Stixx\OpenApiCommandBundle\Exception;
 
 use League\OpenAPIValidation\PSR7\Exception\ValidationFailed as OpenApiValidationFailed;
 use Nelmio\ApiDocBundle\Exception\RenderInvalidArgumentException;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
 /**
+ * Exception messages can reveal routes, classes and data, so outside debug they never reach the response.
+ *
  * @internal
  */
-final class DefaultExceptionToApiProblemTransformer implements ExceptionToApiProblemTransformerInterface
+final readonly class DefaultExceptionToApiProblemTransformer implements ExceptionToApiProblemTransformerInterface
 {
+    public function __construct(private bool $debug = false)
+    {
+    }
+
     public function transform(Throwable $throwable): ApiProblemException
     {
         $authenticationExceptionClass = 'Symfony\\Component\\Security\\Core\\Exception\\AuthenticationException';
@@ -37,48 +42,26 @@ final class DefaultExceptionToApiProblemTransformer implements ExceptionToApiPro
             $throwable instanceof AccessDeniedHttpException => ApiProblemException::forbidden(),
             $throwable instanceof NotFoundHttpException => ApiProblemException::notFound(),
             $throwable instanceof OpenApiValidationFailed => ApiProblemException::badRequest(
-                detail: $throwable->getMessage(),
-                violations: [[
-                    'constraint' => 'openapi_request_validation',
-                    'message' => $throwable->getPrevious()?->getMessage() ?: $throwable->getMessage(),
-                ]]
+                detail: 'The request does not match the API specification.',
+                violations: [ViolationMapper::fromOpenApiValidation($throwable)],
             ),
             $throwable instanceof RenderInvalidArgumentException => ApiProblemException::badRequest(
-                detail: $throwable->getMessage(),
-                violations: [[
-                    'constraint' => 'invalid_argument',
-                    'message' => $throwable->getMessage(),
-                ]]
+                detail: $this->messageOf($throwable),
             ),
-            $throwable instanceof HttpExceptionInterface => new ApiProblemException(
-                statusCode: $throwable->getStatusCode(),
-                title: $this->defaultTitleForStatus($throwable->getStatusCode()),
-                type: 'about:blank',
-                detail: $throwable->getMessage(),
-                previous: $throwable,
-                // HttpExceptionInterface::getHeaders() is typed as plain `array`; the constructor wants array<string, mixed>.
+            $throwable instanceof HttpExceptionInterface && $throwable->getStatusCode() >= 400 => ApiProblemException::fromStatus(
+                $throwable->getStatusCode(),
+                $this->messageOf($throwable),
+                // HttpExceptionInterface::getHeaders() is typed as plain `array`.
                 /* @phpstan-ignore-next-line */
-                headers: $throwable->getHeaders()
+                $throwable->getHeaders(),
+                $throwable,
             ),
-            default => ApiProblemException::serverError(
-                detail: $throwable->getMessage(),
-            ),
+            default => ApiProblemException::serverError(detail: $this->messageOf($throwable)),
         };
     }
 
-    private function defaultTitleForStatus(int $status): string
+    private function messageOf(Throwable $throwable): ?string
     {
-        return match (true) {
-            Response::HTTP_BAD_REQUEST === $status => 'Bad Request',
-            Response::HTTP_UNAUTHORIZED === $status => 'Unauthorized',
-            Response::HTTP_FORBIDDEN === $status => 'Forbidden',
-            Response::HTTP_NOT_FOUND === $status => 'Not Found',
-            Response::HTTP_METHOD_NOT_ALLOWED === $status => 'Method Not Allowed',
-            Response::HTTP_NOT_ACCEPTABLE === $status => 'Not Acceptable',
-            Response::HTTP_CONFLICT === $status => 'Conflict',
-            Response::HTTP_UNSUPPORTED_MEDIA_TYPE === $status => 'Unsupported Media Type',
-            Response::HTTP_UNPROCESSABLE_ENTITY === $status => 'Unprocessable Entity',
-            default => 'An error occurred.',
-        };
+        return $this->debug && $throwable->getMessage() !== '' ? $throwable->getMessage() : null;
     }
 }

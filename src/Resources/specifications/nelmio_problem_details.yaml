@@ -3,41 +3,43 @@ nelmio_api_doc:
     components:
       responses:
         InvalidRequestProblemDetailsResponse:
-          description: RFC7807 Problem Details
+          description: RFC 9457 Problem Details for a request that does not match the API specification or cannot be mapped to the command
           content:
             application/problem+json:
               schema:
                 anyOf:
                   - $ref: '#/components/schemas/ProblemDetailsInvalidRequestBody'
                   - $ref: '#/components/schemas/ProblemDetails'
-              examples:
-                invalidJsonInRequestBody:
-                  summary: Invalid JSON in Request Body
-                  value:
-                    type: 'about:blank'
-                    title: 'The request body contains errors'
-                    status: 400
-                    detail: 'Validation failed.'
-                    violations:
-                      - propertyPath: 'foo'
-                        message: 'This value should not be blank.'
-                        code: c1ac8c7d-eab5-458f-a950-fcf121d23059
-                        constraint: NotBlank
-                        error: "NOT_EQUAL_ERROR"
-                invalidRequestBody:
-                  summary: Invalid Request Body
-                  value:
-                    type: 'about:blank'
-                    title: 'The request body contains errors'
-                    status: 400
-                    detail: 'Body does not match schema'
-                    violations:
-                      - propertyPath: 'body'
-                        message: 'Body does not match schema for content-type "application/json" for Request [post /api/example]'
-                        code: 'openapi_request_validation'
-                        constraint: 'openapi_request_validation'
+              example:
+                type: 'about:blank'
+                title: 'Bad Request'
+                status: 400
+                detail: 'The request does not match the API specification.'
+                violations:
+                  - propertyPath: 'title'
+                    message: 'Keyword validation failed: Value cannot be null'
+                    code: 'nullable'
+                    constraint: 'openapi_request_validation'
+                    error: null
+        UnprocessableEntityProblemDetailsResponse:
+          description: RFC 9457 Problem Details for a command that fails validation
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetailsInvalidRequestBody'
+              example:
+                type: 'about:blank'
+                title: 'Unprocessable Content'
+                status: 422
+                detail: 'Validation failed'
+                violations:
+                  - propertyPath: 'title'
+                    message: 'This value should not be blank.'
+                    code: 'c1051bb4-d103-4f74-8988-acbcafc7fdc3'
+                    constraint: 'NotBlank'
+                    error: 'IS_BLANK_ERROR'
         UnauthorizedProblemDetailsResponse:
-          description: RFC7807 Unauthorized Problem Details
+          description: RFC 9457 Unauthorized Problem Details
           content:
             application/problem+json:
               schema:
@@ -48,7 +50,7 @@ nelmio_api_doc:
                 status: 401
                 detail: 'The authentication token is missing or invalid.'
         ForbiddenProblemDetailsResponse:
-          description: RFC7807 Forbidden Problem Details
+          description: RFC 9457 Forbidden Problem Details
           content:
             application/problem+json:
               schema:
@@ -59,18 +61,18 @@ nelmio_api_doc:
                 status: 403
                 detail: 'You are not allowed to perform this action.'
         ResourceNotFoundProblemDetailsResponse:
-          description: RFC7807 Resource Not Found Problem Details
+          description: RFC 9457 Resource Not Found Problem Details
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
               example:
                 type: 'about:blank'
-                title: 'Resource Not Found'
+                title: 'Not Found'
                 status: 404
-                detail: 'The requested resource was not found.'
+                detail: 'The requested resource could not be found.'
         ConflictProblemDetailsResponse:
-          description: RFC7807 Conflict Problem Details
+          description: RFC 9457 Conflict Problem Details
           content:
             application/problem+json:
               schema:
@@ -81,12 +83,12 @@ nelmio_api_doc:
                 status: 409
                 detail: 'The resource already exists.'
         DefaultProblemDetailsResponse:
-          description: RFC7807 Default Problem Details
+          description: RFC 9457 Default Problem Details
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
               example:
                 type: 'about:blank'
-                title: 'An error occurred'
+                title: 'Internal Server Error'
                 status: 500
