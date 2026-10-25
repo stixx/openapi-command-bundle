@@ -23,7 +23,7 @@ Important: Commands must NOT be controllers
 
 ## Request lifecycle
 
-A successful request flows through the bundle in two phases: a `kernel.request` validation phase, then controller execution. Anything that throws — at any step — is caught by `ApiExceptionSubscriber` and rendered as an RFC 7807 problem response (the second diagram below).
+A successful request flows through the bundle in two phases: a `kernel.request` validation phase, then controller execution. Anything that throws — at any step — is caught by `ApiExceptionSubscriber` and rendered as an RFC 9457 problem response (the second diagram below).
 
 ### Happy path
 
@@ -110,7 +110,7 @@ sequenceDiagram
     ExSub->>Norm: normalize problem
     Norm-->>ExSub: payload
     ExSub->>ExSub: Build JsonResponse with status from the problem
-    Note over ExSub: Throwable headers — Allow on 405, Retry-After on 503, ... —<br/>are preserved, but Content-Type is locked to<br/>application/problem+json per RFC 7807.<br/>If anything above throws, a static problem+json 500<br/>is emitted instead.
+    Note over ExSub: Throwable headers — Allow on 405, Retry-After on 503, ... —<br/>are preserved, but Content-Type is locked to<br/>application/problem+json per RFC 9457.<br/>If anything above throws, a static problem+json 500<br/>is emitted instead.
     ExSub-->>Client: HTTP Response
 ```
 
@@ -396,4 +396,4 @@ The bundle provides a `CommandRouteDescriber` so your routes appear in Nelmio Ap
   - When sending a body, set `Content-Type: application/json` (or a `+json` media type).
 
 - Validation errors
-  - The bundle validates command DTOs prior to dispatch; you’ll get a 400 with violation details when constraints fail.
+  - The bundle validates command DTOs prior to dispatch; you’ll get a 422 with violation details when constraints fail. A request that does not match the OpenAPI document gets a 400 before the command is built.

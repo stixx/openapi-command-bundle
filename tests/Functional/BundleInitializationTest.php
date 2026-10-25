@@ -23,10 +23,9 @@ use Stixx\OpenApiCommandBundle\RouteDescriber\CommandRouteDescriber;
 use Stixx\OpenApiCommandBundle\Routing\CommandRouteDiscovery;
 use Stixx\OpenApiCommandBundle\Routing\Loader\{CommandRouteClassLoader, CommandRouteDirectoryLoader, RouterLoaderDecorator};
 use Stixx\OpenApiCommandBundle\Routing\NelmioAreaRoutesChecker;
-use Stixx\OpenApiCommandBundle\Serializer\Normalizer\{ApiProblemNormalizer, ConstraintViolationListNormalizer, ConstraintViolationNormalizer};
+use Stixx\OpenApiCommandBundle\Serializer\Normalizer\ApiProblemNormalizer;
 use Stixx\OpenApiCommandBundle\Tests\Functional\App\Kernel;
 use Stixx\OpenApiCommandBundle\Validator\{RequestValidator, RequestValidatorChain, RequestValidatorInterface};
-use Symfony\Component\Serializer\Serializer;
 
 final class BundleInitializationTest extends AbstractKernelTestCase
 {
@@ -82,10 +81,6 @@ final class BundleInitializationTest extends AbstractKernelTestCase
 
         // Serializer
         $this->assertTrue($container->has(ApiProblemNormalizer::class));
-        $this->assertTrue($container->has(ConstraintViolationNormalizer::class));
-        $this->assertTrue($container->has(ConstraintViolationListNormalizer::class));
-        $this->assertTrue($container->has('stixx_openapi_command.problem_serializer'));
-        $this->assertInstanceOf(Serializer::class, $container->get('stixx_openapi_command.problem_serializer'));
     }
 
     #[WithoutErrorHandler]

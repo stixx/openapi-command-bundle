@@ -16,7 +16,7 @@ By using standard OpenAPI operation attributes (from `zircote/swagger-php`) dire
 - **Two-Layer Validation**: Each request is checked against the OpenAPI schema (headers, query parameters, body shape via `league/openapi-psr7-validator`) *and* the deserialized command is validated with Symfony Validator constraints before it reaches your handler.
 - **Messenger Integration**: Dispatches your commands directly to the Symfony Messenger bus.
 - **Auto-Generated Documentation**: Seamlessly integrates with `NelmioApiDocBundle` to include your command-based routes in your OpenAPI/Swagger documentation.
-- **Problem Details Support**: Returns RFC 7807 compliant error responses for validation and mapping errors.
+- **Problem Details Support**: Returns RFC 9457 problem details for validation and mapping errors.
 
 ## Installation
 
@@ -164,7 +164,7 @@ stixx_openapi_command:
     command_paths:            # Required. Directories or glob patterns holding command DTOs; [] disables discovery
         - '%kernel.project_dir%/src/Command'
     openapi:
-        problem_details: true  # Enable RFC 7807 problem details for errors
+        problem_details: true  # Add the problem details response components to the generated OpenAPI documentation
         warm_up: false         # Generate the OpenAPI documents during cache:warmup instead of on the first API request
 ```
 
@@ -188,15 +188,15 @@ The bundle distinguishes a small public API surface from its internal implementa
 |---|---|
 | `Stixx\OpenApiCommandBundle\StixxOpenApiCommandBundle` | Bundle entry point |
 | `Stixx\OpenApiCommandBundle\Attribute\CommandObject` | Marker attribute for command arguments |
-| `Stixx\OpenApiCommandBundle\Exception\ApiProblemException` | Throw this from your code to express RFC 7807 problems |
+| `Stixx\OpenApiCommandBundle\Exception\ApiProblemException` | Throw this from your code to express RFC 9457 problems |
 | `Stixx\OpenApiCommandBundle\Exception\ExceptionToApiProblemTransformerInterface` | Replace to customize how exceptions become problem responses |
 | `Stixx\OpenApiCommandBundle\Responder\ResponderInterface` | Implement to handle custom result shapes (CSV, XML, …) |
 | `Stixx\OpenApiCommandBundle\Responder\StatusResolverInterface` | Replace or decorate to customize status code resolution |
 | `Stixx\OpenApiCommandBundle\Responder\ResponseContext` | The request, command and handler result passed to responders and the status resolver |
 | `Stixx\OpenApiCommandBundle\Validator\RequestValidatorInterface` | Implement to add custom request-level validation |
-| `Stixx\OpenApiCommandBundle\Model\ProblemDetails` | OpenAPI schema model — reference from your annotations |
-| `Stixx\OpenApiCommandBundle\Model\ProblemDetailsInvalidRequestBody` | OpenAPI schema model — reference from your annotations |
-| `Stixx\OpenApiCommandBundle\Model\Violation` | OpenAPI schema model — reference from your annotations |
+| `Stixx\OpenApiCommandBundle\Model\ProblemDetails` | The problem a response is written from, and its OpenAPI schema; extend it to add members |
+| `Stixx\OpenApiCommandBundle\Model\ProblemDetailsInvalidRequestBody` | A problem with violations, and its OpenAPI schema |
+| `Stixx\OpenApiCommandBundle\Model\Violation` | One violation of a rejected request or command, and its OpenAPI schema |
 
 **Internal (`@internal`)** — everything else, including default implementations like `JsonResponder`, `DefaultExceptionToApiProblemTransformer`, `RequestValidator`, the controllers, DI extension, compiler passes, route loaders, and event subscribers. Do not extend or rely on these directly; replace them through the `@api` interfaces above.
 
@@ -214,7 +214,10 @@ From 1.0.0 on, the bundle follows [Semantic Versioning](https://semver.org) for 
 - the service tags named by `ResponderInterface::TAG_NAME` and `RequestValidatorInterface::TAG_NAME`;
 - the OpenAPI component names the bundle registers for your annotations when `openapi.problem_details` is enabled
   (the default): the schemas `ProblemDetails`, `Violation` and `ProblemDetailsInvalidRequestBody`, and the
-  `*ProblemDetailsResponse` responses.
+  `*ProblemDetailsResponse` responses;
+- the members of the problem responses, and the fields of a violation.
+
+`ProblemDetails` and `ProblemDetailsInvalidRequestBody` may be extended, to add members to a problem.
 
 The policy:
 

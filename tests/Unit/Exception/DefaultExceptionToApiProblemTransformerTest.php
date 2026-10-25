@@ -14,130 +14,91 @@ declare(strict_types=1);
 namespace Stixx\OpenApiCommandBundle\Tests\Unit\Exception;
 
 use Exception;
+use League\OpenAPIValidation\PSR7\Exception\NoOperation;
 use League\OpenAPIValidation\PSR7\Exception\ValidationFailed as OpenApiValidationFailed;
 use Nelmio\ApiDocBundle\Exception\RenderInvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stixx\OpenApiCommandBundle\Exception\DefaultExceptionToApiProblemTransformer;
-use Symfony\Component\HttpFoundation\Response;
+use Stixx\OpenApiCommandBundle\Model\ProblemDetailsInvalidRequestBody;
+use Stixx\OpenApiCommandBundle\Model\Violation;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Throwable;
 
 final class DefaultExceptionToApiProblemTransformerTest extends TestCase
 {
-    private DefaultExceptionToApiProblemTransformer $transformer;
-
-    protected function setUp(): void
-    {
-        $this->transformer = new DefaultExceptionToApiProblemTransformer();
-    }
-
-    /**
-     * @param array<int, array<string, string|null>>|null $expectedViolations
-     */
     #[DataProvider('exceptionProvider')]
-    public function testTransform(Throwable $exception, int $expectedStatus, string $expectedTitle, ?string $expectedDetail = null, ?array $expectedViolations = null): void
+    public function testTransform(Throwable $exception, int $status, string $title, ?string $detail): void
     {
+        // Arrange
+        $transformer = new DefaultExceptionToApiProblemTransformer();
+
         // Act
-        $apiProblem = $this->transformer->transform($exception);
+        $problem = $transformer->transform($exception)->getProblem();
 
         // Assert
-        self::assertSame($expectedStatus, $apiProblem->getStatusCode());
-        self::assertSame($expectedTitle, $apiProblem->getTitle());
-        if ($expectedDetail !== null) {
-            self::assertSame($expectedDetail, $apiProblem->getDetail());
-        }
-        if ($expectedViolations !== null) {
-            self::assertSame($expectedViolations, $apiProblem->getViolations());
-        }
+        self::assertSame($status, $problem->status);
+        self::assertSame($title, $problem->title);
+        self::assertSame($detail, $problem->detail);
     }
 
     /**
-     * @return iterable<string, array{0: Throwable, 1: int, 2: string, 3?: string|null, 4?: array<int, array<string, string|null>>|null}>
+     * @return iterable<string, array{Throwable, int, string, string|null}>
      */
     public static function exceptionProvider(): iterable
     {
-        yield 'AccessDeniedHttpException' => [
-            new AccessDeniedHttpException('Forbidden message'),
-            Response::HTTP_FORBIDDEN,
-            'Forbidden',
-            'You are not allowed to perform this action.',
-        ];
+        yield 'authentication' => [new AuthenticationException('Invalid JWT'), 401, 'Unauthorized', 'The authentication token is missing or invalid.'];
+        yield 'access denied (HttpKernel)' => [new AccessDeniedHttpException('Forbidden message'), 403, 'Forbidden', 'You are not allowed to perform this action.'];
+        yield 'access denied (Security)' => [new AccessDeniedException('Missing permission: manage_roles'), 403, 'Forbidden', 'You are not allowed to perform this action.'];
+        yield 'not found' => [new NotFoundHttpException('No route found for "GET /api/x"'), 404, 'Not Found', 'The requested resource could not be found.'];
+        yield 'OpenAPI validation' => [new OpenApiValidationFailed('Body does not match schema'), 400, 'Bad Request', 'The request does not match the API specification.'];
+        yield 'Nelmio render argument' => [new RenderInvalidArgumentException('Invalid argument'), 400, 'Bad Request', null];
+        yield 'HTTP exception' => [new HttpException(409, 'App\Entity\Order object not found'), 409, 'Conflict', null];
+        yield 'operation missing from the OpenAPI document' => [NoOperation::fromPathAndMethod('/api/books', 'head'), 400, 'Bad Request', 'The request does not match the API specification.'];
+        yield 'redirect' => [new HttpException(302, 'Moved', headers: ['Location' => '/elsewhere']), 500, 'Internal Server Error', null];
+        yield 'generic exception' => [new Exception('SQLSTATE[23000]'), 500, 'Internal Server Error', null];
+    }
 
-        yield 'AccessDeniedException (Security layer)' => [
-            new AccessDeniedException('Missing permission: manage_roles'),
-            Response::HTTP_FORBIDDEN,
-            'Forbidden',
-            'You are not allowed to perform this action.',
-        ];
+    public function testShowsTheExceptionMessageInDebug(): void
+    {
+        // Arrange
+        $transformer = new DefaultExceptionToApiProblemTransformer(debug: true);
 
-        yield 'NotFoundHttpException' => [
-            new NotFoundHttpException('Not found message'),
-            Response::HTTP_NOT_FOUND,
-            'An error occurred.',
-            'The requested resource could not be found.',
-        ];
+        // Act
+        $problem = $transformer->transform(new Exception('SQLSTATE[23000]'))->getProblem();
 
-        $openApiValidationFailed = new OpenApiValidationFailed('OpenAPI validation failed');
-        yield 'OpenApiValidationFailed' => [
-            $openApiValidationFailed,
-            Response::HTTP_BAD_REQUEST,
-            'The request body contains errors',
-            'OpenAPI validation failed',
-            [[
-                'constraint' => 'openapi_request_validation',
-                'message' => 'OpenAPI validation failed',
-            ]],
-        ];
+        // Assert
+        self::assertSame('SQLSTATE[23000]', $problem->detail);
+    }
 
-        $renderInvalidArgumentException = new RenderInvalidArgumentException('Invalid argument');
-        yield 'RenderInvalidArgumentException' => [
-            $renderInvalidArgumentException,
-            Response::HTTP_BAD_REQUEST,
-            'The request body contains errors',
-            'Invalid argument',
-            [[
-                'constraint' => 'invalid_argument',
-                'message' => 'Invalid argument',
-            ]],
-        ];
+    public function testKeepsTheHeadersOfAnHttpException(): void
+    {
+        // Arrange
+        $transformer = new DefaultExceptionToApiProblemTransformer();
 
-        yield 'HttpExceptionInterface - 400' => [
-            new HttpException(Response::HTTP_BAD_REQUEST, 'Custom bad request'),
-            Response::HTTP_BAD_REQUEST,
-            'Bad Request',
-            'Custom bad request',
-        ];
+        // Act
+        $exception = $transformer->transform(new MethodNotAllowedHttpException(['GET', 'POST']));
 
-        yield 'HttpExceptionInterface - 401' => [
-            new HttpException(Response::HTTP_UNAUTHORIZED, 'Custom unauthorized'),
-            Response::HTTP_UNAUTHORIZED,
-            'Unauthorized',
-            'Custom unauthorized',
-        ];
+        // Assert
+        self::assertSame(405, $exception->getStatusCode());
+        self::assertSame(['Allow' => 'GET, POST'], $exception->getHeaders());
+    }
 
-        yield 'HttpExceptionInterface - 403' => [
-            new HttpException(Response::HTTP_FORBIDDEN, 'Custom forbidden'),
-            Response::HTTP_FORBIDDEN,
-            'Forbidden',
-            'Custom forbidden',
-        ];
+    public function testDescribesAnOpenApiValidationFailureAsAViolation(): void
+    {
+        // Arrange
+        $transformer = new DefaultExceptionToApiProblemTransformer();
 
-        yield 'HttpExceptionInterface - 500' => [
-            new HttpException(Response::HTTP_INTERNAL_SERVER_ERROR, 'Custom server error'),
-            Response::HTTP_INTERNAL_SERVER_ERROR,
-            'An error occurred.',
-            'Custom server error',
-        ];
+        // Act
+        $problem = $transformer->transform(new OpenApiValidationFailed('Body does not match schema'))->getProblem();
 
-        yield 'Default case (generic Exception)' => [
-            new Exception('Something went wrong'),
-            Response::HTTP_INTERNAL_SERVER_ERROR,
-            'An error occurred.',
-            'Something went wrong',
-        ];
+        // Assert
+        self::assertInstanceOf(ProblemDetailsInvalidRequestBody::class, $problem);
+        self::assertEquals([new Violation('', 'Body does not match schema', null, 'openapi_request_validation')], $problem->violations);
     }
 }
